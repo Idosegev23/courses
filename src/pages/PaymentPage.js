@@ -1,4 +1,6 @@
-import React, { useEffect } from 'react';
+// src/pages/PaymentPage.js
+
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
@@ -25,24 +27,37 @@ const PageTitle = styled.h1`
 
 const PaymentPage = () => {
   const { courseId } = useParams();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const initiatePayment = async () => {
       try {
+        // בקשת JWT Token
+        const tokenResponse = await axios.post('https://api.greeninvoice.co.il/api/v1/account/token', {
+          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
+        });
+
+        const jwtToken = tokenResponse.data.token;
+
+        // בקשת תשלום
         const response = await axios.post('https://api.greeninvoice.co.il/api/v1/transactions', {
-          type: 320,
-          sum: 100,
+          type: 320, // סוג עסקה
+          sum: 100, // סכום העסקה (שזה צריך להיות הדינמי לפי מחיר הקורס שלך)
           description: `תשלום עבור קורס ${courseId}`
         }, {
           headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_GREEN_INVOICE_API_KEY}`
+            Authorization: `Bearer ${jwtToken}`
           }
         });
 
+        // מעבר לכתובת התשלום
         window.location.href = response.data.url;
       } catch (error) {
         console.error('Error during payment initiation:', error);
         alert('התרחשה שגיאה במהלך התשלום.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -52,7 +67,11 @@ const PaymentPage = () => {
   return (
     <PageContainer>
       <PageTitle>מעבר לדף התשלום...</PageTitle>
-      <p>אנא המתן בזמן שאנו מעבירים אותך לדף התשלום.</p>
+      {loading ? (
+        <p>אנא המתן בזמן שאנו מעבירים אותך לדף התשלום.</p>
+      ) : (
+        <p>ניסיון התחלה נכשל. נסה שוב מאוחר יותר.</p>
+      )}
     </PageContainer>
   );
 };
