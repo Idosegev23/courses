@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import styled from 'styled-components';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import styled, { createGlobalStyle } from 'styled-components';
+import axios from 'axios';  // הייבוא הנכון ש
 
 const PageContainer = styled.div`
   padding: 2rem;
