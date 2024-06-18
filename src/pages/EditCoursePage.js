@@ -1,6 +1,7 @@
-// src/pages/AddCoursePage.js
+// src/pages/EditCoursePage.js
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
@@ -108,7 +109,8 @@ const ActionButton = styled.button`
   }
 `;
 
-const AddCoursePage = () => {
+const EditCoursePage = () => {
+  const { courseId } = useParams();
   const [course, setCourse] = useState({
     title: '',
     description: '',
@@ -117,6 +119,33 @@ const AddCoursePage = () => {
     details: '',
     lessons: [{ title: '', videoLink: '', faq: [] }],
   });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching course:', error);
+        return;
+      }
+
+      setCourse({
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        duration: data.duration,
+        details: data.details,
+        lessons: data.lessons || [],
+      });
+    };
+
+    fetchCourse();
+  }, [courseId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -160,7 +189,6 @@ const AddCoursePage = () => {
     }));
   };
 
-  // הוספת פונקציה למחיקת שיעור
   const removeLesson = (index) => {
     setCourse((prevCourse) => ({
       ...prevCourse,
@@ -168,24 +196,29 @@ const AddCoursePage = () => {
     }));
   };
 
-  const handleCourseCreation = async (e) => {
+  const handleCourseUpdate = async (e) => {
     e.preventDefault();
     const { error } = await supabase
       .from('courses')
-      .insert([course]);
+      .update(course)
+      .eq('id', courseId);
+
     if (error) {
-      console.error('Error creating course:', error);
-    } else {
-      alert('Course created successfully!');
+      console.error('Error updating course:', error);
+      alert(`שגיאה בעדכון הקורס: ${error.message}`);
+      return;
     }
+
+    alert('הקורס עודכן בהצלחה!');
+    navigate('/admin-dashboard');
   };
 
   return (
     <>
       <GlobalStyle />
       <PageContainer>
-        <PageTitle>הוסף קורס חדש</PageTitle>
-        <Form onSubmit={handleCourseCreation}>
+        <PageTitle>ערוך קורס</PageTitle>
+        <Form onSubmit={handleCourseUpdate}>
           <Input
             type="text"
             name="title"
@@ -262,11 +295,11 @@ const AddCoursePage = () => {
             </div>
           ))}
           <ActionButton type="button" onClick={addLesson}>הוסף שיעור</ActionButton>
-          <ActionButton type="submit">צור קורס</ActionButton>
+          <ActionButton type="submit">עדכן קורס</ActionButton>
         </Form>
       </PageContainer>
     </>
   );
 };
 
-export default AddCoursePage;
+export default EditCoursePage;

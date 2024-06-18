@@ -1,5 +1,7 @@
+// src/pages/PaymentSuccessRedirect.js
+
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const MessageContainer = styled.div`
@@ -25,7 +27,6 @@ const MessageText = styled.p`
 
 const PaymentSuccessRedirect = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     // כיוון מחדש לאזור האישי אחרי כמה שניות

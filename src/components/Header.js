@@ -1,8 +1,10 @@
+// src/components/Header.js
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
-import { useAuth } from '../hooks/useAuth'; // לוודא שהמיקום נכון
+import { useAuth } from '../hooks/useAuth';
 
 const HeaderContainer = styled.header`
   background-color: #ffffff;
@@ -44,7 +46,61 @@ const StyledButton = styled(Link)`
   border: 2px solid #F25C78;
   transition: all 0.3s ease-in-out;
   position: relative;
-  
+  cursor: pointer;  // הוספת שינוי הסמן
+
+  &:hover {
+    color: #BF4B81;
+    border: 2px solid #BF4B81;
+  }
+
+  &::before,
+  &::after {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border-style: solid;
+    border-width: 2px 0 0 2px;
+    border-color: #F25C78;
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    transition: all 0.3s ease-in-out;
+  }
+
+  &::after {
+    border-width: 0 2px 2px 0;
+    top: auto;
+    bottom: -6px;
+    left: auto;
+    right: -6px;
+  }
+
+  &:hover::before,
+  &:hover::after {
+    width: calc(100% + 12px);
+    height: calc(100% + 12px);
+    border-color: #BF4B81;
+    transform: rotateY(180deg);
+  }
+`;
+
+// הוספת סגנון מותאם אישית לכפתור התנתקות
+const StyledSignOutButton = styled.button`
+  background: none;
+  padding: 15px;
+  border-radius: 50px;
+  display: inline-block;
+  font-family: 'Glamour Absolute', sans-serif;
+  color: #F25C78;
+  text-decoration: none;
+  font-weight: 100;
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+  border: 2px solid #F25C78;
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  cursor: pointer;  // שינוי הסמן בעת מעבר מעל הכפתור
+
   &:hover {
     color: #BF4B81;
     border: 2px solid #BF4B81;
@@ -84,6 +140,15 @@ const StyledButton = styled(Link)`
 const Header = () => {
   const { user, signOut } = useAuth();
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      console.log("User signed out successfully.");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   // בדיקה אם המשתמש הוא האדמין
   const isAdmin = user && user.email === 'triroars@gmail.com';
 
@@ -98,12 +163,11 @@ const Header = () => {
             {isAdmin && (
               <StyledButton to="/admin-dashboard">אזור אדמין</StyledButton>
             )}
-            <StyledButton as="button" onClick={signOut}>התנתק</StyledButton>
+            <StyledSignOutButton onClick={handleSignOut}>התנתק</StyledSignOutButton>
           </>
         ) : (
           <StyledButton to="/login">התחברות</StyledButton>
         )}
-        <StyledButton to="/courses">הקורסים</StyledButton>
       </ButtonContainer>
     </HeaderContainer>
   );

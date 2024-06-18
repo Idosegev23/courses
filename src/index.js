@@ -1,10 +1,10 @@
+// src/index.js
+
 import React from 'react';
-import { createRoot } from 'react-dom/client'; // ייבוא createRoot
+import ReactDOM from 'react-dom/client';
 import App from './App';
 
-const container = document.getElementById('root'); // בחירת ה-element שבו נרנדר את האפליקציה
-const root = createRoot(container); // יצירת root חדש
-
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <App />

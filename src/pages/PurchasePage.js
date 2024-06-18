@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
-import axios from 'axios';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -77,7 +76,7 @@ const PurchasePage = () => {
     try {
       const { error } = await supabase
         .from('enrollments')
-        .insert({ userId, courseId });
+        .insert({ user_id: userId, course_id: courseId });
 
       if (error) throw error;
 
@@ -122,25 +121,50 @@ const PurchasePage = () => {
   }, [courseId, handleAdminPurchase]);
 
   const handleRegularPurchase = async () => {
-    setIsProcessing(true); // הצגת פופאפ טעינה
+    setIsProcessing(true);
     try {
-      // בקשה לתשלום דרך Green Invoice
-      const finalPrice = course.price;
-      const response = await axios.post('https://api.greeninvoice.co.il/api/v1/transactions', {
-        type: 320, // קוד סוג תשלום (320 - מכירת מוצר/שירות)
-        sum: finalPrice,
-        description: `תשלום עבור קורס ${course.title}`,
-      }, {
-        headers: {
-          Authorization: `Bearer ${process.env.REACT_APP_GREEN_INVOICE_API_KEY}`
-        }
-      });
+      // בדוק אם המשתמש קיים בטבלת users לפי המייל
+      const { data: existingUsers, error: userCheckError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', user.email);
 
-      // ניתוב לעמוד התשלום של Green Invoice
-      window.location.href = response.data.url;
+      if (userCheckError) throw userCheckError;
+
+      let userId;
+      if (existingUsers && existingUsers.length > 0) {
+        // אם המשתמש קיים, נשתמש ב-ID שלו
+        userId = existingUsers[0].id;
+      } else {
+        // אם המשתמש לא קיים, ניצור אותו בטבלת users
+        const { data: newUser, error: insertUserError } = await supabase
+          .from('users')
+          .insert([{ email: user.email, name: user.email.split('@')[0] }]) // נתנו שם ברירת מחדל המבוסס על החלק שלפני ה-@
+          .select('id')
+          .single();
+
+        if (insertUserError) throw insertUserError;
+        userId = newUser.id;
+      }
+
+      // הוספת הקורס לטבלת ההרשמות ב-Supabase כולל ה-title של הקורס
+      const { error } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id: userId,
+          course_id: course.id,
+          course_title: course.title // הוספת ה-title של הקורס
+        });
+
+      if (error) throw error;
+
+      // הצגת הודעת הצלחה
+      alert('הרכישה בוצעה בהצלחה!');
+      navigate('/personal-area');
     } catch (error) {
       console.error('Error during purchase:', error);
-      alert('התרחשה שגיאה במהלך התשלום.');
+      alert('התרחשה שגיאה במהלך הרכישה.');
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -164,7 +188,7 @@ const PurchasePage = () => {
       {isAdminAsUser ? (
         <p>הקורס נוסף בהצלחה לרשימה שלך.</p>
       ) : (
-        <button onClick={handleRegularPurchase}>רכוש קורס</button>
+        <button onClick={handleRegularPurchase} disabled={isProcessing}>רכוש קורס</button>
       )}
       {isProcessing && (
         <LoadingOverlay>

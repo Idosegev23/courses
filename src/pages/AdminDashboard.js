@@ -1,25 +1,21 @@
+// src/pages/AdminDashboard.js
+
+import Swal from 'sweetalert2';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaBook, FaPlus, FaMoneyBillWave } from 'react-icons/fa';
 import styled, { createGlobalStyle } from 'styled-components';
-import { Bar, Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
-
-// סגנונות גלובליים
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Heebo', sans-serif;
     direction: rtl;
+    background-color: #f4f4f4;
   }
 `;
 
-// סגנונות עיצוב
 const DashboardContainer = styled.div`
-  background-color: #f4f4f4;
-  min-height: 100vh;
   padding: 2rem;
 `;
 
@@ -99,18 +95,6 @@ const AddCourseButton = styled.button`
   }
 `;
 
-const GraphContainer = styled.div`
-  margin: 1rem 0;
-  padding: 1rem;
-  background: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%; /* נקטין את הרוחב */
-  max-width: 400px; /* מקסימום רוחב */
-  display: inline-block;
-  vertical-align: top;
-`;
-
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -183,8 +167,84 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
+  const handleEditCourse = (courseId) => {
+    navigate(`/courses/${courseId}/edit`);
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    try {
+      // שליפת כל המשתמשים הרשומים לקורס
+      const { data: enrollments, error: enrollmentsError } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('course_id', courseId);
+
+      if (enrollmentsError) throw enrollmentsError;
+
+      // שליפת כל המשתמשים לפי ההרשמות
+      const userList = enrollments.map(enrollment => {
+        const user = users.find(user => user.id === enrollment.user_id);
+        return user ? user.email : 'לא ידוע';
+      });
+
+      // פופ-אפ אישור עם רשימת המשתמשים
+      const result = await Swal.fire({
+        title: 'האם אתה בטוח שברצונך למחוק את הקורס?',
+        html: `<p>להלן רשימת המשתמשים הרשומים לקורס:</p>
+               <ul>${userList.map(email => `<li>${email}</li>`).join('')}</ul>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'כן, מחק',
+        cancelButtonText: 'בטל',
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // שליחת הודעה לכל משתמש שהיה רשום לקורס
+      for (const enrollment of enrollments) {
+        const { user_id } = enrollment;
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id,
+            message: `הקורס אליו היית רשום בוטל: ${courses.find(course => course.id === courseId)?.title}`,
+            read: false, // ההודעה לא נקראה
+            created_at: new Date().toISOString() // הוספת התאריך הנוכחי
+          });
+
+        if (notificationError) {
+          console.error(`Error sending notification to user ${user_id}:`, notificationError);
+        }
+      }
+
+      // מחיקת כל ההרשמות לקורס
+      const { error: deleteEnrollmentsError } = await supabase
+        .from('enrollments')
+        .delete()
+        .eq('course_id', courseId);
+
+      if (deleteEnrollmentsError) throw deleteEnrollmentsError;
+
+      // מחיקת הקורס עצמו
+      const { error: deleteCourseError } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', courseId);
+
+      if (deleteCourseError) throw deleteCourseError;
+
+      alert('הקורס וההרשמות הקשורות אליו הוסרו בהצלחה.');
+      setCourses(courses.filter(course => course.id !== courseId));
+    } catch (error) {
+      console.error('Error deleting course and enrollments:', error);
+      alert('התרחשה שגיאה בהסרת הקורס וההרשמות הקשורות.');
+    }
+  };
+
   const handleViewCourse = (courseId) => {
-    navigate(`/courses/${courseId}`);
+    navigate(`/course-learning/${courseId}`);
   };
 
   const handleViewUser = (userId) => {
@@ -192,7 +252,6 @@ const AdminDashboard = () => {
   };
 
   const handleAddDiscount = (userId) => {
-    // פתיחת מודל לעריכת הנחה למשתמש קיים
     const user = users.find((user) => user.id === userId);
     setEditingUserId(userId);
     setEditingUserDiscount(user ? user.discount : 0);
@@ -209,7 +268,6 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       alert('ההנחה עודכנה בהצלחה.');
-      // רענון הרשימה
       setUsers(prevUsers =>
         prevUsers.map(user =>
           user.id === editingUserId ? { ...user, discount: editingUserDiscount } : user
@@ -225,33 +283,21 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleRemoveCourse = (courseId) => {
-    // לוגיקה להסרת קורס
-    console.log(`הסרת הקורס עם מזהה ${courseId}`);
-  };
-
   const handleFilterUsers = () => {
-    // לוגיקה לסינון משתמשים
     console.log('סינון משתמשים');
   };
 
-  const handleAddUser = async () => {
-    // פתיחת מודל להוספת משתמש חדש
+  const handleAddUser = () => {
     setShowAddUserModal(true);
   };
 
   const handleSaveNewUser = async () => {
-    console.log('Saving new user...');
-
-    // בדיקה שהשדות מלאים
     if (!newUserEmail || !newUserPassword || !newUsername) {
       alert('אנא מלא את כל השדות.');
       return;
     }
 
     try {
-      // יצירת משתמש חדש ב-Supabase Auth
-      console.log('Creating user in Supabase Auth...');
       const { data: newUser, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
@@ -269,17 +315,15 @@ const AdminDashboard = () => {
         }
       }
 
-      console.log('User created in Supabase Auth:', newUser);
+      const { user } = newUser;
 
-      // הוספת המשתמש החדש לטבלת ה-users עם הנחה קבועה
-      console.log('Inserting new user into users table...');
       const { error: dbError } = await supabase
         .from('users')
         .insert({
-          id: newUser.user.id,
+          id: user.id,
           email: newUserEmail,
           username: newUsername,
-          discount: newUserDiscount || 0, // הנחה קבועה, אם קיימת
+          discount: newUserDiscount || 0,
         });
 
       if (dbError) {
@@ -288,20 +332,16 @@ const AdminDashboard = () => {
         return;
       }
 
-      console.log('User inserted into users table.');
-
-      // סגירת המודל ואיפוס השדות
       setShowAddUserModal(false);
       setNewUserEmail('');
       setNewUserPassword('');
       setNewUsername('');
       setNewUserDiscount('');
 
-      // רענון רשימת המשתמשים
       setUsers((prevUsers) => [
         ...prevUsers,
         {
-          id: newUser.user.id,
+          id: user.id,
           email: newUserEmail,
           username: newUsername,
           discount: newUserDiscount || 0,
@@ -315,113 +355,91 @@ const AdminDashboard = () => {
     }
   };
 
-  // נתונים לגרפים
-  const userChartData = {
-    labels: users.map(user => user.email),
-    datasets: [
-      {
-        label: 'משתמשים',
-        data: users.map(user => 1),
-        backgroundColor: '#f25c78',
-      },
-    ],
-  };
-
-  const courseChartData = {
-    labels: courses.map(course => course.title),
-    datasets: [
-      {
-        label: 'קורסים',
-        data: courses.map(course => 1),
-        backgroundColor: '#4caf50',
-      },
-    ],
-  };
-
   return (
     <>
       <GlobalStyle />
       <DashboardContainer>
         <main className='container mx-auto mt-10'>
           <SectionTitle><FaUser /> משתמשים</SectionTitle>
-          <div className='flex justify-between'>
-            <GraphContainer>
-              <Doughnut data={userChartData} />
-            </GraphContainer>
-            <TableContainer style={{ flexGrow: 1 }}>
-              <div className="flex justify-between mb-4">
-                <ActionButton onClick={handleAddUser}>הוסף משתמש חדש</ActionButton>
-                <ActionButton onClick={handleFilterUsers}>סנן משתמשים</ActionButton>
-              </div>
-              <Table>
-                <thead>
-                  <tr>
-                    <th>אימייל</th>
-                    <th>פעולות</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length > 0 ? (
-                    users.map((user) => (
-                      <tr key={user.id}>
-                        <td>{user.email}</td>
-                        <td>
-                          <ActionButton onClick={() => handleViewUser(user.id)}>
-                            צפייה בפרטים
-                          </ActionButton>
-                          <ActionButton onClick={() => handleAddDiscount(user.id)} style={{ marginLeft: '0.5rem' }}>
-                            הוסף / ערוך הנחה
-                          </ActionButton>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="2">לא נמצאו משתמשים.</td>
+          <TableContainer>
+            <div className="flex justify-between mb-4">
+              <ActionButton onClick={handleAddUser}>הוסף משתמש חדש</ActionButton>
+              <ActionButton onClick={handleFilterUsers}>סנן משתמשים</ActionButton>
+            </div>
+            <Table>
+              <thead>
+                <tr>
+                  <th>אימייל</th>
+                  <th>שם משתמש</th>
+                  <th>הנחה</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <tr key={user.id}>
+                      <td>{user.email}</td>
+                      <td>{user.username}</td>
+                      <td>{user.discount}%</td>
+                      <td>
+                        <ActionButton onClick={() => handleViewUser(user.id)}>
+                          צפייה בפרטים
+                        </ActionButton>
+                        <ActionButton onClick={() => handleAddDiscount(user.id)} style={{ marginLeft: '0.5rem' }}>
+                          הוסף / ערוך הנחה
+                        </ActionButton>
+                      </td>
                     </tr>
-                  )}
-                </tbody>
-              </Table>
-            </TableContainer>
-          </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4">לא נמצאו משתמשים.</td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </TableContainer>
 
           <SectionTitle><FaBook /> קורסים</SectionTitle>
-          <div className='flex justify-between'>
-            <GraphContainer>
-              <Bar data={courseChartData} />
-            </GraphContainer>
-            <TableContainer style={{ flexGrow: 1 }}>
-              <Table>
-                <thead>
-                  <tr>
-                    <th>כותרת</th>
-                    <th>פעולות</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courses.length > 0 ? (
-                    courses.map((course) => (
-                      <tr key={course.id}>
-                        <td>{course.title}</td>
-                        <td>
-                          <ActionButton onClick={() => handleViewCourse(course.id)}>
-                            צפייה בפרטים
-                          </ActionButton>
-                          <ActionButton onClick={() => handleRemoveCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
-                            הסר קורס
-                          </ActionButton>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="2">לא נמצאו קורסים.</td>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th>כותרת</th>
+                  <th>תיאור</th>
+                  <th>מחיר</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.length > 0 ? (
+                  courses.map((course) => (
+                    <tr key={course.id}>
+                      <td>{course.title}</td>
+                      <td>{course.description}</td>
+                      <td>{course.price} ש"ח</td>
+                      <td>
+                        <ActionButton onClick={() => handleViewCourse(course.id)}>
+                          צפייה בפרטים
+                        </ActionButton>
+                        <ActionButton onClick={() => handleEditCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
+                          ערוך קורס
+                        </ActionButton>
+                        <ActionButton onClick={() => handleDeleteCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
+                          הסר קורס
+                        </ActionButton>
+                      </td>
                     </tr>
-                  )}
-                </tbody>
-              </Table>
-            </TableContainer>
-          </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4">לא נמצאו קורסים.</td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </TableContainer>
 
           <SectionTitle><FaMoneyBillWave /> הרשמות</SectionTitle>
           <TableContainer>
@@ -519,3 +537,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+       

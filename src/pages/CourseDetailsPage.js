@@ -82,6 +82,42 @@ const CourseDescription = styled.div`
   }
 `;
 
+const FaqSection = styled.div`
+  text-align: right;
+  max-width: 800px;
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 2rem;
+    color: #F25C78;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+
+    li {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding: 1rem;
+
+      p {
+        margin: 0;
+        font-size: 1rem;
+
+        &:first-child {
+          font-weight: bold;
+          margin-bottom: 0.5rem;
+        }
+      }
+    }
+  }
+`;
+
 const PurchaseButton = styled(Link)`
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
@@ -112,7 +148,7 @@ const CourseDetailsPage = () => {
     const fetchCourse = async () => {
       const { data, error } = await supabase
         .from('courses')
-        .select('id, title, description, price, duration, details')
+        .select('id, title, description, price, duration, details, faq')
         .eq('id', courseId)
         .single();
       if (error) {
@@ -140,6 +176,19 @@ const CourseDetailsPage = () => {
             <p><strong>משך הקורס:</strong> {course.duration}</p>
             <p><strong>פרטים נוספים:</strong> {course.details}</p>
           </CourseDescription>
+          {course.faq && course.faq.length > 0 && (
+            <FaqSection>
+              <h2>שאלות ותשובות</h2>
+              <ul>
+                {course.faq.map((faqItem, index) => (
+                  <li key={index}>
+                    <p>{faqItem.question}</p>
+                    <p>{faqItem.answer}</p>
+                  </li>
+                ))}
+              </ul>
+            </FaqSection>
+          )}
           <PurchaseButton to={`/purchase/${course.id}`}>רכוש עכשיו</PurchaseButton>
         </PageContent>
       </PageContainer>

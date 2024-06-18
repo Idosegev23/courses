@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+// src/hooks/useAuth.js
+
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 const AuthContext = createContext();
@@ -7,27 +9,24 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data: sessionData, error } = await supabase.auth.getSession();
-      if (sessionData?.session) {
-        setUser(sessionData.session.user);
-      }
-    };
-
-    fetchSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // מאזין לשינויים במצב ההתחברות של המשתמש
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
     });
 
+    // החזרת הפונקציה לביטול המאזין
     return () => {
-      authListener?.subscription?.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error.message);
+    } else {
+      setUser(null); // שינוי המצב המקומי
+    }
   };
 
   return (
@@ -38,9 +37,5 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };

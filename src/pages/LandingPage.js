@@ -1,3 +1,5 @@
+// src/pages/LandingPage.js
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
@@ -54,7 +56,7 @@ const Card = styled.div`
   backdrop-filter: blur(5px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
-  padding: 1.5rem;
+  padding: 5rem;
   width: 100%;
   max-width: 350px;
   text-align: center;
@@ -134,25 +136,51 @@ const TextSub = styled.p`
 
 const LandingPage = () => {
   const [courses, setCourses] = useState([]);
+  const [userEnrollments, setUserEnrollments] = useState([]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      const { data, error } = await supabase.from('courses').select('*');
-      if (error) {
-        console.error('Error fetching courses:', error);
+    const fetchCoursesAndEnrollments = async () => {
+      // Fetch user enrollments
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData && userData.user) {
+        const userId = userData.user.id;
+
+        const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
+        if (coursesError) {
+          console.error('Error fetching courses:', coursesError);
+        } else {
+          setCourses(coursesData);
+        }
+
+        const { data: enrollmentsData, error: enrollmentsError } = await supabase
+          .from('enrollments')
+          .select('course_id')
+          .eq('user_id', userId);
+
+        if (enrollmentsError) {
+          console.error('Error fetching enrollments:', enrollmentsError);
+        } else {
+          setUserEnrollments(enrollmentsData.map(enrollment => enrollment.course_id));
+        }
       } else {
-        setCourses(data);
+        // Fetch courses if user is not logged in or not enrolled in any courses
+        const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
+        if (coursesError) {
+          console.error('Error fetching courses:', coursesError);
+        } else {
+          setCourses(coursesData);
+        }
       }
     };
 
-    fetchCourses();
+    fetchCoursesAndEnrollments();
   }, []);
 
   return (
     <>
       <GlobalStyle />
       <PageContainer>
-        <PageTitle>הקורסים שלנו</PageTitle>
+        <PageTitle>ברוכים הבאים לקורסים שלנו</PageTitle>
         <PageContent>
           {courses.length > 0 ? (
             courses.map((course) => (
@@ -160,10 +188,18 @@ const LandingPage = () => {
                 <CardTitle>{course.title}</CardTitle>
                 <CardDescription>{course.description}</CardDescription>
                 <div>
-                  <CardLink to={`/course/${course.id}`}>פרטים נוספים</CardLink>
-                  <CardLink to={`/purchase/${course.id}`} className="purchase">
-                    רכוש עכשיו
-                  </CardLink>
+                  {userEnrollments.includes(course.id) ? (
+                    <CardLink to={`/course-learning/${course.id}`} className="purchase">
+                      כניסה לקורס
+                    </CardLink>
+                  ) : (
+                    <>
+                      <CardLink to={`/course/${course.id}`}>פרטים נוספים</CardLink>
+                      <CardLink to={`/purchase/${course.id}`} className="purchase">
+                        רכוש עכשיו
+                      </CardLink>
+                    </>
+                  )}
                 </div>
               </Card>
             ))

@@ -1,4 +1,5 @@
-// App.js
+// src/App.js
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
@@ -9,8 +10,10 @@ import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import AddCoursePage from './pages/AddCoursePage';
-import PaymentPage from './pages/PaymentPage'; // הוספתי את דף הסליקה
-import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect'; // הוספתי את הדף לניתוב מוצלח
+import EditCoursePage from './pages/EditCoursePage';
+import PaymentPage from './pages/PaymentPage';
+import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
+import CourseLearningPage from './pages/CourseLearningPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider } from './hooks/useAuth';
@@ -29,8 +32,10 @@ const App = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/add-course" element={<AddCoursePage />} />
-          <Route path="/payment/:courseId" element={<PaymentPage />} /> {/* נתיב לדף הסליקה */}
-          <Route path="/payment-success" element={<PaymentSuccessRedirect />} /> {/* נתיב לניתוב מוצלח */}
+          <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
+          <Route path="/payment/:courseId" element={<PaymentPage />} />
+          <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
+          <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
         </Routes>
         <Footer />
       </AuthProvider>

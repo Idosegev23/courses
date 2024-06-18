@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 
+// ייבוא רכיבים מתאימים
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Heebo', sans-serif;
@@ -11,6 +12,27 @@ const GlobalStyle = createGlobalStyle`
     direction: rtl;
     margin: 0;
     padding: 0;
+  }
+`;
+
+const StyledButton = styled(Link)`
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #3498db;
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: background-color 0.3s, transform 0.3s;
+
+  &:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+    padding: 0.4rem 0.8rem;
   }
 `;
 
@@ -181,58 +203,128 @@ const CalendarButton = styled.a`
   }
 `;
 
+const NotificationContainer = styled.div`
+  margin-bottom: 2rem;
+`;
+
+const Notification = styled.div`
+  background-color: #ffeb3b;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+`;
+
+const MarkAsReadButton = styled.button`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+
+  &:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+  }
+`;
+
 const PersonalArea = () => {
   const [user, setUser] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [nonEnrolledCourses, setNonEnrolledCourses] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        return;
-      }
-
-      if (!user) {
-        alert('אנא התחבר כדי לגשת לאזור האישי.');
-        return;
-      }
-      setUser(user);
-
-      const { data: enrollmentsData, error: enrollmentsError } = await supabase
-        .from('enrollments')
-        .select('*')
-        .eq('userId', user.id);
-
-      const { data: coursesData, error: coursesError } = await supabase
-        .from('courses')
-        .select('*');
-
-      if (enrollmentsError) {
-        console.error('Error fetching enrollments:', enrollmentsError);
-        setEnrollments([]);
-      } else {
-        setEnrollments(enrollmentsData);
-      }
-
-      if (coursesError) {
-        console.error('Error fetching courses:', coursesError);
-        setCourses([]);
-      } else {
-        setCourses(coursesData);
-        if (enrollmentsData) {
-          const enrolledCourseIds = enrollmentsData.map((enrollment) => enrollment.courseId);
-          setNonEnrolledCourses(coursesData.filter((course) => !enrolledCourseIds.includes(course.id)));
-        } else {
-          setNonEnrolledCourses(coursesData);
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error('Error fetching user:', userError);
+          return;
         }
+
+        if (!userData || !userData.user) {
+          alert('אנא התחבר כדי לגשת לאזור האישי.');
+          return;
+        }
+
+        const userId = userData.user.id;
+        setUser(userData.user);
+
+        const { data: enrollmentsData, error: enrollmentsError } = await supabase
+          .from('enrollments')
+          .select('*')
+          .eq('user_id', userId);
+
+        const { data: coursesData, error: coursesError } = await supabase
+          .from('courses')
+          .select('*');
+
+        const { data: notificationsData, error: notificationsError } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('read', false);
+
+        if (enrollmentsError) {
+          console.error('Error fetching enrollments:', enrollmentsError);
+          setEnrollments([]);
+        } else {
+          setEnrollments(enrollmentsData || []);
+        }
+
+        if (coursesError) {
+          console.error('Error fetching courses:', coursesError);
+          setCourses([]);
+        } else {
+          setCourses(coursesData || []);
+
+          if (enrollmentsData) {
+            const enrolledCourseIds = enrollmentsData.map((enrollment) => enrollment.course_id);
+            setNonEnrolledCourses(coursesData.filter((course) => !enrolledCourseIds.includes(course.id)));
+          } else {
+            setNonEnrolledCourses(coursesData);
+          }
+        }
+
+        if (notificationsError) {
+          console.error('Error fetching notifications:', notificationsError);
+          setNotifications([]);
+        } else {
+          setNotifications(notificationsData || []);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
     };
 
     fetchData();
   }, []);
+
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
+      }
+
+      // עדכון המצב המקומי לאחר שסימנו את ההודעה כהתקראה
+      setNotifications((prevNotifications) => prevNotifications.filter((notification) => notification.id !== notificationId));
+    } catch (error) {
+      console.error('Unexpected error:', error);
+    }
+  };
 
   if (!user) return <div>Loading...</div>;
 
@@ -241,49 +333,72 @@ const PersonalArea = () => {
       <GlobalStyle />
       <PageContainer>
         <PageTitle>שלום, {user.email}</PageTitle>
+
+        {/* הצגת הודעות */}
+        {notifications.length > 0 && (
+          <NotificationContainer>
+            <h3 className='text-xl font-semibold text-primary mb-2'>הודעות</h3>
+            {notifications.map((notification) => (
+              <Notification key={notification.id}>
+                <p>{notification.message}</p>
+                <MarkAsReadButton onClick={() => handleMarkAsRead(notification.id)}>
+                  סמן כנקרא
+                </MarkAsReadButton>
+              </Notification>
+            ))}
+          </NotificationContainer>
+        )}
+
         <PageContent>
           <div className="enrolled-courses" style={{ flex: 1 }}>
             <h3 className='text-xl font-semibold text-primary mb-2'>הקורסים שלי</h3>
-            <Table>
-              <thead>
-                <tr>
-                  <th>כותרת הקורס</th>
-                  <th>שיעור נוכחי</th>
-                  <th>התקדמות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrollments && enrollments.length > 0 ? (
-                  enrollments.map((enrollment) => {
-                    const course = courses.find((course) => course.id === enrollment.courseId);
+            {enrollments.length === 0 ? (
+              <p>לא נמצאו קורסים רשומים.</p>
+            ) : (
+              <Table>
+                <thead>
+                  <tr>
+                    <th>כותרת הקורס</th>
+                    <th>שיעור נוכחי</th>
+                    <th>התקדמות</th>
+                    <th>פעולות</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enrollments.map((enrollment) => {
+                    const course = courses.find((course) => course.id === enrollment.course_id);
                     if (!course) return null;
                     return (
                       <tr key={enrollment.id}>
                         <td>{course.title}</td>
-                        <td>{enrollment.currentLesson}</td>
+                        <td>{enrollment.current_lesson || 'אין נתונים'}</td>
                         <td>
                           <div className='w-full bg-gray-200 rounded-full h-2.5'>
-                            <div className='bg-primary h-2.5 rounded-full' style={{ width: `${(enrollment.currentLesson / course.lessons.length) * 100}%` }}></div>
+                            <div className='bg-primary h-2.5 rounded-full' style={{ width: `${(enrollment.current_lesson / (course.total_lessons || 1)) * 100}%` }}></div>
                           </div>
+                        </td>
+                        <td>
+                          <StyledButton to={`/course-learning/${course.id}`}>
+                            כניסה לקורס
+                          </StyledButton>
                         </td>
                       </tr>
                     );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="3">לא נמצאו קורסים רשומים.</td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
+                  })}
+                </tbody>
+              </Table>
+            )}
             <CalendarButton href="https://calendly.com/your-calendly-link" target="_blank" rel="noopener noreferrer">
               קביעת פגישה אישית עם עידו
             </CalendarButton>
           </div>
+
           <div className="non-enrolled-courses" style={{ flex: 1 }}>
             <h3 className='text-xl font-semibold text-primary mb-2'>קורסים שאינכם רשומים אליהם</h3>
             <PageContent>
-              {nonEnrolledCourses && nonEnrolledCourses.length > 0 ? (
+              {nonEnrolledCourses.length === 0 ? (
+                <TextSub>אין קורסים זמינים.</TextSub>
+              ) : (
                 nonEnrolledCourses.map((course) => (
                   <Card key={course.id}>
                     <CardTitle>{course.title}</CardTitle>
@@ -293,8 +408,6 @@ const PersonalArea = () => {
                     </CardLink>
                   </Card>
                 ))
-              ) : (
-                <TextSub>אין קורסים זמינים.</TextSub>
               )}
             </PageContent>
           </div>
@@ -302,6 +415,6 @@ const PersonalArea = () => {
       </PageContainer>
     </>
   );
-}
+};
 
 export default PersonalArea;
