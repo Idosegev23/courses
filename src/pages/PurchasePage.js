@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
+import axios from 'axios';  // הייבוא הנכון של axios
 
 const GlobalStyle = createGlobalStyle`
   body {
