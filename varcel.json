@@ -1,5 +1,5 @@
 {
-   "rewrites": [
+  "rewrites": [
     {
       "source": "/api/green-invoice/:path*",
       "destination": "https://api.greeninvoice.co.il/:path*"
@@ -22,19 +22,6 @@
           "value": "Authorization, Content-Type"
         }
       ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/old-path",
-      "destination": "/new-path",
-      "permanent": true
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/green-invoice/:path*",
-      "dest": "https://api.greeninvoice.co.il/:path*"
     }
   ]
 }
