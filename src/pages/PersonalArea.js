@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 
-// ייבוא רכיבים מתאימים
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Heebo', sans-serif;
@@ -239,6 +238,8 @@ const DiscountInfo = styled.div`
   border-radius: 1rem;
   margin-bottom: 1rem;
   text-align: center;
+  font-size: 1rem;
+  color: #333;
 `;
 
 const PersonalArea = () => {
@@ -247,7 +248,7 @@ const PersonalArea = () => {
   const [courses, setCourses] = useState([]);
   const [nonEnrolledCourses, setNonEnrolledCourses] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [discount, setDiscount] = useState(0); // הוספת סטייט להנחה
+  const [discount, setDiscount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -279,7 +280,7 @@ const PersonalArea = () => {
           setDiscount(userDiscount?.discount || 0);
         }
 
-                const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        const { data: enrollmentsData, error: enrollmentsError } = await supabase
           .from('enrollments')
           .select('*')
           .eq('user_id', userId);
@@ -356,11 +357,12 @@ const PersonalArea = () => {
       <PageContainer>
         <PageTitle>שלום, {user.email}</PageTitle>
 
-        {/* הצגת אחוז ההנחה */}
-        <DiscountInfo>
-          <h3>אחוז ההנחה שלך:</h3>
-          <p>{discount}%</p>
-        </DiscountInfo>
+        {/* הצגת אחוז ההנחה בצורה עדינה */}
+        {discount > 0 && (
+          <DiscountInfo>
+            <p>יש לך הנחה של {discount}% לקורסים שלנו!</p>
+          </DiscountInfo>
+        )}
 
         {/* הצגת הודעות */}
         {notifications.length > 0 && (
