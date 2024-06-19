@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
+import axios from 'axios';  // הייבוא הנכון של axios
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -50,6 +51,7 @@ const PageContainer = styled.div`
   position: relative;
   overflow: hidden;
   background: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
 const PageTitle = styled.h1`
@@ -63,6 +65,38 @@ const PageTitle = styled.h1`
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
+const CourseDescription = styled.p`
+  font-size: 1.25rem;
+  color: #333;
+  margin-bottom: 2rem;
+`;
+
+const PriceTag = styled.h2`
+  font-size: 1.5rem;
+  color: #000;
+  margin-bottom: 2rem;
+`;
+
+const PurchaseButton = styled.button`
+  background: #F25C78;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+
+  &:hover {
+    background-color: #BF4B81;
+  }
+
+  &:disabled {
+    background-color: #ddd;
+    cursor: not-allowed;
+  }
+`;
+
 const PurchasePage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -71,7 +105,6 @@ const PurchasePage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
-  // פונקציה להוספת הקורס לאדמין ללא סליקה
   const handleAdminPurchase = useCallback(async (userId, courseId) => {
     try {
       const { error } = await supabase
@@ -106,7 +139,6 @@ const PurchasePage = () => {
         setCourse(courseData);
         setUser(user);
 
-        // אם המשתמש הוא אדמין, רושמים אותו ללא סליקה
         if (user.email === 'Triroars@gmail.com') {
           await handleAdminPurchase(user.id, courseData.id);
         }
@@ -123,7 +155,6 @@ const PurchasePage = () => {
   const handleRegularPurchase = async () => {
     setIsProcessing(true);
     try {
-      // בדוק אם המשתמש קיים בטבלת users לפי המייל
       const { data: existingUsers, error: userCheckError } = await supabase
         .from('users')
         .select('id')
@@ -133,13 +164,11 @@ const PurchasePage = () => {
 
       let userId;
       if (existingUsers && existingUsers.length > 0) {
-        // אם המשתמש קיים, נשתמש ב-ID שלו
         userId = existingUsers[0].id;
       } else {
-        // אם המשתמש לא קיים, ניצור אותו בטבלת users
         const { data: newUser, error: insertUserError } = await supabase
           .from('users')
-          .insert([{ email: user.email, name: user.email.split('@')[0] }]) // נתנו שם ברירת מחדל המבוסס על החלק שלפני ה-@
+          .insert([{ email: user.email, name: user.email.split('@')[0] }])
           .select('id')
           .single();
 
@@ -147,20 +176,38 @@ const PurchasePage = () => {
         userId = newUser.id;
       }
 
-      // הוספת הקורס לטבלת ההרשמות ב-Supabase כולל ה-title של הקורס
+      // הוספת הקורס לטבלת ההרשמות
       const { error } = await supabase
         .from('enrollments')
         .insert({
           user_id: userId,
           course_id: course.id,
-          course_title: course.title // הוספת ה-title של הקורס
+          course_title: course.title
         });
 
       if (error) throw error;
 
-      // הצגת הודעת הצלחה
-      alert('הרכישה בוצעה בהצלחה!');
-      navigate('/personal-area');
+      // כאן נכניס את הקריאה לסליקה (כפי שמתואר בהמשך)
+
+      // הפניה לדף תשלום באמצעות Green Invoice
+      const paymentResponse = await axios.post('https://api.greeninvoice.co.il/api/v1/transactions', {
+        type: 320,
+        sum: course.price,
+        description: `תשלום עבור קורס ${course.title}`,
+        currency: 'ILS',
+        success_url: window.location.origin + '/payment-success',
+        cancel_url: window.location.origin + '/personal-area'
+      }, {
+        headers: {
+          Authorization: `Bearer ${process.env.REACT_APP_GREEN_INVOICE_API_KEY}`
+        }
+      });
+
+      if (paymentResponse.data && paymentResponse.data.url) {
+        window.location.href = paymentResponse.data.url;
+      } else {
+        throw new Error('שגיאה בהפניה לסליקה.');
+      }
     } catch (error) {
       console.error('Error during purchase:', error);
       alert('התרחשה שגיאה במהלך הרכישה.');
@@ -183,12 +230,12 @@ const PurchasePage = () => {
     <PageContainer>
       <GlobalStyle />
       <PageTitle>{course.title}</PageTitle>
-      <p>{course.description}</p>
-      <h2>עלות: {course.price} ש"ח</h2>
+      <CourseDescription>{course.description}</CourseDescription>
+      <PriceTag>עלות: {course.price} ש"ח</PriceTag>
       {isAdminAsUser ? (
         <p>הקורס נוסף בהצלחה לרשימה שלך.</p>
       ) : (
-        <button onClick={handleRegularPurchase} disabled={isProcessing}>רכוש קורס</button>
+        <PurchaseButton onClick={handleRegularPurchase} disabled={isProcessing}>רכוש קורס</PurchaseButton>
       )}
       {isProcessing && (
         <LoadingOverlay>

@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 
-// ייבוא רכיבים מתאימים
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Heebo', sans-serif;
@@ -233,12 +232,23 @@ const MarkAsReadButton = styled.button`
   }
 `;
 
+const DiscountInfo = styled.div`
+  background: #eaf8ff;
+  padding: 1rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+`;
+
 const PersonalArea = () => {
   const [user, setUser] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
   const [courses, setCourses] = useState([]);
   const [nonEnrolledCourses, setNonEnrolledCourses] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [discount, setDiscount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -256,6 +266,19 @@ const PersonalArea = () => {
 
         const userId = userData.user.id;
         setUser(userData.user);
+
+        // Fetching discount
+        const { data: userDiscount, error: discountError } = await supabase
+          .from('users')
+          .select('discount')
+          .eq('id', userId)
+          .single();
+
+        if (discountError) {
+          console.error('Error fetching discount:', discountError);
+        } else {
+          setDiscount(userDiscount?.discount || 0);
+        }
 
         const { data: enrollmentsData, error: enrollmentsError } = await supabase
           .from('enrollments')
@@ -333,6 +356,13 @@ const PersonalArea = () => {
       <GlobalStyle />
       <PageContainer>
         <PageTitle>שלום, {user.email}</PageTitle>
+
+        {/* הצגת אחוז ההנחה בצורה עדינה */}
+        {discount > 0 && (
+          <DiscountInfo>
+            <p>יש לך הנחה של {discount}% לקורסים שלנו!</p>
+          </DiscountInfo>
+        )}
 
         {/* הצגת הודעות */}
         {notifications.length > 0 && (

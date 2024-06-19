@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -62,25 +63,22 @@ const PaymentPage = () => {
         setFinalPrice(calculatedPrice);
 
         // בקשת JWT Token ל-Green Invoice
-        const tokenResponse = await axios.post('/api/green-invoice', {
-          endpoint: '/account/token',
-          data: {
-            id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
-            secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
-          }
+        const tokenResponse = await axios.post('/api/green-invoice/account/token', {
+          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
         });
 
         const jwtToken = tokenResponse.data.token;
 
         // בקשת תשלום ל-Green Invoice
-        const paymentResponse = await axios.post('/api/green-invoice', {
-          endpoint: '/transactions',
-          data: {
-            type: 320, // סוג עסקה
-            sum: calculatedPrice, // סכום העסקה לאחר הנחה
-            description: `תשלום עבור קורס ${courseId}`
-          },
-          token: jwtToken
+        const paymentResponse = await axios.post('/api/green-invoice/transactions', {
+          type: 320, // סוג עסקה
+          sum: calculatedPrice, // סכום העסקה לאחר הנחה
+          description: `תשלום עבור קורס ${courseId}`
+        }, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`
+          }
         });
 
         // מעבר לכתובת התשלום

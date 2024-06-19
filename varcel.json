@@ -1,0 +1,40 @@
+{
+   "rewrites": [
+    {
+      "source": "/api/green-invoice/:path*",
+      "destination": "https://api.greeninvoice.co.il/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/green-invoice/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Authorization, Content-Type"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/old-path",
+      "destination": "/new-path",
+      "permanent": true
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/green-invoice/:path*",
+      "dest": "https://api.greeninvoice.co.il/:path*"
+    }
+  ]
+}
