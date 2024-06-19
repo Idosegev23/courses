@@ -157,6 +157,19 @@ const LoginPage = () => {
     }
   };
 
+  const handlePasswordReset = async () => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        setMessage('שגיאה בשליחת קישור לאיפוס סיסמא: ' + error.message);
+      } else {
+        setMessage('קישור לאיפוס סיסמא נשלח לאימייל שלך.');
+      }
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      setMessage('התרחשה שגיאה בשליחת קישור לאיפוס סיסמא.');
+    }
+  };
   const handleAdminChoice = () => {
     navigate('/admin-dashboard');
   };
