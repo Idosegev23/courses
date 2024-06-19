@@ -188,13 +188,7 @@ const RegisterPage = () => {
             >
               <FaGoogle /> הרשמה עם גוגל
             </OAuthButton>
-            <OAuthButton
-              onClick={() => handleOAuthSignIn('facebook')}
-              bgColor="#4267B2"
-              color="#fff"
-              hoverBgColor="#365899"
-            >
-              <FaFacebook /> הרשמה עם פייסבוק
+            
             </OAuthButton>
           </div>
         </FormContainer>
