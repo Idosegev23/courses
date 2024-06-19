@@ -211,14 +211,7 @@ const LoginPage = () => {
           >
             <FaGoogle /> התחברות עם גוגל
           </OAuthButton>
-          <OAuthButton
-            onClick={() => handleOAuthSignIn('facebook')}
-            bgColor="#4267B2"
-            color="#fff"
-            hoverBgColor="#365899"
-          >
-            <FaFacebook /> התחברות עם פייסבוק
-          </OAuthButton>
+        
         </div>
         <LinkText>אין לך חשבון? <a href="/register">הרשם כאן</a></LinkText>
       </PageContainer>
