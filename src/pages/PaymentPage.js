@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled from 'styled-components';
-import axios from 'axios'; 
+import axios from 'axios';
 
 const PageContainer = styled.div`
   padding: 2rem;
@@ -33,6 +33,7 @@ const PaymentPage = () => {
   useEffect(() => {
     const fetchCourseAndUserDiscount = async () => {
       try {
+        // קבלת פרטי הקורס
         const { data: course, error: courseError } = await supabase
           .from('courses')
           .select('price')
@@ -43,6 +44,7 @@ const PaymentPage = () => {
 
         setCoursePrice(course.price);
 
+        // קבלת פרטי המשתמש ואחוז ההנחה
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) throw userError;
@@ -55,10 +57,12 @@ const PaymentPage = () => {
         
         if (discountError) throw discountError;
 
-        const discount = userDiscount.discount || 0;
+        // חישוב המחיר הסופי לאחר ההנחה
+        const discount = userDiscount.discount || 0; // הנחה באחוזים (0 אם לא קיימת)
         const calculatedPrice = course.price - (course.price * (discount / 100));
         setFinalPrice(calculatedPrice);
 
+        // בקשת JWT Token ל-Green Invoice
         const tokenResponse = await axios.post('/api/green-invoice/account/token', {
           id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
           secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
@@ -66,9 +70,10 @@ const PaymentPage = () => {
 
         const jwtToken = tokenResponse.data.token;
 
+        // בקשת תשלום ל-Green Invoice
         const paymentResponse = await axios.post('/api/green-invoice/transactions', {
-          type: 320,
-          sum: calculatedPrice,
+          type: 320, // סוג עסקה
+          sum: calculatedPrice, // סכום העסקה לאחר הנחה
           description: `תשלום עבור קורס ${courseId}`
         }, {
           headers: {
@@ -76,6 +81,7 @@ const PaymentPage = () => {
           }
         });
 
+        // מעבר לכתובת התשלום
         window.location.href = paymentResponse.data.url;
       } catch (error) {
         console.error('Error during payment initiation:', error);
