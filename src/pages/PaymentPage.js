@@ -62,23 +62,26 @@ const PaymentPage = () => {
         const calculatedPrice = course.price - (course.price * (discount / 100));
         setFinalPrice(calculatedPrice);
 
-        // בקשת JWT Token ל-Green Invoice
-        const tokenResponse = await axios.post('/api/green-invoice/account/token', {
-          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
-          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
+        // בקשת JWT Token ל-Green Invoice באמצעות הפונקציה ב-Vercel
+        const tokenResponse = await axios.post('/api/green-invoice', {
+          endpoint: '/account/token',
+          data: {
+            id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+            secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
+          }
         });
 
         const jwtToken = tokenResponse.data.token;
 
-        // בקשת תשלום ל-Green Invoice
-        const paymentResponse = await axios.post('/api/green-invoice/transactions', {
-          type: 320, // סוג עסקה
-          sum: calculatedPrice, // סכום העסקה לאחר הנחה
-          description: `תשלום עבור קורס ${courseId}`
-        }, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`
-          }
+        // בקשת תשלום ל-Green Invoice באמצעות הפונקציה ב-Vercel
+        const paymentResponse = await axios.post('/api/green-invoice', {
+          endpoint: '/transactions',
+          data: {
+            type: 320, // סוג עסקה
+            sum: calculatedPrice, // סכום העסקה לאחר הנחה
+            description: `תשלום עבור קורס ${courseId}`
+          },
+          token: jwtToken
         });
 
         // מעבר לכתובת התשלום
