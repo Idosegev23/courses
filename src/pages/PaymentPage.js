@@ -84,8 +84,13 @@ const PaymentPage = () => {
           token: jwtToken
         });
 
-        // מעבר לכתובת התשלום
-        window.location.href = paymentResponse.data.url;
+        // בדיקה אם יש כתובת תשלום תקפה
+        if (paymentResponse.data.url) {
+          // מעבר לכתובת התשלום
+          window.location.href = paymentResponse.data.url;
+        } else {
+          throw new Error('התרחשה שגיאה בקבלת כתובת התשלום.');
+        }
       } catch (error) {
         console.error('Error during payment initiation:', error);
         alert('התרחשה שגיאה במהלך התשלום.');
