@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { FaGoogle, FaFacebook } from 'react-icons/fa';
+import { FaGoogle } from 'react-icons/fa'; // הסרנו את פייסבוק
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -66,8 +66,8 @@ const ActionButton = styled.button`
 `;
 
 const OAuthButton = styled.button`
-  background-color: ${(props) => (props.bgColor || '#fff')};
-  color: ${(props) => (props.color || '#000')};
+  background-color: ${(props) => (props.bgColor || '#DB4437')}; // ברירת מחדל לצבע של גוגל
+  color: ${(props) => (props.color || '#fff')};
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
@@ -79,10 +79,10 @@ const OAuthButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 100%;
-  gap: 2rem;
+  gap: 0.5rem;
 
   &:hover {
-    background-color: ${(props) => (props.hoverBgColor || '#e0e0e0')};
+    background-color: ${(props) => (props.hoverBgColor || '#C33D2E')}; // צבע בעת ריחוף
   }
 `;
 
@@ -187,8 +187,6 @@ const RegisterPage = () => {
               hoverBgColor="#C33D2E"
             >
               <FaGoogle /> הרשמה עם גוגל
-            </OAuthButton>
-            
             </OAuthButton>
           </div>
         </FormContainer>
