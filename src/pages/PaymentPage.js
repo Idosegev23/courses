@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { supabase } from '../supabaseClient';
 import axios from 'axios';  // הייבוא הנכון של axios
 
 const PageContainer = styled.div`
