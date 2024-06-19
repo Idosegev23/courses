@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // להוסיף את useNavigate
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
@@ -249,6 +250,7 @@ const PersonalArea = () => {
   const [nonEnrolledCourses, setNonEnrolledCourses] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [discount, setDiscount] = useState(0);
+  const navigate = useNavigate(); // נוודא שהמשתמש מנווט לדף ההתחברות אם הוא לא מחובר
 
   useEffect(() => {
     const fetchData = async () => {
@@ -261,6 +263,7 @@ const PersonalArea = () => {
 
         if (!userData || !userData.user) {
           alert('אנא התחבר כדי לגשת לאזור האישי.');
+          navigate('/login'); // ניווט לדף ההתחברות אם המשתמש לא מחובר
           return;
         }
 
@@ -328,7 +331,7 @@ const PersonalArea = () => {
     };
 
     fetchData();
-  }, []);
+  }, [navigate]); // הוספת navigate לרשימת התלויות של useEffect כדי לוודא שהניווט יקרה אם המשתמש לא מחובר
 
   const handleMarkAsRead = async (notificationId) => {
     try {
@@ -364,7 +367,7 @@ const PersonalArea = () => {
           </DiscountInfo>
         )}
 
-        {/* הצגת הודעות */}
+                {/* הצגת הודעות */}
         {notifications.length > 0 && (
           <NotificationContainer>
             <h3 className='text-xl font-semibold text-primary mb-2'>הודעות</h3>
