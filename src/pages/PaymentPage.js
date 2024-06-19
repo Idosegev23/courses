@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import styled from 'styled-components';
-import axios from 'axios';
+import axios from 'axios'; 
 
 const PageContainer = styled.div`
   padding: 2rem;
@@ -25,34 +26,76 @@ const PageTitle = styled.h1`
 
 const PaymentPage = () => {
   const { courseId } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [coursePrice, setCoursePrice] = useState(0);
+  const [finalPrice, setFinalPrice] = useState(0);
 
   useEffect(() => {
-    const initiatePayment = async () => {
+    const fetchCourseAndUserDiscount = async () => {
       try {
-        const response = await axios.post('https://api.greeninvoice.co.il/api/v1/transactions', {
+        const { data: course, error: courseError } = await supabase
+          .from('courses')
+          .select('price')
+          .eq('id', courseId)
+          .single();
+        
+        if (courseError) throw courseError;
+
+        setCoursePrice(course.price);
+
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) throw userError;
+
+        const { data: userDiscount, error: discountError } = await supabase
+          .from('users')
+          .select('discount')
+          .eq('id', user.id)
+          .single();
+        
+        if (discountError) throw discountError;
+
+        const discount = userDiscount.discount || 0;
+        const calculatedPrice = course.price - (course.price * (discount / 100));
+        setFinalPrice(calculatedPrice);
+
+        const tokenResponse = await axios.post('/api/green-invoice/account/token', {
+          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
+        });
+
+        const jwtToken = tokenResponse.data.token;
+
+        const paymentResponse = await axios.post('/api/green-invoice/transactions', {
           type: 320,
-          sum: 100,
+          sum: calculatedPrice,
           description: `תשלום עבור קורס ${courseId}`
         }, {
           headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_GREEN_INVOICE_API_KEY}`
+            Authorization: `Bearer ${jwtToken}`
           }
         });
 
-        window.location.href = response.data.url;
+        window.location.href = paymentResponse.data.url;
       } catch (error) {
         console.error('Error during payment initiation:', error);
         alert('התרחשה שגיאה במהלך התשלום.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    initiatePayment();
+    fetchCourseAndUserDiscount();
   }, [courseId]);
 
   return (
     <PageContainer>
       <PageTitle>מעבר לדף התשלום...</PageTitle>
-      <p>אנא המתן בזמן שאנו מעבירים אותך לדף התשלום.</p>
+      {loading ? (
+        <p>אנא המתן בזמן שאנו מעבירים אותך לדף התשלום.</p>
+      ) : (
+        <p>ניסיון התחלה נכשל. נסה שוב מאוחר יותר.</p>
+      )}
     </PageContainer>
   );
 };
