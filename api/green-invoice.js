@@ -8,26 +8,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { endpoint, data, token } = body;
+    const { endpoint, data, tokenRequest } = body;
 
-    // בדיקה שהפרמטרים הנדרשים קיימים
-    if (!endpoint || !data || !token) {
-      return res.status(400).json({ message: 'Missing required parameters: endpoint, data, or token' });
-    }
-
-    // בקשת POST ל-Green Invoice
-    const response = await axios.post(`https://api.greeninvoice.co.il${endpoint}`, data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+    // בדיקה אם מדובר בבקשת Token
+    if (endpoint === '/account/token') {
+      const { id, secret } = data;
+      if (!id || !secret) {
+        return res.status(400).json({ message: 'Missing API key or secret for token request' });
       }
-    });
+      
+      // בקשת Token
+      const response = await axios.post('https://api.greeninvoice.co.il/api/v1/account/token', {
+        id,
+        secret
+      });
 
-    // שליחת התגובה חזרה ללקוח עם הכותרות המתאימות ל-CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-    res.status(200).json(response.data);
+      res.status(200).json(response.data);
+    } else {
+      // בקשת POST ל-Green Invoice לכל endpoint אחר
+      if (!endpoint || !data || !tokenRequest) {
+        return res.status(400).json({ message: 'Missing required parameters: endpoint, data, or token' });
+      }
+
+      // בקשת POST ל-API של Green Invoice
+      const response = await axios.post(`https://api.greeninvoice.co.il${endpoint}`, data, {
+        headers: {
+          Authorization: `Bearer ${tokenRequest}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      // שליחת התגובה חזרה ללקוח עם הכותרות המתאימות ל-CORS
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.status(200).json(response.data);
+    }
   } catch (error) {
     console.error('Error in serverless function:', error);
 
