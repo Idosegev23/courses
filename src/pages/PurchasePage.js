@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
-import axios from 'axios';  // הייבוא הנכון של axios
+import axios from 'axios';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -176,31 +176,33 @@ const PurchasePage = () => {
         userId = newUser.id;
       }
 
-      // הוספת הקורס לטבלת ההרשמות
-      const { error } = await supabase
-        .from('enrollments')
-        .insert({
-          user_id: userId,
-          course_id: course.id,
-          course_title: course.title
-        });
-
-      if (error) throw error;
-
-      // כאן נכניס את הקריאה לסליקה (כפי שמתואר בהמשך)
-
-      // הפניה לדף תשלום באמצעות Green Invoice
-      const paymentResponse = await axios.post('https://api.greeninvoice.co.il/api/v1/transactions', {
+      // הכנת הנתונים עבור התשלום
+      const transactionData = {
         type: 320,
         sum: course.price,
         description: `תשלום עבור קורס ${course.title}`,
         currency: 'ILS',
-        success_url: window.location.origin + '/payment-success',
-        cancel_url: window.location.origin + '/personal-area'
-      }, {
-        headers: {
-          Authorization: `Bearer ${process.env.REACT_APP_GREEN_INVOICE_API_KEY}`
+        metadata: { user_id: userId, course_id: course.id }, // נתונים נוספים כדי לעקוב אחרי המשתמש והקורס
+        success_url: `${window.location.origin}/payment-success`,
+        cancel_url: `${window.location.origin}/personal-area`
+      };
+
+      // בקשת JWT Token מ-Green Invoice
+      const tokenResponse = await axios.post('/api/green-invoice', {
+        endpoint: '/account/token',
+        data: {
+          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
         }
+      });
+
+      const jwtToken = tokenResponse.data.token;
+
+      // הפניה לדף תשלום באמצעות Green Invoice
+      const paymentResponse = await axios.post('/api/green-invoice', {
+        endpoint: '/transactions',
+        data: transactionData,
+        token: jwtToken
       });
 
       if (paymentResponse.data && paymentResponse.data.url) {
