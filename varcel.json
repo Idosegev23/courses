@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/green-invoice/:path*",
-      "destination": "https://api.greeninvoice.co.il/:path*"
+      "destination": "/api/green-invoice/:path*"
     }
   ],
   "headers": [
