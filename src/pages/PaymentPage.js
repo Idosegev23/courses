@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled from 'styled-components';
 import axios from 'axios';
@@ -29,7 +29,6 @@ const PaymentPage = () => {
   const [loading, setLoading] = useState(true);
   const [coursePrice, setCoursePrice] = useState(0);
   const [finalPrice, setFinalPrice] = useState(0);
-  const navigate = useNavigate(); // להוסיף את useNavigate
 
   useEffect(() => {
     const fetchCourseAndUserDiscount = async () => {
@@ -40,14 +39,14 @@ const PaymentPage = () => {
           .select('price')
           .eq('id', courseId)
           .single();
-
+        
         if (courseError) throw courseError;
 
         setCoursePrice(course.price);
 
         // קבלת פרטי המשתמש ואחוז ההנחה
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-
+        
         if (userError) throw userError;
 
         const { data: userDiscount, error: discountError } = await supabase
@@ -55,7 +54,7 @@ const PaymentPage = () => {
           .select('discount')
           .eq('id', user.id)
           .single();
-
+        
         if (discountError) throw discountError;
 
         // חישוב המחיר הסופי לאחר ההנחה
@@ -71,6 +70,10 @@ const PaymentPage = () => {
             secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
           }
         });
+
+        if (!tokenResponse.data.token) {
+          throw new Error('Failed to retrieve JWT token.');
+        }
 
         const jwtToken = tokenResponse.data.token;
 
