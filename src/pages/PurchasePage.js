@@ -71,10 +71,6 @@ const PaymentPage = () => {
           }
         });
 
-        if (!tokenResponse.data.token) {
-          throw new Error('Failed to retrieve JWT token.');
-        }
-
         const jwtToken = tokenResponse.data.token;
 
         // בקשת תשלום ל-Green Invoice באמצעות הפונקציה ב-Vercel
@@ -119,3 +115,4 @@ const PaymentPage = () => {
 };
 
 export default PaymentPage;
+``
