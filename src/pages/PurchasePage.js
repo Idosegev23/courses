@@ -1,45 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import styled, { createGlobalStyle } from 'styled-components';
+import styled from 'styled-components';
 import axios from 'axios';
-
-const GlobalStyle = createGlobalStyle`
-  body {
-    font-family: 'Heebo', sans-serif;
-    background-color: #ffffff;
-    direction: rtl;
-    margin: 0;
-    padding: 0;
-  }
-`;
-
-const LoadingOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-`;
-
-const Spinner = styled.div`
-  border: 8px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #3498db;
-  border-radius: 50%;
-  width: 64px;
-  height: 64px;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
 
 const PageContainer = styled.div`
   padding: 2rem;
@@ -51,7 +14,6 @@ const PageContainer = styled.div`
   position: relative;
   overflow: hidden;
   background: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
 const PageTitle = styled.h1`
@@ -60,192 +22,100 @@ const PageTitle = styled.h1`
   color: #F25C78;
   margin-bottom: 2rem;
   text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
-const CourseDescription = styled.p`
-  font-size: 1.25rem;
-  color: #333;
-  margin-bottom: 2rem;
-`;
-
-const PriceTag = styled.h2`
-  font-size: 1.5rem;
-  color: #000;
-  margin-bottom: 2rem;
-`;
-
-const PurchaseButton = styled.button`
-  background: #F25C78;
-  color: #fff;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1.25rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
-
-  &:hover {
-    background-color: #BF4B81;
-  }
-
-  &:disabled {
-    background-color: #ddd;
-    cursor: not-allowed;
-  }
-`;
-
-const PurchasePage = () => {
+const PaymentPage = () => {
   const { courseId } = useParams();
-  const [course, setCourse] = useState(null);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const navigate = useNavigate();
-
-  const handleAdminPurchase = useCallback(async (userId, courseId) => {
-    try {
-      const { error } = await supabase
-        .from('enrollments')
-        .insert({ user_id: userId, course_id: courseId });
-
-      if (error) throw error;
-
-      alert('הקורס נוסף בהצלחה לרשימה שלך.');
-      navigate('/personal-area');
-    } catch (error) {
-      console.error('Error enrolling in course:', error);
-      alert('התרחשה שגיאה בעת הוספת הקורס.');
-    }
-  }, [navigate]);
+  const [coursePrice, setCoursePrice] = useState(0);
+  const [finalPrice, setFinalPrice] = useState(0);
 
   useEffect(() => {
-    const fetchCourseAndUser = async () => {
-      setLoading(true);
+    const fetchCourseAndUserDiscount = async () => {
       try {
-        const { data: courseData, error: courseError } = await supabase
+        // קבלת פרטי הקורס
+        const { data: course, error: courseError } = await supabase
           .from('courses')
-          .select('*')
+          .select('price')
           .eq('id', courseId)
           .single();
-
+        
         if (courseError) throw courseError;
 
+        setCoursePrice(course.price);
+
+        // קבלת פרטי המשתמש ואחוז ההנחה
         const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
         if (userError) throw userError;
 
-        setCourse(courseData);
-        setUser(user);
+        const { data: userDiscount, error: discountError } = await supabase
+          .from('users')
+          .select('discount')
+          .eq('id', user.id)
+          .single();
+        
+        if (discountError) throw discountError;
 
-        if (user.email === 'Triroars@gmail.com') {
-          await handleAdminPurchase(user.id, courseData.id);
+        // חישוב המחיר הסופי לאחר ההנחה
+        const discount = userDiscount.discount || 0; // הנחה באחוזים (0 אם לא קיימת)
+        const calculatedPrice = course.price - (course.price * (discount / 100));
+        setFinalPrice(calculatedPrice);
+
+        // בקשת JWT Token ל-Green Invoice באמצעות הפונקציה ב-Vercel
+        const tokenResponse = await axios.post('/api/green-invoice', {
+          endpoint: '/account/token',
+          data: {
+            id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+            secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
+          }
+        });
+
+        if (!tokenResponse.data.token) {
+          throw new Error('Failed to retrieve JWT token.');
+        }
+
+        const jwtToken = tokenResponse.data.token;
+
+        // בקשת תשלום ל-Green Invoice באמצעות הפונקציה ב-Vercel
+        const paymentResponse = await axios.post('/api/green-invoice', {
+          endpoint: '/transactions',
+          data: {
+            type: 320, // סוג עסקה
+            sum: calculatedPrice, // סכום העסקה לאחר הנחה
+            description: `תשלום עבור קורס ${courseId}`
+          },
+          token: jwtToken
+        });
+
+        // בדיקה אם יש כתובת תשלום תקפה
+        if (paymentResponse.data.url) {
+          // מעבר לכתובת התשלום
+          window.location.href = paymentResponse.data.url;
+        } else {
+          throw new Error('התרחשה שגיאה בקבלת כתובת התשלום.');
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error during payment initiation:', error);
+        alert('התרחשה שגיאה במהלך התשלום.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourseAndUser();
-  }, [courseId, handleAdminPurchase]);
-
-  const handleRegularPurchase = async () => {
-    setIsProcessing(true);
-    try {
-      const { data: existingUsers, error: userCheckError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', user.email);
-
-      if (userCheckError) throw userCheckError;
-
-      let userId;
-      if (existingUsers && existingUsers.length > 0) {
-        userId = existingUsers[0].id;
-      } else {
-        const { data: newUser, error: insertUserError } = await supabase
-          .from('users')
-          .insert([{ email: user.email, name: user.email.split('@')[0] }])
-          .select('id')
-          .single();
-
-        if (insertUserError) throw insertUserError;
-        userId = newUser.id;
-      }
-
-      // הכנת הנתונים עבור התשלום
-      const transactionData = {
-        type: 320,
-        sum: course.price,
-        description: `תשלום עבור קורס ${course.title}`,
-        currency: 'ILS',
-        metadata: { user_id: userId, course_id: course.id }, // נתונים נוספים כדי לעקוב אחרי המשתמש והקורס
-        success_url: `${window.location.origin}/payment-success`,
-        cancel_url: `${window.location.origin}/personal-area`
-      };
-
-      // בקשת JWT Token מ-Green Invoice
-      const tokenResponse = await axios.post('/api/green-invoice', {
-        endpoint: '/account/token',
-        data: {
-          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
-          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
-        }
-      });
-
-      const jwtToken = tokenResponse.data.token;
-
-      // הפניה לדף תשלום באמצעות Green Invoice
-      const paymentResponse = await axios.post('/api/green-invoice', {
-        endpoint: '/transactions',
-        data: transactionData,
-        token: jwtToken
-      });
-
-      if (paymentResponse.data && paymentResponse.data.url) {
-        window.location.href = paymentResponse.data.url;
-      } else {
-        throw new Error('שגיאה בהפניה לסליקה.');
-      }
-    } catch (error) {
-      console.error('Error during purchase:', error);
-      alert('התרחשה שגיאה במהלך הרכישה.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (loading) {
-    return <div>טוען...</div>;
-  }
-
-  if (!course) {
-    return <div>לא נמצאו פרטים עבור הקורס המבוקש.</div>;
-  }
-
-  const isAdminAsUser = user && user.email === 'Triroars@gmail.com';
+    fetchCourseAndUserDiscount();
+  }, [courseId]);
 
   return (
     <PageContainer>
-      <GlobalStyle />
-      <PageTitle>{course.title}</PageTitle>
-      <CourseDescription>{course.description}</CourseDescription>
-      <PriceTag>עלות: {course.price} ש"ח</PriceTag>
-      {isAdminAsUser ? (
-        <p>הקורס נוסף בהצלחה לרשימה שלך.</p>
+      <PageTitle>מעבר לדף התשלום...</PageTitle>
+      {loading ? (
+        <p>אנא המתן בזמן שאנו מעבירים אותך לדף התשלום.</p>
       ) : (
-        <PurchaseButton onClick={handleRegularPurchase} disabled={isProcessing}>רכוש קורס</PurchaseButton>
-      )}
-      {isProcessing && (
-        <LoadingOverlay>
-          <Spinner />
-        </LoadingOverlay>
+        <p>ניסיון התחלה נכשל. נסה שוב מאוחר יותר.</p>
       )}
     </PageContainer>
   );
 };
 
-export default PurchasePage;
+export default PaymentPage;
