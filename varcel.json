@@ -1,10 +1,4 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/green-invoice/:path*",
-      "destination": "https://api.greeninvoice.co.il/:path*"
-    }
-  ],
   "headers": [
     {
       "source": "/api/green-invoice/:path*",
@@ -24,10 +18,5 @@
       ]
     }
   ],
-  "routes": [
-    {
-      "src": "/api/green-invoice/:path*",
-      "dest": "https://api.greeninvoice.co.il/:path*"
-    }
-  ]
+
 }
