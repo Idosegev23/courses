@@ -176,7 +176,6 @@ const PurchasePage = () => {
         userId = newUser.id;
       }
 
-      // הוספת הקורס לטבלת ההרשמות
       const { error } = await supabase
         .from('enrollments')
         .insert({
@@ -187,7 +186,6 @@ const PurchasePage = () => {
 
       if (error) throw error;
 
-      // הפניה לדף תשלום באמצעות Green Invoice
       const tokenResponse = await axios.post('/api/green-invoice', {
         endpoint: '/account/token',
         data: {
@@ -195,6 +193,8 @@ const PurchasePage = () => {
           secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
         }
       });
+
+      console.log('Token response:', tokenResponse.data);
 
       if (!tokenResponse.data.token) {
         throw new Error('Failed to retrieve JWT token.');
@@ -215,6 +215,8 @@ const PurchasePage = () => {
         token: jwtToken
       });
 
+      console.log('Payment response:', paymentResponse.data);
+
       if (paymentResponse.data && paymentResponse.data.url) {
         window.location.href = paymentResponse.data.url;
       } else {
@@ -222,6 +224,9 @@ const PurchasePage = () => {
       }
     } catch (error) {
       console.error('Error during purchase:', error);
+      if (error.response) {
+        console.error('API error response:', error.response.data);
+      }
       alert('התרחשה שגיאה במהלך הרכישה.');
     } finally {
       setIsProcessing(false);
