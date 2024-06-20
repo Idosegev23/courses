@@ -1,6 +1,10 @@
+// api/green-invoice.js
 import axios from 'axios';
 
 export default async function handler(req, res) {
+  console.log('REACT_APP_GREEN_INVOICE_API_KEY:', process.env.REACT_APP_GREEN_INVOICE_API_KEY);
+  console.log('REACT_APP_GREEN_INVOICE_API_SECRET:', process.env.REACT_APP_GREEN_INVOICE_API_SECRET);
+
   const { method, body } = req;
 
   if (method !== 'POST') {
