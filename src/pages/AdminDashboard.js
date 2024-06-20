@@ -249,6 +249,7 @@ const AdminDashboard = () => {
           <p><strong>הנחה:</strong> ${user.discount}%</p>
           <p><strong>שם משתמש:</strong> ${user.username}</p>
           <div class="swal2-actions">
+            <button id="edit-user-details" class="swal2-confirm swal2-styled">ערוך פרטי משתמש</button>
             <button id="add-discount" class="swal2-confirm swal2-styled">הוסף / ערוך הנחה</button>
             <button id="delete-user" class="swal2-cancel swal2-styled">מחק משתמש</button>
           </div>
@@ -256,334 +257,411 @@ const AdminDashboard = () => {
         showCancelButton: false,
         showConfirmButton: false,
         didRender: () => {
+          const editUserDetailsButton = Swal.getPopup().querySelector('#edit-user-details');
           const addDiscountButton = Swal.getPopup().querySelector('#add-discount');
           const deleteUserButton = Swal.getPopup().querySelector('#delete-user');
 
+          editUserDetailsButton.addEventListener('click', () => handleEditUserDetails(userId));
           addDiscountButton.addEventListener('click', () => handleAddDiscount(userId));
-deleteUserButton.addEventListener('click', () => handleDeleteUser(userId));
-      }
-    });
-  }
-};
-
-const handleDeleteUser = async (userId) => {
-  const user = users.find((user) => user.id === userId);
-  if (user) {
-    const result = await Swal.fire({
-      title: `האם אתה בטוח שברצונך למחוק את המשתמש: ${user.username}?`,
-      text: 'פעולה זו אינה ניתנת לביטול!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'כן, מחק',
-      cancelButtonText: 'בטל'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        // מחיקת המשתמש מההרשאות (Auth)
-        const { error: authError } = await supabase.auth.api.deleteUser(userId);
-        if (authError) throw authError;
-
-        // מחיקת המשתמש מבסיס הנתונים
-        const { error: dbError } = await supabase.from('users').delete().eq('id', userId);
-        if (dbError) throw dbError;
-
-        setUsers(users.filter(user => user.id !== userId));
-        Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        Swal.fire('שגיאה!', 'התרחשה שגיאה במחיקת המשתמש.', 'error');
-      }
+          deleteUserButton.addEventListener('click', () => handleDeleteUser(userId));
+        }
+      });
     }
-  }
-};
+  };
 
-const handleAddDiscount = (userId) => {
-  const user = users.find((user) => user.id === userId);
-  setEditingUserId(userId);
-  setEditingUserDiscount(user ? user.discount : 0);
-  setShowEditUserModal(true);
-};
-
-const handleUpdateDiscount = async () => {
-  try {
-    const { error } = await supabase
-      .from('users')
-      .update({ discount: editingUserDiscount })
-      .eq('id', editingUserId);
-
-    if (error) throw error;
-
-    alert('ההנחה עודכנה בהצלחה.');
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
-        user.id === editingUserId ? { ...user, discount: editingUserDiscount } : user
-      )
-    );
-
-    setShowEditUserModal(false);
-    setEditingUserId(null);
-    setEditingUserDiscount('');
-  } catch (error) {
-    console.error('Error updating discount:', error);
-    alert('התרחשה שגיאה בעדכון ההנחה.');
-  }
-};
-
-const handleFilterUsers = () => {
-  console.log('סינון משתמשים');
-};
-
-const handleAddUser = () => {
-  setShowAddUserModal(true);
-};
-
-const handleSaveNewUser = async () => {
-  if (!newUserEmail || !newUserPassword || !newUsername) {
-    alert('אנא מלא את כל השדות.');
-    return;
-  }
-
-  try {
-    const { data: newUser, error: authError } = await supabase.auth.signUp({
-      email: newUserEmail,
-      password: newUserPassword,
-    });
-
-    if (authError) {
-      if (authError.message.includes('Email rate limit exceeded')) {
-        console.error('Email rate limit exceeded. Please wait and try again later.');
-        alert('שגיאה: יותר מדי בקשות יצירת משתמשים בזמן קצר. אנא המתן ונסה שוב מאוחר יותר.');
-        return;
-      } else {
-        console.error('Error creating user in Supabase Auth:', authError);
-        alert(`שגיאה ביצירת משתמש באוטנטיקציה: ${authError.message}`);
-        return;
-      }
-    }
-
-    const { user } = newUser;
-
-    const { error: dbError } = await supabase
-      .from('users')
-      .insert({
-        id: user.id,
-        email: newUserEmail,
-        username: newUsername,
-        discount: newUserDiscount || 0,
+  const handleDeleteUser = async (userId) => {
+    const user = users.find((user) => user.id === userId);
+    if (user) {
+      const result = await Swal.fire({
+        title: `האם אתה בטוח שברצונך למחוק את המשתמש: ${user.username}?`,
+        text: 'פעולה זו אינה ניתנת לביטול!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'כן, מחק',
+        cancelButtonText: 'בטל'
       });
 
-    if (dbError) {
-      console.error('Error saving user to database:', dbError);
-      alert(`שגיאה בהוספת המשתמש לבסיס הנתונים: ${dbError.message}`);
+      if (result.isConfirmed) {
+        try {
+          // מחיקת המשתמש מההרשאות (Auth)
+          const { error: authError } = await supabase.auth.api.deleteUser(userId);
+          if (authError) throw authError;
+
+          // מחיקת המשתמש מבסיס הנתונים
+          const { error: dbError } = await supabase.from('users').delete().eq('id', userId);
+          if (dbError) throw dbError;
+
+          setUsers(users.filter(user => user.id !== userId));
+          Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
+        } catch (error) {
+          console.error('Error deleting user:', error);
+          Swal.fire('שגיאה!', 'התרחשה שגיאה במחיקת המשתמש.', 'error');
+        }
+      }
+    }
+  };
+
+  const handleAddDiscount = (userId) => {
+    const user = users.find((user) => user.id === userId);
+    setEditingUserId(userId);
+    setEditingUserDiscount(user ? user.discount : 0);
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateDiscount = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ discount: editingUserDiscount })
+        .eq('id', editingUserId);
+
+      if (error) throw error;
+
+      alert('ההנחה עודכנה בהצלחה.');
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === editingUserId ? { ...user, discount: editingUserDiscount } : user
+        )
+      );
+
+      setShowEditUserModal(false);
+      setEditingUserId(null);
+      setEditingUserDiscount('');
+    } catch (error) {
+      console.error('Error updating discount:', error);
+      alert('התרחשה שגיאה בעדכון ההנחה.');
+    }
+  };
+
+  const handleFilterUsers = () => {
+    console.log('סינון משתמשים');
+  };
+
+  const handleAddUser = () => {
+    setShowAddUserModal(true);
+  };
+
+  const handleSaveNewUser = async () => {
+    if (!newUserEmail || !newUserPassword || !newUsername) {
+      alert('אנא מלא את כל השדות.');
       return;
     }
 
-    setShowAddUserModal(false);
-    setNewUserEmail('');
-    setNewUserPassword('');
-    setNewUsername('');
-    setNewUserDiscount('');
-
-    setUsers((prevUsers) => [
-      ...prevUsers,
-      {
-        id: user.id,
+    try {
+      const { data: newUser, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,
-        username: newUsername,
-        discount: newUserDiscount || 0,
-      },
-    ]);
+        password: newUserPassword,
+      });
 
-    alert('המשתמש נוסף בהצלחה!');
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    alert('אירעה שגיאה בלתי צפויה.');
-  }
-};
+      if (authError) {
+        if (authError.message.includes('Email rate limit exceeded')) {
+          console.error('Email rate limit exceeded. Please wait and try again later.');
+          alert('שגיאה: יותר מדי בקשות יצירת משתמשים בזמן קצר. אנא המתן ונסה שוב מאוחר יותר.');
+          return;
+        } else {
+          console.error('Error creating user in Supabase Auth:', authError);
+          alert(`שגיאה ביצירת משתמש באוטנטיקציה: ${authError.message}`);
+          return;
+        }
+      }
 
-return (
-  <>
-    <GlobalStyle />
-    <DashboardContainer>
-      <main className='container mx-auto mt-10'>
-        <SectionTitle><FaUser /> משתמשים</SectionTitle>
-        <TableContainer>
-          <div className="flex justify-between mb-4">
-            <ActionButton onClick={handleAddUser}>הוסף משתמש חדש</ActionButton>
-            <ActionButton onClick={handleFilterUsers}>סנן משתמשים</ActionButton>
-          </div>
-          <Table>
-            <thead>
-              <tr>
-                <th>אימייל</th>
-                <th>שם משתמש</th>
-                <th>הנחה</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.email}</td>
-                    <td>{user.username}</td>
-                    <td>{user.discount}%</td>
-                    <td>
-                      <ActionButton onClick={() => handleViewUser(user.id)}>
-                        צפייה בפרטים
-                      </ActionButton>
-                      <ActionButton onClick={() => handleAddDiscount(user.id)} style={{ marginLeft: '0.5rem' }}>
-                        הוסף / ערוך הנחה
-                      </ActionButton>
-                      <ActionButton onClick={() => handleDeleteUser(user.id)} style={{ marginLeft: '0.5rem' }}>
-                        מחק משתמש
-                      </ActionButton>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+      const { user } = newUser;
+
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: newUserEmail,
+          username: newUsername,
+          discount: newUserDiscount || 0,
+        });
+
+      if (dbError) {
+        console.error('Error saving user to database:', dbError);
+        alert(`שגיאה בהוספת המשתמש לבסיס הנתונים: ${dbError.message}`);
+        return;
+      }
+
+      setShowAddUserModal(false);
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUsername('');
+      setNewUserDiscount('');
+
+      setUsers((prevUsers) => [
+        ...prevUsers,
+        {
+          id: user.id,
+          email: newUserEmail,
+          username: newUsername,
+          discount: newUserDiscount || 0,
+        },
+      ]);
+
+      alert('המשתמש נוסף בהצלחה!');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('אירעה שגיאה בלתי צפויה.');
+    }
+  };
+
+  const handleEditUserDetails = (userId) => {
+    const user = users.find((user) => user.id === userId);
+    setEditingUserId(userId);
+    setNewUsername(user ? user.username : '');
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUserDetails = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ username: newUsername })
+        .eq('id', editingUserId);
+
+      if (error) throw error;
+
+      alert('פרטי המשתמש עודכנו בהצלחה.');
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === editingUserId ? { ...user, username: newUsername } : user
+        )
+      );
+
+      setShowEditUserModal(false);
+      setEditingUserId(null);
+      setNewUsername('');
+    } catch (error) {
+      console.error('Error updating user details:', error);
+      alert('התרחשה שגיאה בעדכון פרטי המשתמש.');
+    }
+  };
+
+  const handleDeleteEnrollment = async (enrollmentId) => {
+    try {
+      const result = await Swal.fire({
+        title: 'האם אתה בטוח שברצונך למחוק את ההרשמה הזו?',
+        text: 'פעולה זו אינה ניתנת לביטול!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'כן, מחק',
+        cancelButtonText: 'בטל'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      const { error } = await supabase
+        .from('enrollments')
+        .delete()
+        .eq('id', enrollmentId);
+
+      if (error) throw error;
+
+      // עדכון הרשימה המקומית של ההרשמות
+      setEnrollments(enrollments.filter(enrollment => enrollment.id !== enrollmentId));
+      Swal.fire('נמחק!', 'ההרשמה נמחקה בהצלחה.', 'success');
+    } catch (error) {
+      console.error('Error deleting enrollment:', error);
+      Swal.fire('שגיאה!', 'התרחשה שגיאה במחיקת ההרשמה.', 'error');
+    }
+  };
+
+  return (
+    <>
+      <GlobalStyle />
+      <DashboardContainer>
+        <main className='container mx-auto mt-10'>
+          <SectionTitle><FaUser /> משתמשים</SectionTitle>
+          <TableContainer>
+            <div className="flex justify-between mb-4">
+              <ActionButton onClick={handleAddUser}>הוסף משתמש חדש</ActionButton>
+              <ActionButton onClick={handleFilterUsers}>סנן משתמשים</ActionButton>
+            </div>
+            <Table>
+              <thead>
                 <tr>
-                  <td colSpan="4">לא נמצאו משתמשים.</td>
+                  <th>אימייל</th>
+                  <th>שם משתמש</th>
+                  <th>הנחה</th>
+                  <th>פעולות</th>
                 </tr>
-              )}
-            </tbody>
-          </Table>
-        </TableContainer>
-
-        <SectionTitle><FaBook /> קורסים</SectionTitle>
-        <TableContainer>
-          <Table>
-            <thead>
-              <tr>
-                <th>כותרת</th>
-                <th>תיאור</th>
-                <th>מחיר</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {courses.length > 0 ? (
-                courses.map((course) => (
-                  <tr key={course.id}>
-                    <td>{course.title}</td>
-                    <td>{course.description}</td>
-                    <td>{course.price} ש"ח</td>
-                    <td>
-                      <ActionButton onClick={() => handleViewCourse(course.id)}>
-                        צפייה בפרטים
-                      </ActionButton>
-                      <ActionButton onClick={() => handleEditCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
-                        ערוך קורס
-                      </ActionButton>
-                      <ActionButton onClick={() => handleDeleteCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
-                        הסר קורס
-                      </ActionButton>
-                    </td>
+              </thead>
+              <tbody>
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <tr key={user.id}>
+                      <td>{user.email}</td>
+                      <td>{user.username}</td>
+                      <td>{user.discount}%</td>
+                      <td>
+                        <ActionButton onClick={() => handleViewUser(user.id)}>
+                          צפייה בפרטים
+                        </ActionButton>
+                        <ActionButton onClick={() => handleAddDiscount(user.id)} style={{ marginLeft: '0.5rem' }}>
+                          הוסף / ערוך הנחה
+                        </ActionButton>
+                        <ActionButton onClick={() => handleDeleteUser(user.id)} style={{ marginLeft: '0.5rem' }}>
+                          מחק משתמש
+                        </ActionButton>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4">לא נמצאו משתמשים.</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4">לא נמצאו קורסים.</td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        </TableContainer>
+                )}
+              </tbody>
+            </Table>
+          </TableContainer>
 
-        <SectionTitle><FaMoneyBillWave /> הרשמות</SectionTitle>
-        <TableContainer>
-          <Table>
-            <thead>
-              <tr>
-                <th>משתמש</th>
-                <th>קורס</th>
-                <th>שיעור נוכחי</th>
-                <th>תשלום</th>
-              </tr>
-            </thead>
-            <tbody>
-              {enrollments.length > 0 ? (
-                enrollments.map((enrollment) => (
-                  <tr key={enrollment.id}>
-                    <td>{users.find((user) => user.id === enrollment.user_id)?.email}</td>
-                    <td>{courses.find((course) => course.id === enrollment.course_id)?.title}</td>
-                    <td>{enrollment.current_lesson}</td>
-                    <td>{enrollment.amount_paid} ש"ח</td>
+          <SectionTitle><FaBook /> קורסים</SectionTitle>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th>כותרת</th>
+                  <th>תיאור</th>
+                  <th>מחיר</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.length > 0 ? (
+                  courses.map((course) => (
+                    <tr key={course.id}>
+                      <td>{course.title}</td>
+                      <td>{course.description}</td>
+                      <td>{course.price} ש"ח</td>
+                      <td>
+                        <ActionButton onClick={() => handleViewCourse(course.id)}>
+                          צפייה בפרטים
+                        </ActionButton>
+                        <ActionButton onClick={() => handleEditCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
+                          ערוך קורס
+                        </ActionButton>
+                        <ActionButton onClick={() => handleDeleteCourse(course.id)} style={{ marginLeft: '0.5rem' }}>
+                          הסר קורס
+                        </ActionButton>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4">לא נמצאו קורסים.</td>
                   </tr>
-                ))
-              ) : (
+                )}
+              </tbody>
+            </Table>
+          </TableContainer>
+
+          <SectionTitle><FaMoneyBillWave /> הרשמות</SectionTitle>
+          <TableContainer>
+            <Table>
+              <thead>
                 <tr>
-                  <td colSpan="4">לא נמצאו הרשמות.</td>
+                  <th>משתמש</th>
+                  <th>קורס</th>
+                  <th>שיעור נוכחי</th>
+                  <th>תשלום</th>
+                  <th>פעולות</th>
                 </tr>
-              )}
-            </tbody>
-          </Table>
-        </TableContainer>
+              </thead>
+              <tbody>
+                {enrollments.length > 0 ? (
+                  enrollments.map((enrollment) => (
+                    <tr key={enrollment.id}>
+                      <td>{users.find((user) => user.id === enrollment.user_id)?.email}</td>
+                      <td>{courses.find((course) => course.id === enrollment.course_id)?.title}</td>
+                      <td>{enrollment.current_lesson}</td>
+                      <td>{enrollment.amount_paid} ש"ח</td>
+                      <td>
+                        <ActionButton onClick={() => handleDeleteEnrollment(enrollment.id)}>
+                          מחק הרשמה
+                        </ActionButton>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5">לא נמצאו הרשמות.</td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </TableContainer>
 
-        <div className='flex justify-center mt-8'>
-          <AddCourseButton onClick={() => navigate('/add-course')}>
-            <FaPlus /> הוסף קורס חדש
-          </AddCourseButton>
-        </div>
-      </main>
-    </DashboardContainer>
-
-    {showAddUserModal && (
-      <ModalOverlay>
-        <ModalContent>
-          <h2>הוסף משתמש חדש</h2>
-          <Input
-            type="email"
-            placeholder="אימייל"
-            value={newUserEmail}
-            onChange={(e) => setNewUserEmail(e.target.value)}
-          />
-          <Input
-            type="password"
-            placeholder="סיסמה"
-            value={newUserPassword}
-            onChange={(e) => setNewUserPassword(e.target.value)}
-          />
-          <Input
-            type="text"
-            placeholder="שם משתמש"
-            value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
-          />
-          <Input
-            type="number"
-            placeholder="הנחה קבועה (%)"
-            value={newUserDiscount}
-            onChange={(e) => setNewUserDiscount(e.target.value)}
-          />
-          <div className="flex justify-between mt-4">
-            <ActionButton onClick={handleSaveNewUser}>שמור</ActionButton>
-            <ActionButton onClick={() => setShowAddUserModal(false)}>בטל</ActionButton>
+          <div className='flex justify-center mt-8'>
+            <AddCourseButton onClick={() => navigate('/add-course')}>
+              <FaPlus /> הוסף קורס חדש
+            </AddCourseButton>
           </div>
-        </ModalContent>
-      </ModalOverlay>
-    )}
+        </main>
+      </DashboardContainer>
 
-    {showEditUserModal && (
-      <ModalOverlay>
-        <ModalContent>
-          <h2>ערוך הנחה למשתמש</h2>
-          <Input
-            type="number"
-            placeholder="הנחה קבועה (%)"
-            value={editingUserDiscount}
-            onChange={(e) => setEditingUserDiscount(e.target.value)}
-          />
-          <div className="flex justify-between mt-4">
-            <ActionButton onClick={handleUpdateDiscount}>שמור</ActionButton>
-            <ActionButton onClick={() => setShowEditUserModal(false)}>בטל</ActionButton>
-          </div>
-        </ModalContent>
-      </ModalOverlay>
-    )}
-  </>
-);
+      {showAddUserModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <h2>הוסף משתמש חדש</h2>
+            <Input
+              type="email"
+              placeholder="אימייל"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="סיסמה"
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+            />
+            <Input
+              type="text"
+              placeholder="שם משתמש"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+            />
+            <Input
+              type="number"
+              placeholder="הנחה קבועה (%)"
+              value={newUserDiscount}
+              onChange={(e) => setNewUserDiscount(e.target.value)}
+            />
+            <div className="flex justify-between mt-4">
+              <ActionButton onClick={handleSaveNewUser}>שמור</ActionButton>
+              <ActionButton onClick={() => setShowAddUserModal(false)}>בטל</ActionButton>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {showEditUserModal && (
+        <ModalOverlay>
+          <ModalContent>
+            <h2>ערוך פרטי משתמש</h2>
+            <Input
+              type="text"
+              placeholder="שם משתמש"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+            />
+            <Input
+              type="number"
+              placeholder="הנחה קבועה (%)"
+              value={editingUserDiscount}
+              onChange={(e) => setEditingUserDiscount(e.target.value)}
+            />
+            <div className="flex justify-between mt-4">
+              <ActionButton onClick={handleUpdateUserDetails}>שמור</ActionButton>
+              <ActionButton onClick={() => setShowEditUserModal(false)}>בטל</ActionButton>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </>
+  );
 };
 
 export default AdminDashboard;
