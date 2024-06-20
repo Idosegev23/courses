@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     const { endpoint, data, token } = body;
 
-    const response = await axios.post(`https://api.greeninvoice.co.il${endpoint}`, data, {
+    const response = await axios.post(`https://api.greeninvoice.co.il/api/v1/${endpoint}`, data, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
