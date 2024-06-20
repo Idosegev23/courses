@@ -86,7 +86,7 @@ const PurchasePage = () => {
         vatType: 0,
         amount: course.price,
         maxPayments: 1,
-        pluginId: courses, // שים כאן את ה-Plugin ID שקיבלת מ-Green Invoice
+        pluginId: 7944827a-c664-11e4-8231-080027271115, // שים כאן את ה-Plugin ID שקיבלת מ-Green Invoice
         client: {
           id: user.id,
           name: user.name || user.email,
