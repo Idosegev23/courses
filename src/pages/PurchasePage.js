@@ -177,17 +177,6 @@ const PurchasePage = () => {
         userId = newUser.id;
       }
 
-      // הוספת הקורס לטבלת ההרשמות
-      const { error } = await supabase
-        .from('enrollments')
-        .insert({
-          user_id: userId,
-          course_id: course.id,
-          course_title: course.title
-        });
-
-      if (error) throw error;
-
       // בקשת JWT Token ל-Green Invoice דרך השרת שלך
       const tokenResponse = await axios.post('/api/green-invoice', {
         endpoint: '/account/token',
@@ -214,6 +203,7 @@ const PurchasePage = () => {
       });
 
       if (paymentResponse.data && paymentResponse.data.url) {
+        // הפניה לדף התשלום
         window.location.href = paymentResponse.data.url;
       } else {
         throw new Error('שגיאה בהפניה לסליקה.');
