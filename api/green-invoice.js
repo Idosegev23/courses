@@ -1,3 +1,4 @@
+// api/green-invoice.js
 import axios from 'axios';
 
 export default async function handler(req, res) {
@@ -20,9 +21,10 @@ export default async function handler(req, res) {
     console.log('Data:', data);
     console.log('Token:', tokenRequest);
 
+    // בדיקת בקשת ה-Token
     if (endpoint === '/account/token') {
       const { id, secret } = data;
-      
+
       // בדיקה שה-ID וה-SECRET קיימים
       if (!id || !secret) {
         console.log('Missing API key or secret for token request');
@@ -40,8 +42,59 @@ export default async function handler(req, res) {
       // לוג לתוצאה מוצלחת של בקשת Token
       console.log('Token request successful:', response.data);
       res.status(200).json(response.data);
-    } else {
+    } else if (endpoint === '/payments/form') {
+      // טיפול בבקשת יצירת טופס תשלום
+
+      const {
+        description, type, lang, currency, vatType, amount, maxPayments,
+        pluginId, client, income, remarks, successUrl, failureUrl, notifyUrl, custom
+      } = data;
+
       // בדיקה שהפרמטרים הנדרשים קיימים
+      if (!description || !type || !lang || !currency || !vatType || !amount || !pluginId || !client) {
+        console.log('Missing required parameters for payment form request:', {
+          description, type, lang, currency, vatType, amount, pluginId, client
+        });
+        return res.status(400).json({ message: 'Missing required parameters for payment form request' });
+      }
+
+      console.log('Requesting payment form from Green Invoice API');
+
+      // בקשת טופס תשלום ל-API של Green Invoice
+      const response = await axios.post('https://api.greeninvoice.co.il/api/v1/payments/form', {
+        description,
+        type,
+        lang,
+        currency,
+        vatType,
+        amount,
+        maxPayments,
+        pluginId,
+        client,
+        income,
+        remarks,
+        successUrl,
+        failureUrl,
+        notifyUrl,
+        custom
+      }, {
+        headers: {
+          Authorization: `Bearer ${tokenRequest}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      // לוג לתוצאה מוצלחת של בקשת POST
+      console.log('Payment form request successful:', response.data);
+
+      // הגדרות CORS בתגובה
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.status(200).json(response.data);
+    } else {
+      // טיפול בכל בקשה אחרת
+
       if (!endpoint || !data || !tokenRequest) {
         console.log('Missing required parameters for request:', { endpoint, data, tokenRequest });
         return res.status(400).json({ message: 'Missing required parameters: endpoint, data, or token' });
@@ -49,7 +102,7 @@ export default async function handler(req, res) {
 
       console.log(`Requesting ${endpoint} from Green Invoice API with token`);
 
-      // בקשת POST ל-API של Green Invoice לכל endpoint אחר
+      // בקשת POST ל-API של Green Invoice
       const response = await axios.post(`https://api.greeninvoice.co.il${endpoint}`, data, {
         headers: {
           Authorization: `Bearer ${tokenRequest}`,
