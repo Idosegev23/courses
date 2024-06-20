@@ -1,3 +1,4 @@
+// PaymentPage.js
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -33,7 +34,6 @@ const PaymentPage = () => {
   useEffect(() => {
     const fetchCourseAndUserDiscount = async () => {
       try {
-        // קבלת פרטי הקורס
         const { data: course, error: courseError } = await supabase
           .from('courses')
           .select('price')
@@ -44,7 +44,6 @@ const PaymentPage = () => {
 
         setCoursePrice(course.price);
 
-        // קבלת פרטי המשתמש ואחוז ההנחה
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) throw userError;
@@ -57,46 +56,28 @@ const PaymentPage = () => {
         
         if (discountError) throw discountError;
 
-        // חישוב המחיר הסופי לאחר ההנחה
-        const discount = userDiscount.discount || 0; // הנחה באחוזים (0 אם לא קיימת)
+        const discount = userDiscount.discount || 0;
         const calculatedPrice = course.price - (course.price * (discount / 100));
         setFinalPrice(calculatedPrice);
 
-        // בקשת JWT Token ל-Green Invoice באמצעות הפונקציה ב-Vercel
-        const tokenResponse = await axios.post('/api/green-invoice', {
-          endpoint: '/account/token',
-          data: {
-            id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
-            secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
-          }
+        const tokenResponse = await axios.post('/api/green-invoice/account/token', {
+          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
+          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
         });
-
-        if (!tokenResponse.data.token) {
-          throw new Error('Failed to retrieve JWT token.');
-        }
 
         const jwtToken = tokenResponse.data.token;
 
-        // בקשת תשלום ל-Green Invoice באמצעות הפונקציה ב-Vercel
-        const paymentResponse = await axios.post('/api/green-invoice', {
-          endpoint: '/transactions',
-          data: {
-            type: 320, // סוג עסקה
-            sum: calculatedPrice, // סכום העסקה לאחר הנחה
-            description: `תשלום עבור קורס ${courseId}`,
-            success_url: window.location.origin + '/payment-success', // כתובת URL במקרה של הצלחה
-            cancel_url: window.location.origin + '/payment-cancel', // כתובת URL במקרה של ביטול
-          },
-          token: jwtToken
+        const paymentResponse = await axios.post('/api/green-invoice/transactions', {
+          type: 320,
+          sum: calculatedPrice,
+          description: `תשלום עבור קורס ${courseId}`
+        }, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`
+          }
         });
 
-        // בדיקה אם יש כתובת תשלום תקפה
-        if (paymentResponse.data.url) {
-          // מעבר לכתובת התשלום
-          window.location.href = paymentResponse.data.url;
-        } else {
-          throw new Error('התרחשה שגיאה בקבלת כתובת התשלום.');
-        }
+        window.location.href = paymentResponse.data.url;
       } catch (error) {
         console.error('Error during payment initiation:', error);
         alert('התרחשה שגיאה במהלך התשלום.');
