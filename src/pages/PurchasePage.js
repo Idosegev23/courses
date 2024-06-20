@@ -14,33 +14,6 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-const LoadingOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-`;
-
-const Spinner = styled.div`
-  border: 8px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #3498db;
-  border-radius: 50%;
-  width: 64px;
-  height: 64px;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
 const PageContainer = styled.div`
   padding: 2rem;
   background: #ffffff;
@@ -97,12 +70,86 @@ const PurchaseButton = styled.button`
   }
 `;
 
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+`;
+
+const Spinner = styled.div`
+  border: 8px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #3498db;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// Constants
+const API_BASE_URL = 'https://api.greeninvoice.co.il/api/v1';
+const API_KEY = process.env.REACT_APP_GREEN_INVOICE_API_KEY;
+const API_SECRET = process.env.REACT_APP_GREEN_INVOICE_API_SECRET;
+
+// Helper function to get Green Invoice token
+const getGreenInvoiceToken = async () => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/account/token`, {
+      id: API_KEY,
+      secret: API_SECRET
+    });
+    return response.data.token;
+  } catch (error) {
+    console.error('Error getting Green Invoice token:', error);
+    throw error;
+  }
+};
+
+// Helper function to create a payment transaction
+const createPaymentTransaction = async (token, courseData) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/transactions`,
+      {
+        type: 320,
+        sum: courseData.price,
+        description: `תשלום עבור קורס ${courseData.title}`,
+        currency: 'ILS',
+        success_url: `${window.location.origin}/payment-success`,
+        cancel_url: `${window.location.origin}/payment-cancel`
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error creating payment transaction:', error);
+    throw error;
+  }
+};
+
 const PurchasePage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   const handleAdminPurchase = useCallback(async (userId, courseId) => {
@@ -144,6 +191,7 @@ const PurchasePage = () => {
         }
       } catch (error) {
         console.error('Error fetching data:', error);
+        setMessage('אירעה שגיאה בטעינת נתוני הקורס.');
       } finally {
         setLoading(false);
       }
@@ -186,39 +234,14 @@ const PurchasePage = () => {
 
       if (error) throw error;
 
-      const tokenResponse = await axios.post('/api/green-invoice', {
-        endpoint: '/account/token',
-        data: {
-          id: process.env.REACT_APP_GREEN_INVOICE_API_KEY,
-          secret: process.env.REACT_APP_GREEN_INVOICE_API_SECRET,
-        }
-      });
+      // Get Green Invoice token
+      const token = await getGreenInvoiceToken();
 
-      console.log('Token response:', tokenResponse.data);
+      // Create payment transaction
+      const paymentData = await createPaymentTransaction(token, course);
 
-      if (!tokenResponse.data.token) {
-        throw new Error('Failed to retrieve JWT token.');
-      }
-
-      const jwtToken = tokenResponse.data.token;
-
-      const paymentResponse = await axios.post('/api/green-invoice', {
-        endpoint: '/transactions',
-        data: {
-          type: 320,
-          sum: course.price,
-          description: `תשלום עבור קורס ${course.title}`,
-          currency: 'ILS',
-          success_url: window.location.origin + '/payment-success',
-          cancel_url: window.location.origin + '/payment-cancel'
-        },
-        token: jwtToken
-      });
-
-      console.log('Payment response:', paymentResponse.data);
-
-      if (paymentResponse.data && paymentResponse.data.url) {
-        window.location.href = paymentResponse.data.url;
+      if (paymentData && paymentData.url) {
+        window.location.href = paymentData.url;
       } else {
         throw new Error('שגיאה בהפניה לסליקה.');
       }
@@ -226,8 +249,16 @@ const PurchasePage = () => {
       console.error('Error during purchase:', error);
       if (error.response) {
         console.error('API error response:', error.response.data);
+        if (error.response.status === 429) {
+          setMessage('נא לנסות שוב בעוד מספר שניות. יותר מדי בקשות נשלחו.');
+        } else {
+          setMessage(`שגיאה בתהליך הרכישה: ${error.response.data.errorMessage || error.message}`);
+        }
+      } else if (error.request) {
+        setMessage('לא התקבלה תשובה מהשרת. נא לבדוק את החיבור לאינטרנט ולנסות שוב.');
+      } else {
+        setMessage('אירעה שגיאה בלתי צפויה במהלך הרכישה.');
       }
-      alert('התרחשה שגיאה במהלך הרכישה.');
     } finally {
       setIsProcessing(false);
     }
@@ -254,6 +285,7 @@ const PurchasePage = () => {
       ) : (
         <PurchaseButton onClick={handleRegularPurchase} disabled={isProcessing}>רכוש קורס</PurchaseButton>
       )}
+      {message && <p>{message}</p>}
       {isProcessing && (
         <LoadingOverlay>
           <Spinner />
