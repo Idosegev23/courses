@@ -188,7 +188,7 @@ const PurchasePage = () => {
       const jwtToken = tokenResponse.data.token;
 
       // בקשת טופס תשלום מ-Green Invoice
-      const paymentResponse = await axios.post('https://api.greeninvoice.co.il/api/v1/payments/form', {
+      const paymentResponse = await axios.post('https://api.greeninvoice.co.il/api/v1/payments/formRequest', {
         description: `תשלום עבור קורס ${course.title}`,
         type: 320, // סוג עסקה
         lang: 'he',
@@ -196,7 +196,7 @@ const PurchasePage = () => {
         vatType: 0,
         amount: course.price, // סכום העסקה
         maxPayments: 1,
-        pluginId: 309fc9b8031709c6, // עדכן עם ה-Plugin ID שלך
+        pluginId: '309fc9b8031709c6', // עדכן עם ה-Plugin ID שלך
         client: {
           name: user.email.split('@')[0], // שם הלקוח
           emails: [user.email],
