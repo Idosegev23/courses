@@ -1,4 +1,3 @@
-// api/green-invoice.js
 import axios from 'axios';
 
 export default async function handler(req, res) {
@@ -6,6 +5,28 @@ export default async function handler(req, res) {
 
   // לוג להתחלת הפונקציה
   console.log('Received request:', { method, body });
+
+  // הגדרות CORS
+  const allowedOrigins = [
+    'https://courses-seven-alpha.vercel.app',
+    'https://courses-idosegev23s-projects.vercel.app',
+    'https://courses-git-main-idosegev23s-projects.vercel.app'
+  ];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+
+  // טיפול בבקשות OPTIONS
+  if (method === 'OPTIONS') {
+    return res.status(200).json({});
+  }
 
   // בדיקה אם השיטה היא POST
   if (method !== 'POST') {
@@ -87,10 +108,6 @@ export default async function handler(req, res) {
       // לוג לתוצאה מוצלחת של בקשת POST
       console.log('Payment form request successful:', response.data);
 
-      // הגדרות CORS בתגובה
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
       res.status(200).json(response.data);
     } else {
       // טיפול בכל בקשה אחרת
@@ -113,10 +130,6 @@ export default async function handler(req, res) {
       // לוג לתוצאה מוצלחת של בקשת POST
       console.log('Request successful:', response.data);
 
-      // הגדרות CORS בתגובה
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
       res.status(200).json(response.data);
     }
   } catch (error) {
