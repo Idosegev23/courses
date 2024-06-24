@@ -280,17 +280,21 @@ const AdminDashboard = () => {
         confirmButtonText: 'כן, מחק',
         cancelButtonText: 'בטל'
       });
-
+  
       if (result.isConfirmed) {
         try {
           // מחיקת המשתמש מההרשאות (Auth)
-          const { error: authError } = await supabase.auth.api.deleteUser(userId);
-          if (authError) throw authError;
-
+          if (supabase.auth.api.deleteUser) {
+            const { error: authError } = await supabase.auth.api.deleteUser(userId);
+            if (authError) throw authError;
+          } else {
+            throw new Error("deleteUser function is not available in supabase.auth.api");
+          }
+  
           // מחיקת המשתמש מבסיס הנתונים
           const { error: dbError } = await supabase.from('users').delete().eq('id', userId);
           if (dbError) throw dbError;
-
+  
           setUsers(users.filter(user => user.id !== userId));
           Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
         } catch (error) {
@@ -300,6 +304,7 @@ const AdminDashboard = () => {
       }
     }
   };
+  
 
   const handleAddDiscount = (userId) => {
     const user = users.find((user) => user.id === userId);
