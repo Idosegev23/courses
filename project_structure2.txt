@@ -1,0 +1,77 @@
+.
+├── README.md
+├── api
+│   ├── green-invoice.js
+│   └── webhook.js
+├── build
+│   ├── NewLogo_BLANK.png
+│   ├── NewLogo_BLANK_192.png
+│   ├── NewLogo_BLANK_512.png
+│   ├── asset-manifest.json
+│   ├── favicon.ico
+│   ├── index.html
+│   ├── manifest.json
+│   └── static
+│       ├── js
+│       │   ├── 174.b8a988e3.chunk.js
+│       │   ├── 174.b8a988e3.chunk.js.map
+│       │   ├── main.b7a2fcde.js
+│       │   ├── main.b7a2fcde.js.LICENSE.txt
+│       │   └── main.b7a2fcde.js.map
+│       └── media
+│           ├── NewLogo_BLANK-outer.90feb95f8d223dbd04fd.png
+│           └── NewLogo_BLANK.d8e9d7456ca4b4c3ff71.png
+├── courses.json
+├── functions
+│   └── purchase.js
+├── netlify.toml
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── project_structure.txt
+├── project_structure1.txt
+├── project_structure2.txt
+├── public
+│   ├── NewLogo_BLANK.png
+│   ├── NewLogo_BLANK_192.png
+│   ├── NewLogo_BLANK_512.png
+│   ├── favicon.ico
+│   ├── index.html
+│   └── manifest.json
+├── src
+│   ├── App.js
+│   ├── components
+│   │   ├── CourseCard.js
+│   │   ├── Footer.js
+│   │   ├── Header.js
+│   │   ├── NewLogo_BLANK-outer.png
+│   │   ├── NewLogo_BLANK.png
+│   │   └── Popup.js
+│   ├── functions
+│   │   └── payment-received.js
+│   ├── hooks
+│   │   └── useAuth.js
+│   ├── index.css
+│   ├── index.js
+│   ├── pages
+│   │   ├── AddCoursePage.js
+│   │   ├── AdminDashboard.js
+│   │   ├── ContactAndPolicyPage.js
+│   │   ├── CourseDetailsPage.js
+│   │   ├── CourseLearningPage.js
+│   │   ├── CoursePage.js
+│   │   ├── EditCoursePage.js
+│   │   ├── LandingPage.js
+│   │   ├── LoginPage.js
+│   │   ├── PaymentPage.js
+│   │   ├── PaymentSuccessRedirect.js
+│   │   ├── PersonalArea.js
+│   │   ├── PurchasePage.js
+│   │   └── RegisterPage.js
+│   ├── reportWebVitals.js
+│   └── supabaseClient.js
+├── tailwind.config.js
+├── uploadCourses.js
+└── varcel.json
+
+13 directories, 62 files
