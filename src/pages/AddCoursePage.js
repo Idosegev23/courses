@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
@@ -135,9 +135,13 @@ const AddCoursePage = () => {
     price: '',
     duration: '',
     details: '',
-    lessons: [{ title: '', videoLink: '', faq: [] }],
+    lessons: [{ title: '', videoLink: '', duration: '', faq: [] }],
   });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    calculateTotalDuration();
+  }, [course.lessons]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -170,7 +174,7 @@ const AddCoursePage = () => {
   const addLesson = () => {
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: [...prevCourse.lessons, { title: '', videoLink: '', faq: [] }],
+      lessons: [...prevCourse.lessons, { title: '', videoLink: '', duration: '', faq: [] }],
     }));
   };
 
@@ -190,12 +194,25 @@ const AddCoursePage = () => {
     }));
   };
 
+  const calculateTotalDuration = () => {
+    const totalMinutes = course.lessons.reduce((total, lesson) => {
+      const duration = parseFloat(lesson.duration) || 0;
+      return total + duration;
+    }, 0);
+    
+    const hours = (totalMinutes / 60).toFixed(2);
+    
+    setCourse(prevCourse => ({
+      ...prevCourse,
+      duration: `${hours} שעות`
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!course.title.trim()) newErrors.title = 'שדה חובה';
     if (!course.description.trim()) newErrors.description = 'שדה חובה';
     if (!course.price || isNaN(course.price)) newErrors.price = 'נא להזין מחיר תקין';
-    if (!course.duration.trim()) newErrors.duration = 'שדה חובה';
     
     course.lessons.forEach((lesson, index) => {
       if (!lesson.title.trim()) newErrors[`lesson_${index}_title`] = 'שדה חובה';
@@ -203,6 +220,9 @@ const AddCoursePage = () => {
         newErrors[`lesson_${index}_videoLink`] = 'שדה חובה';
       } else if (!isValidUrl(lesson.videoLink)) {
         newErrors[`lesson_${index}_videoLink`] = 'נא להזין קישור תקין';
+      }
+      if (!lesson.duration || isNaN(lesson.duration)) {
+        newErrors[`lesson_${index}_duration`] = 'נא להזין משך זמן תקין בשעות';
       }
     });
 
@@ -275,14 +295,11 @@ const AddCoursePage = () => {
           </FormSection>
 
           <FormSection>
-            <Label htmlFor="duration">משך הקורס</Label>
+            <Label>משך הקורס הכולל</Label>
             <Input
-              id="duration"
-              name="duration"
               value={course.duration}
-              onChange={handleChange}
+              readOnly
             />
-            {errors.duration && <ErrorMessage>{errors.duration}</ErrorMessage>}
           </FormSection>
 
           <FormSection>
@@ -316,6 +333,18 @@ const AddCoursePage = () => {
                   onChange={(e) => handleLessonChange(index, 'videoLink', e.target.value)}
                 />
                 {errors[`lesson_${index}_videoLink`] && <ErrorMessage>{errors[`lesson_${index}_videoLink`]}</ErrorMessage>}
+              </FormSection>
+
+              <FormSection>
+                <Label htmlFor={`lesson_${index}_duration`}>משך השיעור (בשעות)</Label>
+                <Input
+                  id={`lesson_${index}_duration`}
+                  type="number"
+                  step="0.01"
+                  value={lesson.duration}
+                  onChange={(e) => handleLessonChange(index, 'duration', e.target.value)}
+                />
+                {errors[`lesson_${index}_duration`] && <ErrorMessage>{errors[`lesson_${index}_duration`]}</ErrorMessage>}
               </FormSection>
 
               <Button type="button" onClick={() => addFaq(index)} secondary>
