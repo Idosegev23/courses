@@ -234,7 +234,39 @@ const AdminDashboard = () => {
       alert('התרחשה שגיאה בהסרת הקורס וההרשמות הקשורות.');
     }
   };
-
+  const handleAddDiscount = (userId) => {
+    const user = users.find((user) => user.id === userId);
+    if (user) {
+      setEditingUserId(userId);
+      setEditingUserDiscount(user.discount);
+      setShowEditUserModal(true);
+    }
+  };
+  
+  const handleUpdateUserDiscount = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ discount: editingUserDiscount })
+        .eq('id', editingUserId);
+  
+      if (error) throw error;
+  
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === editingUserId ? { ...user, discount: editingUserDiscount } : user
+        )
+      );
+  
+      setShowEditUserModal(false);
+      setEditingUserId(null);
+      setEditingUserDiscount('');
+    } catch (error) {
+      console.error('Error updating user discount:', error);
+      alert('התרחשה שגיאה בעדכון ההנחה של המשתמש.');
+    }
+  };
+  
   const handleViewCourse = (courseId) => {
     navigate(`/course-learning/${courseId}`);
   };
@@ -466,49 +498,49 @@ const AdminDashboard = () => {
       <GlobalStyle />
       <DashboardContainer>
         <main className='container mx-auto mt-10'>
-          <SectionTitle><FaUser /> משתמשים</SectionTitle>
-          <TableContainer>
-            <div className="flex justify-between mb-4">
-              <ActionButton onClick={handleAddUser}>הוסף משתמש חדש</ActionButton>
-              <ActionButton onClick={handleFilterUsers}>סנן משתמשים</ActionButton>
-            </div>
-            <Table>
-              <thead>
-                <tr>
-                  <th>אימייל</th>
-                  <th>שם משתמש</th>
-                  <th>הנחה</th>
-                  <th>פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length > 0 ? (
-                  users.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.email}</td>
-                      <td>{user.username}</td>
-                      <td>{user.discount}%</td>
-                      <td>
-                        <ActionButton onClick={() => handleViewUser(user.id)}>
-                          צפייה בפרטים
-                        </ActionButton>
-                        <ActionButton onClick={() => handleAddDiscount(user.id)} style={{ marginLeft: '0.5rem' }}>
-                          הוסף / ערוך הנחה
-                        </ActionButton>
-                        <ActionButton onClick={() => handleDeleteUser(user.id)} style={{ marginLeft: '0.5rem' }}>
-                          מחק משתמש
-                        </ActionButton>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4">לא נמצאו משתמשים.</td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          </TableContainer>
+        <SectionTitle><FaUser /> משתמשים</SectionTitle>
+<TableContainer>
+  <div className="flex justify-between mb-4">
+    <ActionButton onClick={handleAddUser}>הוסף משתמש חדש</ActionButton>
+    <ActionButton onClick={handleFilterUsers}>סנן משתמשים</ActionButton>
+  </div>
+  <Table>
+    <thead>
+      <tr>
+        <th>אימייל</th>
+        <th>שם משתמש</th>
+        <th>הנחה</th>
+        <th>פעולות</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.length > 0 ? (
+        users.map((user) => (
+          <tr key={user.id}>
+            <td>{user.email}</td>
+            <td>{user.username}</td>
+            <td>{user.discount}%</td>
+            <td>
+              <ActionButton onClick={() => handleViewUser(user.id)}>
+                צפייה בפרטים
+              </ActionButton>
+              <ActionButton onClick={() => handleAddDiscount(user.id)} style={{ marginLeft: '0.5rem' }}>
+                הוסף / ערוך הנחה
+              </ActionButton>
+              <ActionButton onClick={() => handleDeleteUser(user.id)} style={{ marginLeft: '0.5rem' }}>
+                מחק משתמש
+              </ActionButton>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="4">לא נמצאו משתמשים.</td>
+        </tr>
+      )}
+    </tbody>
+  </Table>
+</TableContainer>
 
           <SectionTitle><FaBook /> קורסים</SectionTitle>
           <TableContainer>
