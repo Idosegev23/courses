@@ -283,13 +283,9 @@ const AdminDashboard = () => {
   
       if (result.isConfirmed) {
         try {
-          // מחיקת המשתמש מההרשאות (Auth)
-          if (supabase.auth.api.deleteUser) {
-            const { error: authError } = await supabase.auth.api.deleteUser(userId);
-            if (authError) throw authError;
-          } else {
-            throw new Error("deleteUser function is not available in supabase.auth.api");
-          }
+          // בדיקת מחיקת המשתמש מההרשאות (Auth)
+          const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+          if (authError) throw authError;
   
           // מחיקת המשתמש מבסיס הנתונים
           const { error: dbError } = await supabase.from('users').delete().eq('id', userId);
@@ -304,6 +300,7 @@ const AdminDashboard = () => {
       }
     }
   };
+  
   
 
   const handleAddDiscount = (userId) => {
