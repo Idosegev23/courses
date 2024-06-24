@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import axios from 'axios';
+import Popup from '../components/Popup';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -103,7 +104,11 @@ const PurchasePage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showFailurePopup, setShowFailurePopup] = useState(false);
+  const [failureReason, setFailureReason] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleAdminPurchase = useCallback(async (userId, courseId) => {
     try {
@@ -152,6 +157,19 @@ const PurchasePage = () => {
     fetchCourseAndUser();
   }, [courseId, handleAdminPurchase]);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const status = urlParams.get('status');
+    const reason = urlParams.get('reason');
+
+    if (status === 'success') {
+      setShowSuccessPopup(true);
+    } else if (status === 'failure') {
+      setFailureReason(reason || 'סיבה לא ידועה');
+      setShowFailurePopup(true);
+    }
+  }, [location]);
+
   const handleRegularPurchase = async () => {
     setIsProcessing(true);
     try {
@@ -190,21 +208,22 @@ const PurchasePage = () => {
       // בקשת טופס תשלום מ-Green Invoice
       const paymentResponse = await axios.post('https://api.greeninvoice.co.il/api/v1/payments/formRequest', {
         description: `תשלום עבור קורס ${course.title}`,
-        type: 320, // סוג עסקה
+        type: 320,
         lang: 'he',
         currency: 'ILS',
         vatType: 0,
-        amount: course.price, // סכום העסקה
+        amount: course.price,
         maxPayments: 1,
-        pluginId: '309fc9b8031709c6', // עדכן עם ה-Plugin ID שלך
+        pluginId: '309fc9b8031709c6',
+        group: 100, // כפי שנדרש על ידי התמיכה
         client: {
-          name: user.email.split('@')[0], // שם הלקוח
+          name: user.email.split('@')[0],
           emails: [user.email],
           add: true,
         },
-        successUrl: window.location.origin + '/payment-success',
-        failureUrl: window.location.origin + '/payment-failed',
-        notifyUrl: window.location.origin + '/payment-notification',
+        successUrl: `${window.location.origin}/purchase/${courseId}?status=success`,
+        failureUrl: `${window.location.origin}/purchase/${courseId}?status=failure`,
+        notifyUrl: `${window.location.origin}/payment-notification`,
         custom: `order_${courseId}_${userId}`
       }, {
         headers: {
@@ -214,17 +233,26 @@ const PurchasePage = () => {
       });
 
       if (paymentResponse.data && paymentResponse.data.url) {
-        // פתיחת דף התשלום כחלון פופ-אפ
-        window.open(paymentResponse.data.url, 'תשלום', 'width=800,height=600');
+        window.location.href = paymentResponse.data.url;
       } else {
         throw new Error('שגיאה בהפניה לסליקה.');
       }
     } catch (error) {
       console.error('Error during purchase:', error);
-      alert('התרחשה שגיאה במהלך הרכישה.');
+      setFailureReason('התרחשה שגיאה במהלך הרכישה. אנא נסה שנית או צור קשר עם התמיכה.');
+      setShowFailurePopup(true);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleSuccessPopupClose = () => {
+    setShowSuccessPopup(false);
+    navigate(`/course/${courseId}`);
+  };
+
+  const handleFailurePopupClose = () => {
+    setShowFailurePopup(false);
   };
 
   if (loading) {
@@ -253,6 +281,22 @@ const PurchasePage = () => {
           <Spinner />
         </LoadingOverlay>
       )}
+      <Popup
+        isOpen={showSuccessPopup}
+        onClose={handleSuccessPopupClose}
+        title="תשלום התקבל"
+        message="התשלום עבור הקורס התקבל בהצלחה. אתה מועבר לדף הקורס."
+        buttonText="המשך לקורס"
+        onButtonClick={handleSuccessPopupClose}
+      />
+      <Popup
+        isOpen={showFailurePopup}
+        onClose={handleFailurePopupClose}
+        title="התשלום נכשל"
+        message={`התשלום עבור הקורס נכשל. סיבה: ${failureReason}`}
+        buttonText="סגור"
+        onButtonClick={handleFailurePopupClose}
+      />
     </PageContainer>
   );
 };

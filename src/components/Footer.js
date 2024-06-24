@@ -25,6 +25,7 @@ const Footer = () => (
   <FooterContainer>
     <p>&copy; 2024 TriRoars - נבנה בעזרת AI</p>
     <FooterLink to="/">חזרה לדף הבית</FooterLink>
+    <FooterLink to="/contact-and-policy">פרטי קשר ותקנון ביטולים</FooterLink>
   </FooterContainer>
 );
 

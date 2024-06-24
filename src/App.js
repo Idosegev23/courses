@@ -1,5 +1,3 @@
-// src/App.js
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
@@ -14,6 +12,7 @@ import EditCoursePage from './pages/EditCoursePage';
 import PaymentPage from './pages/PaymentPage';
 import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
 import CourseLearningPage from './pages/CourseLearningPage';
+import ContactAndPolicyPage from './pages/ContactAndPolicyPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider } from './hooks/useAuth';
@@ -36,6 +35,7 @@ const App = () => {
           <Route path="/payment/:courseId" element={<PaymentPage />} />
           <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
           <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
+          <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
         </Routes>
         <Footer />
       </AuthProvider>
