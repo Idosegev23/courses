@@ -1,3 +1,5 @@
+// PurchasePage.js
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -161,20 +163,40 @@ const PurchasePage = () => {
       });
 
       if (result.isConfirmed) {
-        const { error } = await supabase
-          .from('enrollments')
-          .insert({
-            user_id: user.id,
-            course_id: courseId,
-            current_lesson: 1,
-            amount_paid: course.price,
-            course_title: course.title
-          });
+        // פתיחת פופ-אפ לפרטי תשלום
+        const { value: paymentDetails } = await Swal.fire({
+          title: 'פרטי תשלום',
+          html:
+            '<input id="card-number" class="swal2-input" placeholder="מספר כרטיס">' +
+            '<input id="expiry-date" class="swal2-input" placeholder="תאריך תפוגה (MM/YY)">' +
+            '<input id="cvv" class="swal2-input" placeholder="CVV">',
+          focusConfirm: false,
+          preConfirm: () => {
+            return {
+              cardNumber: document.getElementById('card-number').value,
+              expiryDate: document.getElementById('expiry-date').value,
+              cvv: document.getElementById('cvv').value,
+            };
+          }
+        });
 
-        if (error) throw error;
+        if (paymentDetails) {
+          // הדמיית תהליך רכישה מוצלח
+          const { error } = await supabase
+            .from('enrollments')
+            .insert({
+              user_id: user.id,
+              course_id: courseId,
+              current_lesson: 1,
+              amount_paid: course.price,
+              course_title: course.title
+            });
 
-        Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
-        navigate('/personal-area');
+          if (error) throw error;
+
+          Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+          navigate('/personal-area');
+        }
       }
     } catch (error) {
       console.error('Error during purchase:', error);
