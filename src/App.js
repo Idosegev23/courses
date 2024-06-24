@@ -16,6 +16,8 @@ import ContactAndPolicyPage from './pages/ContactAndPolicyPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider } from './hooks/useAuth';
+require('dotenv').config();
+
 
 const App = () => {
   return (

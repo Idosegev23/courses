@@ -286,6 +286,14 @@ const AdminDashboard = () => {
           const serviceRoleKey = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY;
           const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
   
+          // בדיקת השליפה של הפרמטרים הנכונים
+          console.log('Supabase URL:', supabaseUrl);
+          console.log('Service Role Key:', serviceRoleKey);
+  
+          if (!serviceRoleKey || !supabaseUrl) {
+            throw new Error('Missing Supabase URL or Service Role Key');
+          }
+  
           // מחיקת המשתמש מההרשאות (Auth)
           const authResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
             method: 'DELETE',
@@ -317,6 +325,7 @@ const AdminDashboard = () => {
       }
     }
   };
+  
   
   
 
