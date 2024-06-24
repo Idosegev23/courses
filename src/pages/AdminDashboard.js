@@ -283,12 +283,29 @@ const AdminDashboard = () => {
   
       if (result.isConfirmed) {
         try {
-          // בדיקת מחיקת המשתמש מההרשאות (Auth)
-          const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-          if (authError) throw authError;
+          const serviceRoleKey = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY;
+          const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+  
+          // מחיקת המשתמש מההרשאות (Auth)
+          const authResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+              'apikey': serviceRoleKey,
+              'Authorization': `Bearer ${serviceRoleKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+  
+          if (!authResponse.ok) {
+            throw new Error('Error deleting user from auth');
+          }
   
           // מחיקת המשתמש מבסיס הנתונים
-          const { error: dbError } = await supabase.from('users').delete().eq('id', userId);
+          const { error: dbError } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', userId);
+  
           if (dbError) throw dbError;
   
           setUsers(users.filter(user => user.id !== userId));
