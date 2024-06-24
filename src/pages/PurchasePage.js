@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
-import Popup from '../components/Popup';
+import Swal from 'sweetalert2';
+import newLogo from '../components/NewLogo_BLANK-outer.png';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -23,8 +24,21 @@ const PageContainer = styled.div`
   border-radius: 2rem;
   position: relative;
   overflow: hidden;
-  background: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url(${newLogo}) no-repeat center;
+    background-size: cover;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 0;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -42,129 +56,154 @@ const CourseDescription = styled.p`
   font-size: 1.25rem;
   color: #333;
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
 `;
 
 const PriceTag = styled.h2`
   font-size: 1.5rem;
   color: #000;
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
 `;
 
-const PurchaseButton = styled.button`
-  background: #F25C78;
-  color: #fff;
+const StyledButton = styled.button`
+  display: inline-block;
+  margin: 0.5rem;
   padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  text-decoration: none;
+  color: #fff;
+  background-color: ${props => props.isPurchase ? '#BF4B81' : '#F25C78'};
+  transition: background-color 0.3s, transform 0.3s;
   border: none;
-  border-radius: 0.5rem;
-  font-size: 1.25rem;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
+  position: relative;
+  z-index: 1;
 
   &:hover {
-    background-color: #BF4B81;
+    background-color: ${props => props.isPurchase ? '#62238C' : '#BF4B81'};
+    transform: translateY(-2px);
   }
 
   &:disabled {
     background-color: #ddd;
     cursor: not-allowed;
   }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+`;
+
+const Message = styled.p`
+  font-size: 1.25rem;
+  color: #333;
+  text-align: center;
+  position: relative;
+  z-index: 1;
 `;
 
 const PurchasePage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCourseAndUser = async () => {
+    const fetchCourse = async () => {
       setLoading(true);
       try {
-        const { data: courseData, error: courseError } = await supabase
+        const { data, error } = await supabase
           .from('courses')
           .select('*')
           .eq('id', courseId)
           .single();
 
-        if (courseError) throw courseError;
+        if (error) throw error;
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-
-        setCourse(courseData);
-        setUser(user);
+        setCourse(data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching course:', error);
+        Swal.fire('שגיאה', 'אירעה שגיאה בטעינת פרטי הקורס. אנא נסה שוב מאוחר יותר.', 'error');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourseAndUser();
+    fetchCourse();
   }, [courseId]);
 
   const handlePurchase = async () => {
-    setShowConfirmPopup(true);
-  };
+    if (!course.is_available) {
+      Swal.fire('לא זמין', 'הקורס עדיין לא זמין לרכישה.', 'info');
+      return;
+    }
 
-  const confirmPurchase = async () => {
     try {
-      const { error } = await supabase
-        .from('enrollments')
-        .insert({ user_id: user.id, course_id: courseId });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Swal.fire('לא מחובר', 'עליך להתחבר כדי לרכוש קורס.', 'info');
+        navigate('/login');
+        return;
+      }
 
-      if (error) throw error;
+      const result = await Swal.fire({
+        title: 'אישור רכישה',
+        text: `האם אתה בטוח שברצונך לרכוש את הקורס "${course.title}" במחיר ${course.price} ש"ח?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'כן, אני רוצה לרכוש',
+        cancelButtonText: 'ביטול'
+      });
 
-      setShowConfirmPopup(false);
-      setShowSuccessPopup(true);
+      if (result.isConfirmed) {
+        const { error } = await supabase
+          .from('enrollments')
+          .insert({
+            user_id: user.id,
+            course_id: courseId,
+            current_lesson: 1,
+            amount_paid: course.price,
+            course_title: course.title
+          });
+
+        if (error) throw error;
+
+        Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+        navigate('/personal-area');
+      }
     } catch (error) {
-      console.error('Error enrolling in course:', error);
-      alert('התרחשה שגיאה בעת הוספת הקורס. אנא נסה שנית.');
+      console.error('Error during purchase:', error);
+      Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
     }
   };
 
-  const handleSuccessPopupClose = () => {
-    setShowSuccessPopup(false);
-    navigate('/personal-area');
-  };
-
   if (loading) {
-    return <div>טוען...</div>;
+    return <Message>טוען...</Message>;
   }
 
   if (!course) {
-    return <div>לא נמצאו פרטים עבור הקורס המבוקש.</div>;
+    return <Message>לא נמצא קורס עם המזהה הזה.</Message>;
   }
 
   return (
-    <PageContainer>
+    <>
       <GlobalStyle />
-      <PageTitle>{course.title}</PageTitle>
-      <CourseDescription>{course.description}</CourseDescription>
-      <PriceTag>עלות: {course.price} ש"ח</PriceTag>
-      <PurchaseButton onClick={handlePurchase}>רכוש קורס</PurchaseButton>
-      
-      <Popup
-        isOpen={showConfirmPopup}
-        onClose={() => setShowConfirmPopup(false)}
-        title="אישור רכישה"
-        message={`האם אתה בטוח שברצונך לרכוש את הקורס "${course.title}" במחיר ${course.price} ש"ח?`}
-        buttonText="אשר רכישה"
-        onButtonClick={confirmPurchase}
-      />
-      
-      <Popup
-        isOpen={showSuccessPopup}
-        onClose={handleSuccessPopupClose}
-        title="הרכישה הושלמה בהצלחה"
-        message={`הקורס "${course.title}" נוסף בהצלחה לרשימת הקורסים שלך.`}
-        buttonText="עבור לאזור האישי"
-        onButtonClick={handleSuccessPopupClose}
-      />
-    </PageContainer>
+      <PageContainer>
+        <PageTitle>{course.title}</PageTitle>
+        <CourseDescription>{course.description}</CourseDescription>
+        <PriceTag>עלות: {course.price} ש"ח</PriceTag>
+        {course.is_available ? (
+          <StyledButton onClick={handlePurchase} isPurchase>רכוש קורס</StyledButton>
+        ) : (
+          <Message>הקורס עדיין לא זמין לרכישה.</Message>
+        )}
+      </PageContainer>
+    </>
   );
 };
 
