@@ -280,20 +280,20 @@ const AdminDashboard = () => {
         confirmButtonText: 'כן, מחק',
         cancelButtonText: 'בטל'
       });
-  
+
       if (result.isConfirmed) {
         try {
           const serviceRoleKey = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY;
           const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-  
+
           // בדיקת השליפה של הפרמטרים הנכונים
           console.log('Supabase URL:', supabaseUrl);
           console.log('Service Role Key:', serviceRoleKey);
-  
+
           if (!serviceRoleKey || !supabaseUrl) {
             throw new Error('Missing Supabase URL or Service Role Key');
           }
-  
+
           // מחיקת המשתמש מההרשאות (Auth)
           const authResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
             method: 'DELETE',
@@ -303,19 +303,19 @@ const AdminDashboard = () => {
               'Content-Type': 'application/json'
             }
           });
-  
+
           if (!authResponse.ok) {
             throw new Error('Error deleting user from auth');
           }
-  
+
           // מחיקת המשתמש מבסיס הנתונים
           const { error: dbError } = await supabase
             .from('users')
             .delete()
             .eq('id', userId);
-  
+
           if (dbError) throw dbError;
-  
+
           setUsers(users.filter(user => user.id !== userId));
           Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
         } catch (error) {
@@ -324,49 +324,6 @@ const AdminDashboard = () => {
         }
       }
     }
-  };
-  
-  
-  
-
-  const handleAddDiscount = (userId) => {
-    const user = users.find((user) => user.id === userId);
-    setEditingUserId(userId);
-    setEditingUserDiscount(user ? user.discount : 0);
-    setShowEditUserModal(true);
-  };
-
-  const handleUpdateDiscount = async () => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ discount: editingUserDiscount })
-        .eq('id', editingUserId);
-
-      if (error) throw error;
-
-      alert('ההנחה עודכנה בהצלחה.');
-      setUsers(prevUsers =>
-        prevUsers.map(user =>
-          user.id === editingUserId ? { ...user, discount: editingUserDiscount } : user
-        )
-      );
-
-      setShowEditUserModal(false);
-      setEditingUserId(null);
-      setEditingUserDiscount('');
-    } catch (error) {
-      console.error('Error updating discount:', error);
-      alert('התרחשה שגיאה בעדכון ההנחה.');
-    }
-  };
-
-  const handleFilterUsers = () => {
-    console.log('סינון משתמשים');
-  };
-
-  const handleAddUser = () => {
-    setShowAddUserModal(true);
   };
 
   const handleSaveNewUser = async () => {
@@ -494,6 +451,14 @@ const AdminDashboard = () => {
       console.error('Error deleting enrollment:', error);
       Swal.fire('שגיאה!', 'התרחשה שגיאה במחיקת ההרשמה.', 'error');
     }
+  };
+
+  const handleAddUser = () => {
+    setShowAddUserModal(true);
+  };
+
+  const handleFilterUsers = () => {
+    console.log('סינון משתמשים');
   };
 
   return (
