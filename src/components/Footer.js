@@ -6,7 +6,7 @@ import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa';
 const FooterContainer = styled.footer`
   padding: 1rem;
   text-align: center;
-  background-color: #F25C78;
+  background-color: #62238C;
   color: #fff;
   border-radius: 1rem;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);

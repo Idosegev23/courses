@@ -98,6 +98,19 @@ const ModalContent = styled(Box)`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
+const ProgressBar = styled.div`
+  width: 100%;
+  background-color: #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+
+  div {
+    width: ${props => props.progress}%;
+    background-color: #62238C;
+    height: 20px;
+  }
+`;
+
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -584,7 +597,11 @@ const AdminDashboard = () => {
                   >
                     <td>{users.find(user => user.id === userId)?.email}</td>
                     <td>{courses.find(course => course.id === progress.course_id)?.title}</td>
-                    <td>{progress.completion_percentage}%</td>
+                    <td>
+                      <ProgressBar progress={progress.completion_percentage}>
+                        <div></div>
+                      </ProgressBar>
+                    </td>
                     <td>{new Date(progress.last_activity).toLocaleDateString()}</td>
                   </motion.tr>
                 ))}

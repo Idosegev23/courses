@@ -152,6 +152,7 @@ const PersonalArea = () => {
   const [nonEnrolledCourses, setNonEnrolledCourses] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [discount, setDiscount] = useState(0);
+  const [meetingUsed, setMeetingUsed] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -227,6 +228,17 @@ const PersonalArea = () => {
         } else {
           setNotifications(notificationsData || []);
         }
+
+        const { data: meetingsData, error: meetingsError } = await supabase
+          .from('meetings')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (meetingsError) {
+          console.error('Error fetching meetings:', meetingsError);
+        } else {
+          setMeetingUsed(meetingsData.length > 0);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -250,6 +262,26 @@ const PersonalArea = () => {
       setNotifications((prevNotifications) => prevNotifications.filter((notification) => notification.id !== notificationId));
     } catch (error) {
       console.error('Unexpected error:', error);
+    }
+  };
+
+  const handleMeetingRequest = async () => {
+    try {
+      const { error } = await supabase
+        .from('meetings')
+        .insert({ user_id: user.id });
+
+      if (error) {
+        console.error('Error requesting meeting:', error);
+        alert('אירעה שגיאה בבקשה לפגישה.');
+        return;
+      }
+
+      setMeetingUsed(true);
+      alert('הבקשה לפגישה נשלחה בהצלחה!');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('אירעה שגיאה בבקשה לפגישה.');
     }
   };
 
@@ -343,7 +375,13 @@ const PersonalArea = () => {
           </Grid>
         </Box>
 
-        <StyledButton component="a" href="https://calendly.com/your-calendly-link" target="_blank" rel="noopener noreferrer">
+        <StyledButton
+          component="a"
+          href="https://calendly.com/your-calendly-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          disabled={meetingUsed}
+        >
           קביעת פגישה אישית עם עידו
         </StyledButton>
       </PageContainer>
