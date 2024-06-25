@@ -1,5 +1,3 @@
-// src/pages/CourseLearningPage.js
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -144,11 +142,69 @@ const FAQSection = styled.div`
   }
 `;
 
+const ExerciseSection = styled.div`
+  margin-top: 2rem;
+  text-align: left;
+  max-width: 800px;
+  width: 100%;
+
+  h2 {
+    font-size: 1.5rem;
+    color: #F25C78;
+    margin-bottom: 1rem;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  li {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const SummarySection = styled.div`
+  margin-top: 2rem;
+  text-align: left;
+  max-width: 800px;
+  width: 100%;
+
+  h2 {
+    font-size: 1.5rem;
+    color: #F25C78;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+  cursor: pointer;
+
+  input {
+    margin-right: 0.5rem;
+  }
+`;
+
 const CourseLearningPage = () => {
   const { courseId } = useParams();
   const [lessons, setLessons] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [exercisesCompleted, setExercisesCompleted] = useState({});
 
   useEffect(() => {
     const fetchCourseContent = async () => {
@@ -194,12 +250,12 @@ const CourseLearningPage = () => {
   };
 
   const updateProgress = async (lessonIndex) => {
-    console.log("Updating progress for lesson index:", lessonIndex + 1); // הבהרה שהשיעור הוא אינדקס + 1 להצגה נכונה
+    console.log("Updating progress for lesson index:", lessonIndex + 1);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { error } = await supabase
         .from('enrollments')
-        .update({ current_lesson: lessonIndex + 1 }) // עדכון המסד לייצוג נכון של מספר השיעור
+        .update({ current_lesson: lessonIndex + 1 })
         .eq('user_id', user.id)
         .eq('course_id', courseId);
       if (error) {
@@ -217,18 +273,27 @@ const CourseLearningPage = () => {
     return `https://www.youtube-nocookie.com/embed/${videoId}`;
   };
 
+  const handleExerciseCompletion = (exerciseIndex) => {
+    setExercisesCompleted(prev => ({
+      ...prev,
+      [exerciseIndex]: !prev[exerciseIndex]
+    }));
+  };
+
   if (lessons.length === 0) return <div>Loading...</div>;
+
+  const currentLesson = lessons[currentLessonIndex];
 
   return (
     <>
       <GlobalStyle />
       <PageContainer>
-        <PageTitle>{lessons[currentLessonIndex].title}</PageTitle>
+        <PageTitle>{currentLesson.title}</PageTitle>
         <PageContent>
           <VideoContainer>
             <iframe
               title={`שיעור ${currentLessonIndex + 1}`}
-              src={getYouTubeEmbedURL(lessons[currentLessonIndex].videoLink)}
+              src={getYouTubeEmbedURL(currentLesson.videoLink)}
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
@@ -243,6 +308,48 @@ const CourseLearningPage = () => {
             שיעור הבא
           </button>
         </LessonNavigation>
+
+        {currentLesson.summary && (
+          <SummarySection>
+            <h2>סיכום השיעור</h2>
+            <p>{currentLesson.summary}</p>
+          </SummarySection>
+        )}
+
+        {currentLesson.faq && currentLesson.faq.length > 0 && (
+          <FAQSection>
+            <h2>שאלות ותשובות לשיעור זה</h2>
+            <ul>
+              {currentLesson.faq.map((faq, index) => (
+                <li key={index}>
+                  <strong>{faq.question}</strong>
+                  <p>{faq.answer}</p>
+                </li>
+              ))}
+            </ul>
+          </FAQSection>
+        )}
+
+        {currentLesson.exercises && currentLesson.exercises.length > 0 && (
+          <ExerciseSection>
+            <h2>תרגילים לשיעור זה</h2>
+            <ul>
+              {currentLesson.exercises.map((exercise, index) => (
+                <li key={index}>
+                  <p>{exercise.description}</p>
+                  <CheckboxLabel>
+                    <input
+                      type="checkbox"
+                      checked={exercisesCompleted[index] || false}
+                      onChange={() => handleExerciseCompletion(index)}
+                    />
+                    סיימתי את התרגיל
+                  </CheckboxLabel>
+                </li>
+              ))}
+            </ul>
+          </ExerciseSection>
+        )}
 
         {faqs.length > 0 && (
           <FAQSection>

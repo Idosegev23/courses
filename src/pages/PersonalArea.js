@@ -1,9 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // להוסיף את useNavigate
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
+import { motion } from 'framer-motion';
+import { Typography, Container, Grid, Button, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#62238C',
+    },
+    secondary: {
+      main: '#BF4B81',
+    },
+  },
+  typography: {
+    fontFamily: 'Heebo, sans-serif',
+  },
+});
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -15,28 +32,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-const StyledButton = styled(Link)`
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  background-color: #3498db;
-  color: white;
-  text-decoration: none;
-  font-size: 1rem;
-  transition: background-color 0.3s, transform 0.3s;
-
-  &:hover {
-    background-color: #2980b9;
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
-    padding: 0.4rem 0.8rem;
-  }
-`;
-
-const PageContainer = styled.div`
+const PageContainer = styled(Container)`
   padding: 2rem;
   background: #ffffff;
   text-align: center;
@@ -45,7 +41,6 @@ const PageContainer = styled.div`
   border-radius: 2rem;
   position: relative;
   overflow: hidden;
-  background: white;
 
   &::before {
     content: '';
@@ -62,145 +57,52 @@ const PageContainer = styled.div`
   }
 `;
 
-const PageTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: bold;
-  color: #F25C78;
-  margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-`;
-
-const PageContent = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2rem;
-  position: relative;
-  z-index: 1;
-`;
-
-const Card = styled.div`
-  background: rgba(255, 255, 255, 0.9);
+const StyledButton = styled(Button)`
+  margin: 0.5rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 1rem;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  padding: 1rem;
-  width: calc(40% - 2rem);
-  max-width: 320px;
-  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(45deg, #62238C 30%, #BF4B81 90%);
+  transition: all 0.3s;
+  border: none;
+  box-shadow: 0 3px 5px 2px rgba(191, 75, 129, .3);
 
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
   }
+`;
 
+const CardContainer = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2rem;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-
-  @media (max-width: 768px) {
-    width: calc(100% - 2rem);
-  }
 `;
 
-const CardTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-
-  @media (max-width: 768px) {
-    font-size: 1.25rem;
-  }
-`;
-
-const CardDescription = styled.p`
-  font-size: 0.875rem;
-  color: #666;
-  margin-bottom: 1rem;
-  flex-grow: 1;
-
-  @media (max-width: 768px) {
-    font-size: 0.75rem;
-  }
-`;
-
-const CardLink = styled(Link)`
-  display: inline-block;
-  margin: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
-  text-decoration: none;
-  color: #fff;
-  background-color: #F25C78;
-  transition: background-color 0.3s, transform 0.3s;
-
-  &:hover {
-    background-color: #BF4B81;
-    transform: translateY(-2px);
-  }
-
-  &.purchase {
-    background-color: #BF4B81;
-  }
-
-  &.purchase:hover {
-    background-color: #62238C;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-`;
-
-const TextSub = styled.p`
-  color: #666;
-  font-size: 1rem;
-
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
-  }
-`;
-
-const Table = styled.table`
+const ProgressBar = styled.div`
   width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 2rem;
-
-  th, td {
-    border: 1px solid #ddd;
-    padding: 0.75rem;
-    text-align: center;
-  }
-
-  th {
-    background-color: #f5f5f5;
-    font-weight: bold;
-  }
-
-  td {
-    background-color: #fff;
-  }
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  height: 20px;
+  margin-top: 5px;
 `;
 
-const CalendarButton = styled.a`
-  display: inline-block;
-  margin: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
-  text-decoration: none;
-  color: #fff;
-  background-color: #00A3E0;
-  transition: background-color 0.3s, transform 0.3s;
-
-  &:hover {
-    background-color: #007BBD;
-    transform: translateY(-2px);
-  }
+const Progress = styled.div`
+  width: ${props => props.percent}%;
+  background-color: #4CAF50;
+  height: 100%;
+  border-radius: 5px;
+  text-align: center;
+  line-height: 20px;
+  color: white;
 `;
 
 const NotificationContainer = styled.div`
@@ -250,7 +152,7 @@ const PersonalArea = () => {
   const [nonEnrolledCourses, setNonEnrolledCourses] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [discount, setDiscount] = useState(0);
-  const navigate = useNavigate(); // נוודא שהמשתמש מנווט לדף ההתחברות אם הוא לא מחובר
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -263,7 +165,7 @@ const PersonalArea = () => {
 
         if (!userData || !userData.user) {
           alert('אנא התחבר כדי לגשת לאזור האישי.');
-          navigate('/login'); // ניווט לדף ההתחברות אם המשתמש לא מחובר
+          navigate('/login');
           return;
         }
 
@@ -331,7 +233,7 @@ const PersonalArea = () => {
     };
 
     fetchData();
-  }, [navigate]); // הוספת navigate לרשימת התלויות של useEffect כדי לוודא שהניווט יקרה אם המשתמש לא מחובר
+  }, [navigate]);
 
   const handleMarkAsRead = async (notificationId) => {
     try {
@@ -345,7 +247,6 @@ const PersonalArea = () => {
         return;
       }
 
-      // עדכון המצב המקומי לאחר שסימנו את ההודעה כהתקראה
       setNotifications((prevNotifications) => prevNotifications.filter((notification) => notification.id !== notificationId));
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -355,25 +256,25 @@ const PersonalArea = () => {
   if (!user) return <div>Loading...</div>;
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
-        <PageTitle>שלום, {user.email}</PageTitle>
+        <Typography variant="h2" component="h1" gutterBottom color="primary" align="center">
+          שלום, {user.email}
+        </Typography>
 
-        {/* הצגת אחוז ההנחה בצורה עדינה */}
         {discount > 0 && (
           <DiscountInfo>
-            <p>יש לך הנחה של {discount}% לקורסים שלנו!</p>
+            <Typography variant="h6">יש לך הנחה של {discount}% לקורסים שלנו!</Typography>
           </DiscountInfo>
         )}
 
-                {/* הצגת הודעות */}
         {notifications.length > 0 && (
           <NotificationContainer>
-            <h3 className='text-xl font-semibold text-primary mb-2'>הודעות</h3>
+            <Typography variant="h4" gutterBottom>הודעות</Typography>
             {notifications.map((notification) => (
               <Notification key={notification.id}>
-                <p>{notification.message}</p>
+                <Typography>{notification.message}</Typography>
                 <MarkAsReadButton onClick={() => handleMarkAsRead(notification.id)}>
                   סמן כנקרא
                 </MarkAsReadButton>
@@ -382,71 +283,71 @@ const PersonalArea = () => {
           </NotificationContainer>
         )}
 
-        <PageContent>
-          <div className="enrolled-courses" style={{ flex: 1 }}>
-            <h3 className='text-xl font-semibold text-primary mb-2'>הקורסים שלי</h3>
-            {enrollments.length === 0 ? (
-              <p>לא נמצאו קורסים רשומים.</p>
-            ) : (
-              <Table>
-                <thead>
-                  <tr>
-                    <th>כותרת הקורס</th>
-                    <th>שיעור נוכחי</th>
-                    <th>התקדמות</th>
-                    <th>פעולות</th>
-                  </tr>
-                </thead>
-                <tbody>
+        <Box mb={4}>
+          <Typography variant="h4" gutterBottom>הקורסים שלי</Typography>
+          {enrollments.length === 0 ? (
+            <Typography>לא נמצאו קורסים רשומים.</Typography>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table aria-label="enrolled courses table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>קורס</TableCell>
+                    <TableCell>שיעור נוכחי</TableCell>
+                    <TableCell>התקדמות</TableCell>
+                    <TableCell align="center">כניסה לקורס</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {enrollments.map((enrollment) => {
-                    const course = courses.find((course) => course.id === enrollment.course_id);
+                    const course = courses.find((c) => c.id === enrollment.course_id);
                     if (!course) return null;
+                    const progressPercent = Math.round((enrollment.current_lesson / (course.total_lessons || 1)) * 100);
                     return (
-                      <tr key={enrollment.id}>
-                        <td>{course.title}</td>
-                        <td>{enrollment.current_lesson || 'אין נתונים'}</td>
-                        <td>
-                          <div className='w-full bg-gray-200 rounded-full h-2.5'>
-                            <div className='bg-primary h-2.5 rounded-full' style={{ width: `${(enrollment.current_lesson / (course.total_lessons || 1)) * 100}%` }}></div>
-                          </div>
-                        </td>
-                        <td>
-                          <StyledButton to={`/course-learning/${course.id}`}>
+                      <TableRow key={enrollment.id}>
+                        <TableCell>{course.title}</TableCell>
+                        <TableCell>{enrollment.current_lesson || 'אין נתונים'}</TableCell>
+                        <TableCell>
+                          <ProgressBar>
+                            <Progress percent={progressPercent}>{progressPercent}%</Progress>
+                          </ProgressBar>
+                        </TableCell>
+                        <TableCell align="center">
+                          <StyledButton component={Link} to={`/course-learning/${course.id}`}>
                             כניסה לקורס
                           </StyledButton>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
+                </TableBody>
               </Table>
-            )}
-            <CalendarButton href="https://calendly.com/your-calendly-link" target="_blank" rel="noopener noreferrer">
-              קביעת פגישה אישית עם עידו
-            </CalendarButton>
-          </div>
+            </TableContainer>
+          )}
+        </Box>
 
-          <div className="non-enrolled-courses" style={{ flex: 1 }}>
-            <h3 className='text-xl font-semibold text-primary mb-2'>קורסים שאינכם רשומים אליהם</h3>
-            <PageContent>
-              {nonEnrolledCourses.length === 0 ? (
-                <TextSub>אין קורסים זמינים.</TextSub>
-              ) : (
-                nonEnrolledCourses.map((course) => (
-                  <Card key={course.id}>
-                    <CardTitle>{course.title}</CardTitle>
-                    <CardDescription>{course.description}</CardDescription>
-                    <CardLink to={`/purchase/${course.id}`} className="purchase">
-                      רכשו קורס
-                    </CardLink>
-                  </Card>
-                ))
-              )}
-            </PageContent>
-          </div>
-        </PageContent>
+        <Box mb={4}>
+          <Typography variant="h4" gutterBottom>קורסים נוספים</Typography>
+          <Grid container spacing={3}>
+            {nonEnrolledCourses.map((course) => (
+              <Grid item xs={12} sm={6} md={4} key={course.id}>
+                <CardContainer>
+                  <Typography variant="h5">{course.title}</Typography>
+                  <Typography>{course.description}</Typography>
+                  <StyledButton component={Link} to={`/purchase/${course.id}`}>
+                    רכוש קורס
+                  </StyledButton>
+                </CardContainer>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        <StyledButton component="a" href="https://calendly.com/your-calendly-link" target="_blank" rel="noopener noreferrer">
+          קביעת פגישה אישית עם עידו
+        </StyledButton>
       </PageContainer>
-    </>
+    </ThemeProvider>
   );
 };
 

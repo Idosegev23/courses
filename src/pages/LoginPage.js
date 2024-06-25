@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { FaGoogle } from 'react-icons/fa'; // הסרנו את פייסבוק
+import { FaGoogle } from 'react-icons/fa';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -79,7 +79,7 @@ const OAuthButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 100%;
-  gap: 2rem;
+  gap: 0.5rem;
 
   &:hover {
     background-color: ${(props) => (props.hoverBgColor || '#e0e0e0')};

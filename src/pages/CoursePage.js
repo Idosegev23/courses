@@ -1,9 +1,8 @@
-// src/pages/CoursePage.js
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
+import { FaClock, FaBook } from 'react-icons/fa';
 
 // סגנונות כלליים לדף
 const GlobalStyle = createGlobalStyle`
@@ -25,6 +24,7 @@ const PageContainer = styled.div`
   border-radius: 2rem;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
 const PageTitle = styled.h1`
@@ -112,9 +112,28 @@ const CourseLink = styled(Link)`
   }
 `;
 
+const CourseInfo = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #666;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+`;
+
 const CoursePage = () => {
   const [courses, setCourses] = useState([]);
   const [userEnrollments, setUserEnrollments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchCoursesAndEnrollments = async () => {
@@ -145,18 +164,33 @@ const CoursePage = () => {
     fetchCoursesAndEnrollments();
   }, []);
 
+  const filteredCourses = courses.filter(course =>
+    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <>
       <GlobalStyle />
       <PageContainer>
         <PageTitle>הקורסים שלנו</PageTitle>
+        <SearchInput
+          type="text"
+          placeholder="חפש קורסים..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
         <CoursesGrid>
-          {courses.map((course) => (
+          {filteredCourses.map((course) => (
             <CourseCard key={course.id}>
               <CourseImage src={course.image || 'default_image_url'} alt={course.title} />
               <CourseContent>
                 <CourseTitle>{course.title}</CourseTitle>
                 <CourseDescription>{course.description}</CourseDescription>
+                <CourseInfo>
+                  <span><FaClock /> {course.duration}</span>
+                  <span><FaBook /> {course.lessons_count} שיעורים</span>
+                </CourseInfo>
                 <CourseDetails>{course.details}</CourseDetails>
                 {userEnrollments.includes(course.id) ? (
                   <CourseLink to={`/course-learning/${course.id}`} className="purchase">
@@ -164,7 +198,7 @@ const CoursePage = () => {
                   </CourseLink>
                 ) : (
                   <CourseLink to={`/purchase/${course.id}`} className="purchase">
-                    רכוש עכשיו
+                    רכוש עכשיו - {course.price} ₪
                   </CourseLink>
                 )}
               </CourseContent>

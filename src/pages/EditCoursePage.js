@@ -1,10 +1,25 @@
-// src/pages/EditCoursePage.js
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
+import { Button, TextField, Typography, Box } from '@mui/material';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#62238C',
+    },
+    secondary: {
+      main: '#BF4B81',
+    },
+  },
+  typography: {
+    fontFamily: 'Heebo, sans-serif',
+  },
+});
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -41,17 +56,6 @@ const PageContainer = styled.div`
   }
 `;
 
-const PageTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: bold;
-  color: #F25C78;
-  margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-`;
-
 const Form = styled.form`
   display: flex;
   flex-direction: column;
@@ -63,46 +67,10 @@ const Form = styled.form`
   margin: 0 auto;
 `;
 
-const Input = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-`;
-
-const Textarea = styled.textarea`
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-`;
-
-const ActionButton = styled.button`
+const ActionButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
-  border: none;
-  text-decoration: none;
-  color: #fff;
-  background-color: #F25C78;
-  transition: background-color 0.3s, transform 0.3s;
   font-size: 1.2rem;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #BF4B81;
-    transform: translateY(-2px);
-  }
-
   @media (max-width: 768px) {
     padding: 0.5rem 1rem;
     font-size: 1rem;
@@ -115,9 +83,10 @@ const EditCoursePage = () => {
     title: '',
     description: '',
     price: 0,
+    discountPrice: 0,
     duration: '',
     details: '',
-    lessons: [{ title: '', videoLink: '', faq: [] }],
+    lessons: [{ title: '', videoLink: '', duration: '', summary: '', faq: [], exercises: [] }],
   });
   const navigate = useNavigate();
 
@@ -138,6 +107,7 @@ const EditCoursePage = () => {
         title: data.title,
         description: data.description,
         price: data.price,
+        discountPrice: data.discountPrice || 0,
         duration: data.duration,
         details: data.details,
         lessons: data.lessons || [],
@@ -173,16 +143,34 @@ const EditCoursePage = () => {
     }));
   };
 
+  const handleExerciseChange = (lessonIndex, exerciseIndex, name, value) => {
+    const newLessons = [...course.lessons];
+    newLessons[lessonIndex].exercises[exerciseIndex][name] = value;
+    setCourse((prevCourse) => ({
+      ...prevCourse,
+      lessons: newLessons,
+    }));
+  };
+
   const addLesson = () => {
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: [...prevCourse.lessons, { title: '', videoLink: '', faq: [] }],
+      lessons: [...prevCourse.lessons, { title: '', videoLink: '', duration: '', summary: '', faq: [], exercises: [] }],
     }));
   };
 
   const addFaq = (lessonIndex) => {
     const newLessons = [...course.lessons];
     newLessons[lessonIndex].faq.push({ question: '', answer: '' });
+    setCourse((prevCourse) => ({
+      ...prevCourse,
+      lessons: newLessons,
+    }));
+  };
+
+  const addExercise = (lessonIndex) => {
+    const newLessons = [...course.lessons];
+    newLessons[lessonIndex].exercises.push({ description: '', solution: '' });
     setCourse((prevCourse) => ({
       ...prevCourse,
       lessons: newLessons,
@@ -214,91 +202,196 @@ const EditCoursePage = () => {
   };
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
-        <PageTitle>ערוך קורס</PageTitle>
+        <Typography variant="h4" component="h1" gutterBottom color="primary" align="center">
+          ערוך קורס
+        </Typography>
         <Form onSubmit={handleCourseUpdate}>
-          <Input
-            type="text"
+          <TextField
+            fullWidth
+            label="כותרת הקורס"
             name="title"
-            placeholder="כותרת הקורס"
+            variant="outlined"
             value={course.title}
             onChange={handleChange}
+            margin="normal"
           />
-          <Textarea
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="תיאור הקורס"
             name="description"
-            placeholder="תיאור הקורס"
+            variant="outlined"
             value={course.description}
             onChange={handleChange}
+            margin="normal"
           />
-          <Input
+          <TextField
+            fullWidth
             type="number"
+            label="מחיר הקורס"
             name="price"
-            placeholder="מחיר הקורס"
+            variant="outlined"
             value={course.price}
             onChange={handleChange}
+            margin="normal"
           />
-          <Input
-            type="text"
+          <TextField
+            fullWidth
+            type="number"
+            label="מחיר מבצע (אופציונלי)"
+            name="discountPrice"
+            variant="outlined"
+            value={course.discountPrice}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="משך הקורס הכולל"
             name="duration"
-            placeholder="משך הקורס"
+            variant="outlined"
             value={course.duration}
             onChange={handleChange}
+            margin="normal"
           />
-          <Textarea
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="פרטים נוספים"
             name="details"
-            placeholder="פרטים נוספים"
+            variant="outlined"
             value={course.details}
             onChange={handleChange}
+            margin="normal"
           />
+
           {course.lessons.map((lesson, index) => (
-            <div key={index} style={{ marginBottom: '1rem' }}>
-              <h3>שיעור {index + 1}</h3>
-              <Input
-                type="text"
-                placeholder={`כותרת השיעור ${index + 1}`}
+            <Box key={index} sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, boxShadow: 1 }}>
+              <Typography variant="h6" gutterBottom>{`שיעור ${index + 1}`}</Typography>
+              <TextField
+                fullWidth
+                label={`כותרת השיעור ${index + 1}`}
+                variant="outlined"
                 value={lesson.title}
                 onChange={(e) => handleLessonChange(index, 'title', e.target.value)}
+                margin="normal"
               />
-              <Input
-                type="text"
-                placeholder={`קישור וידאו לשיעור ${index + 1}`}
+              <TextField
+                fullWidth
+                label={`קישור וידאו לשיעור ${index + 1}`}
+                variant="outlined"
                 value={lesson.videoLink}
                 onChange={(e) => handleLessonChange(index, 'videoLink', e.target.value)}
+                margin="normal"
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <ActionButton type="button" onClick={() => addFaq(index)}>
-                  הוסף שאלות ותשובות לשיעור
-                </ActionButton>
-                <div style={{ textAlign: 'right' }}>
-                  <ActionButton type="button" onClick={() => removeLesson(index)}>
-                    🗑️ הסר שיעור
-                  </ActionButton>
-                </div>
-              </div>
+              <TextField
+                fullWidth
+                type="number"
+                label={`משך השיעור ${index + 1} (בדקות)`}
+                variant="outlined"
+                value={lesson.duration}
+                onChange={(e) => handleLessonChange(index, 'duration', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                label="סיכום השיעור"
+                variant="outlined"
+                value={lesson.summary}
+                onChange={(e) => handleLessonChange(index, 'summary', e.target.value)}
+                margin="normal"
+              />
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => addFaq(index)}
+                sx={{ mt: 2 }}
+              >
+                הוסף שאלה ותשובה
+              </Button>
               {lesson.faq.map((faqItem, faqIndex) => (
-                <div key={faqIndex} style={{ marginBottom: '0.5rem' }}>
-                  <Input
-                    type="text"
-                    placeholder={`שאלה ${faqIndex + 1}`}
+                <Box key={faqIndex} sx={{ mt: 2, p: 2, bgcolor: 'background.paper' }}>
+                  <TextField
+                    fullWidth
+                    label={`שאלה ${faqIndex + 1}`}
+                    variant="outlined"
                     value={faqItem.question}
                     onChange={(e) => handleFaqChange(index, faqIndex, 'question', e.target.value)}
+                    margin="normal"
                   />
-                  <Textarea
-                    placeholder={`תשובה ${faqIndex + 1}`}
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label={`תשובה ${faqIndex + 1}`}
+                    variant="outlined"
                     value={faqItem.answer}
                     onChange={(e) => handleFaqChange(index, faqIndex, 'answer', e.target.value)}
+                    margin="normal"
                   />
-                </div>
+                </Box>
               ))}
-            </div>
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => addExercise(index)}
+                sx={{ mt: 2 }}
+              >
+                הוסף תרגיל
+              </Button>
+              {lesson.exercises.map((exercise, exerciseIndex) => (
+                <Box key={exerciseIndex} sx={{ mt: 2, p: 2, bgcolor: 'background.paper' }}>
+                  <TextField
+                    fullWidth
+                    label={`תיאור התרגיל ${exerciseIndex + 1}`}
+                    variant="outlined"
+                    value={exercise.description}
+                    onChange={(e) => handleExerciseChange(index, exerciseIndex, 'description', e.target.value)}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label={`פתרון התרגיל ${exerciseIndex + 1}`}
+                    variant="outlined"
+                    value={exercise.solution}
+                    onChange={(e) => handleExerciseChange(index, exerciseIndex, 'solution', e.target.value)}
+                    margin="normal"
+                  />
+                </Box>
+              ))}
+              <Button
+                startIcon={<RemoveIcon />}
+                onClick={() => removeLesson(index)}
+                sx={{ mt: 2 }}
+                color="error"
+              >
+                הסר שיעור
+              </Button>
+            </Box>
           ))}
-          <ActionButton type="button" onClick={addLesson}>הוסף שיעור</ActionButton>
-          <ActionButton type="submit">עדכן קורס</ActionButton>
+          <ActionButton
+            startIcon={<AddIcon />}
+            onClick={addLesson}
+            sx={{ mt: 2 }}
+          >
+            הוסף שיעור
+          </ActionButton>
+          <ActionButton
+            type="submit"
+            sx={{ mt: 2 }}
+          >
+            עדכן קורס
+          </ActionButton>
         </Form>
       </PageContainer>
-    </>
+    </ThemeProvider>
   );
 };
 

@@ -2,19 +2,35 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
+import { Typography, Container, Button } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#62238C',
+    },
+    secondary: {
+      main: '#BF4B81',
+    },
+  },
+  typography: {
+    fontFamily: 'Heebo, sans-serif',
+  },
+});
 
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Heebo', sans-serif;
     background-color: #ffffff;
-    direction: rtl; /* כיוון הטקסט מימין לשמאל */
+    direction: rtl;
     margin: 0;
     padding: 0;
   }
 `;
 
-const PageContainer = styled.div`
+const PageContainer = styled(Container)`
   padding: 2rem;
   background: #ffffff;
   text-align: center;
@@ -39,21 +55,18 @@ const PageContainer = styled.div`
   }
 `;
 
-const PageTitle = styled.h1`
+const PageTitle = styled(Typography)`
   font-size: 3rem;
   font-weight: bold;
   color: #F25C78;
   margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 `;
 
 const PageContent = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center; /* מרכז אופקי */
+  align-items: center;
   gap: 2rem;
   position: relative;
   z-index: 1;
@@ -64,12 +77,12 @@ const CourseDescription = styled.div`
   color: #666;
   margin-bottom: 1rem;
   max-width: 800px;
-  text-align: right; /* יישור טקסט לימין */
+  text-align: right;
 
   h2 {
     font-size: 2rem;
     color: #F25C78;
-    text-align: center; /* כותרת ממורכזת */
+    text-align: center;
   }
 
   p {
@@ -118,16 +131,13 @@ const FaqSection = styled.div`
   }
 `;
 
-const PurchaseButton = styled(Link)`
+const PurchaseButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
-  border: none;
-  text-decoration: none;
   color: #fff;
   background-color: #F25C78;
   transition: background-color 0.3s, transform 0.3s;
   font-size: 1.2rem;
-  cursor: pointer;
 
   &:hover {
     background-color: #BF4B81;
@@ -164,10 +174,10 @@ const CourseDetailsPage = () => {
   if (!course) return <div>Loading...</div>;
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
-        <PageTitle>{course.title}</PageTitle>
+        <PageTitle variant="h1" component="h1">{course.title}</PageTitle>
         <PageContent>
           <CourseDescription>
             <h2>פרטי הקורס</h2>
@@ -189,10 +199,10 @@ const CourseDetailsPage = () => {
               </ul>
             </FaqSection>
           )}
-          <PurchaseButton to={`/purchase/${course.id}`}>רכוש עכשיו</PurchaseButton>
+          <PurchaseButton component={Link} to={`/purchase/${course.id}`}>רכוש עכשיו</PurchaseButton>
         </PageContent>
       </PageContainer>
-    </>
+    </ThemeProvider>
   );
 };
 

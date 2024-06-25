@@ -1,5 +1,3 @@
-// PurchasePage.js
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -140,30 +138,69 @@ const PurchasePage = () => {
   }, [courseId]);
 
   const handlePurchase = async () => {
-    if (!course.is_available) {
-      Swal.fire('לא זמין', 'הקורס עדיין לא זמין לרכישה.', 'info');
-      return;
-    }
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
+
       if (!user) {
-        Swal.fire('לא מחובר', 'עליך להתחבר כדי לרכוש קורס.', 'info');
-        navigate('/login');
-        return;
-      }
+        // משתמש לא מחובר, הצגת טופס הרשמה ותשלום
+        const { value: formValues } = await Swal.fire({
+          title: 'הרשמה ותשלום',
+          html:
+            '<input id="swal-input1" class="swal2-input" placeholder="שם משתמש">' +
+            '<input id="swal-input2" class="swal2-input" type="email" placeholder="אימייל">' +
+            '<input id="swal-input3" class="swal2-input" type="password" placeholder="סיסמה">' +
+            '<input id="swal-input4" class="swal2-input" placeholder="מספר כרטיס">' +
+            '<input id="swal-input5" class="swal2-input" placeholder="תאריך תפוגה (MM/YY)">' +
+            '<input id="swal-input6" class="swal2-input" placeholder="CVV">',
+          focusConfirm: false,
+          preConfirm: () => {
+            return {
+              username: document.getElementById('swal-input1').value,
+              email: document.getElementById('swal-input2').value,
+              password: document.getElementById('swal-input3').value,
+              cardNumber: document.getElementById('swal-input4').value,
+              expiryDate: document.getElementById('swal-input5').value,
+              cvv: document.getElementById('swal-input6').value,
+            };
+          }
+        });
 
-      const result = await Swal.fire({
-        title: 'אישור רכישה',
-        text: `האם אתה בטוח שברצונך לרכוש את הקורס "${course.title}" במחיר ${course.price} ש"ח?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'כן, אני רוצה לרכוש',
-        cancelButtonText: 'ביטול'
-      });
+        if (formValues) {
+          const { username, email, password, cardNumber, expiryDate, cvv } = formValues;
 
-      if (result.isConfirmed) {
-        // פתיחת פופ-אפ לפרטי תשלום
+          // ביצוע הרשמה
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                username,
+              },
+            },
+          });
+
+          if (signUpError) throw signUpError;
+
+          const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
+
+          // ביצוע רכישה
+          const { error: purchaseError } = await supabase
+            .from('enrollments')
+            .insert({
+              user_id: newUser.id,
+              course_id: courseId,
+              current_lesson: 1,
+              amount_paid: course.price,
+              course_title: course.title,
+            });
+
+          if (purchaseError) throw purchaseError;
+
+          Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+          navigate('/personal-area');
+        }
+      } else {
+        // משתמש מחובר, הצגת טופס תשלום בלבד
         const { value: paymentDetails } = await Swal.fire({
           title: 'פרטי תשלום',
           html:
@@ -189,7 +226,7 @@ const PurchasePage = () => {
               course_id: courseId,
               current_lesson: 1,
               amount_paid: course.price,
-              course_title: course.title
+              course_title: course.title,
             });
 
           if (error) throw error;

@@ -1,11 +1,28 @@
-// src/pages/LandingPage.js
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Typography, Container, Grid } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#62238C',
+    },
+    secondary: {
+      main: '#BF4B81',
+    },
+  },
+  typography: {
+    fontFamily: 'Heebo, sans-serif',
+  },
+});
 
 const GlobalStyle = createGlobalStyle`
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap');
+  
   body {
     font-family: 'Heebo', sans-serif;
     background-color: #ffffff;
@@ -15,122 +32,52 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-const PageContainer = styled.div`
+const PageContainer = styled(Container)`
   padding: 2rem;
-  background: #ffffff;
   text-align: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  border-radius: 2rem;
   position: relative;
   overflow: hidden;
 `;
 
-const PageTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: bold;
-  color: #F25C78;
-  margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+const Header = styled.header`
+  margin-bottom: 4rem;
 `;
 
-const PageContent = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4rem;
-  position: relative;
-  z-index: 1;
-
-  @media (max-width: 768px) {
-    gap: 2rem;
-  }
+const Logo = styled.img`
+  height: 100px;
+  margin-bottom: 1rem;
 `;
 
-const Card = styled.div`
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 1rem;
+const CardContainer = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  padding: 5rem;
-  width: 100%;
-  max-width: 350px;
-  text-align: center;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  }
-
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2rem;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-
-  @media (max-width: 768px) {
-    max-width: 100%;
-  }
 `;
 
-const CardTitle = styled.h2`
-  font-size: 1.75rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
-`;
-
-const CardDescription = styled.p`
-  font-size: 1rem;
-  color: #666;
-  margin-bottom: 1rem;
-  flex-grow: 1;
-
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
-  }
-`;
-
-const CardLink = styled(Link)`
+const StyledButton = styled(Link)`
   display: inline-block;
   margin: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
   text-decoration: none;
   color: #fff;
-  background-color: #F25C78;
-  transition: background-color 0.3s, transform 0.3s;
+  background: ${props => props.isPrimary ? 
+    'linear-gradient(45deg, #62238C 30%, #BF4B81 90%)' : 
+    'linear-gradient(45deg, #BF4B81 30%, #F25C78 90%)'};
+  transition: all 0.3s;
+  border: none;
+  box-shadow: 0 3px 5px 2px rgba(191, 75, 129, .3);
 
   &:hover {
-    background-color: #BF4B81;
     transform: translateY(-2px);
-  }
-
-  &.purchase {
-    background-color: #BF4B81;
-  }
-
-  &.purchase:hover {
-    background-color: #62238C;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-`;
-
-const TextSub = styled.p`
-  color: #666;
-  font-size: 1rem;
-
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
+    box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
   }
 `;
 
@@ -140,7 +87,6 @@ const LandingPage = () => {
 
   useEffect(() => {
     const fetchCoursesAndEnrollments = async () => {
-      // Fetch user enrollments
       const { data: userData } = await supabase.auth.getUser();
       if (userData && userData.user) {
         const userId = userData.user.id;
@@ -163,7 +109,6 @@ const LandingPage = () => {
           setUserEnrollments(enrollmentsData.map(enrollment => enrollment.course_id));
         }
       } else {
-        // Fetch courses if user is not logged in or not enrolled in any courses
         const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
         if (coursesError) {
           console.error('Error fetching courses:', coursesError);
@@ -177,38 +122,73 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <GlobalStyle />
-      <PageContainer>
-        <PageTitle>ברוכים הבאים לקורסים שלנו</PageTitle>
-        <PageContent>
-          {courses.length > 0 ? (
-            courses.map((course) => (
-              <Card key={course.id}>
-                <CardTitle>{course.title}</CardTitle>
-                <CardDescription>{course.description}</CardDescription>
-                <div>
-                  {userEnrollments.includes(course.id) ? (
-                    <CardLink to={`/course-learning/${course.id}`} className="purchase">
-                      כניסה לקורס
-                    </CardLink>
-                  ) : (
-                    <>
-                      <CardLink to={`/course/${course.id}`}>פרטים נוספים</CardLink>
-                      <CardLink to={`/purchase/${course.id}`} className="purchase">
-                        רכוש עכשיו
-                      </CardLink>
-                    </>
-                  )}
-                </div>
-              </Card>
-            ))
-          ) : (
-            <TextSub>לא נמצאו קורסים זמינים.</TextSub>
-          )}
-        </PageContent>
+      <PageContainer maxWidth="lg">
+        <Header>
+          <Logo src="/path-to-your-logo.png" alt="Logo" />
+          <Typography variant="h2" component="h1" sx={{
+            fontWeight: 'bold',
+            color: '#62238C',
+            marginBottom: 2,
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+          }}>
+            ברוכים הבאים לקורסים שלנו
+          </Typography>
+          <Typography variant="h5" sx={{ color: '#0D0D0D' }}>
+            גלו את הקורסים החדשניים ביותר שלנו
+          </Typography>
+        </Header>
+
+        <Grid container spacing={4}>
+          <AnimatePresence>
+            {courses.map((course) => (
+              <Grid item xs={12} sm={6} md={4} key={course.id}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <CardContainer>
+                    <div>
+                      <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
+                        {course.title}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
+                        {course.description}
+                      </Typography>
+                    </div>
+                    <div>
+                      {userEnrollments.includes(course.id) ? (
+                        <StyledButton to={`/course-learning/${course.id}`} isPrimary>
+                          כניסה לקורס
+                        </StyledButton>
+                      ) : (
+                        <>
+                          <StyledButton to={`/course/${course.id}`}>
+                            פרטים נוספים
+                          </StyledButton>
+                          <StyledButton to={`/purchase/${course.id}`} isPrimary>
+                            רכוש עכשיו
+                          </StyledButton>
+                        </>
+                      )}
+                    </div>
+                  </CardContainer>
+                </motion.div>
+              </Grid>
+            ))}
+          </AnimatePresence>
+        </Grid>
+
+        {courses.length === 0 && (
+          <Typography variant="body1" sx={{ mt: 4, color: '#666' }}>
+            לא נמצאו קורסים זמינים.
+          </Typography>
+        )}
       </PageContainer>
-    </>
+    </ThemeProvider>
   );
 };
 

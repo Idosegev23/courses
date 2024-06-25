@@ -1,8 +1,26 @@
-// src/pages/ContactAndPolicyPage.js
 import React from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
+import { motion } from 'framer-motion';
+import { Typography, Container } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#62238C',
+    },
+    secondary: {
+      main: '#BF4B81',
+    },
+  },
+  typography: {
+    fontFamily: 'Heebo, sans-serif',
+  },
+});
 
 const GlobalStyle = createGlobalStyle`
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap');
+  
   body {
     font-family: 'Heebo', sans-serif;
     background-color: #ffffff;
@@ -12,60 +30,71 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-const PageContainer = styled.div`
+const PageContainer = styled(Container)`
   padding: 2rem;
-  background: #ffffff;
   text-align: center;
-  max-width: 800px;
-  margin: 0 auto;
-  border-radius: 2rem;
   position: relative;
   overflow: hidden;
-  background: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
-const PageTitle = styled.h1`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #F25C78;
+const SectionContainer = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2rem;
   margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1rem;
-`;
-
-const Paragraph = styled.p`
-  font-size: 1rem;
-  color: #333;
-  margin-bottom: 1rem;
-  text-align: justify;
 `;
 
 const ContactAndPolicyPage = () => {
   return (
-    <PageContainer>
+    <ThemeProvider theme={theme}>
       <GlobalStyle />
-      <PageTitle>פרטי קשר ותקנון ביטולים</PageTitle>
-      <SectionTitle>פרטי קשר</SectionTitle>
-      <Paragraph>
-        טלפון: 054-7667775<br />
-        אימייל: Triroars@gmail.com<br />
-        כתובת: צבי סגל 20א, אשקלון, ישראל
-      </Paragraph>
-      <SectionTitle>תקנון ביטולים</SectionTitle>
-      <Paragraph>
-        לא ניתן לבטל את הרכישה או לבקש החזר כספי. כל ההזמנות הן סופיות.
-      </Paragraph>
-    </PageContainer>
+      <PageContainer maxWidth="md">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Typography variant="h2" component="h1" gutterBottom color="primary" align="center" sx={{
+            fontWeight: 'bold',
+            marginBottom: 4,
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+          }}>
+            פרטי קשר ותקנון ביטולים
+          </Typography>
+
+          <SectionContainer
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Typography variant="h4" gutterBottom color="secondary">
+              פרטי קשר
+            </Typography>
+            <Typography variant="body1" paragraph>
+              טלפון: 054-7667775<br />
+              אימייל: Triroars@gmail.com<br />
+              כתובת: צבי סגל 20א, אשקלון, ישראל
+            </Typography>
+          </SectionContainer>
+
+          <SectionContainer
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <Typography variant="h4" gutterBottom color="secondary">
+              תקנון ביטולים
+            </Typography>
+            <Typography variant="body1" paragraph>
+              לא ניתן לבטל את הרכישה או לבקש החזר כספי. כל ההזמנות הן סופיות.
+            </Typography>
+          </SectionContainer>
+        </motion.div>
+      </PageContainer>
+    </ThemeProvider>
   );
 };
 
