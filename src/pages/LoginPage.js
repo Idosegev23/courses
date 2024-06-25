@@ -36,7 +36,7 @@ const FormContainer = styled.div`
 const Title = styled.h2`
   font-size: 2rem;
   font-weight: bold;
-  color: #F25C78;
+  color: #62238C;
   margin-bottom: 1.5rem;
 `;
 
@@ -49,7 +49,7 @@ const Input = styled.input`
 `;
 
 const ActionButton = styled.button`
-  background-color: #F25C78;
+  background-color: #62238C;
   color: #fff;
   padding: 0.75rem 1.5rem;
   border: none;
