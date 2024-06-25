@@ -82,7 +82,6 @@ const StyledButton = styled(Link)`
   }
 `;
 
-// הוספת סגנון מותאם אישית לכפתור התנתקות
 const StyledSignOutButton = styled.button`
   background: none;
   padding: 15px;
@@ -147,7 +146,6 @@ const Header = () => {
     }
   };
 
-  // בדיקה אם המשתמש הוא האדמין
   const isAdmin = user && user.email === 'triroars@gmail.com';
 
   return (
