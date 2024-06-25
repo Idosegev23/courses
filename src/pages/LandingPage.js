@@ -59,7 +59,7 @@ const CardContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 300px; // הוספת גובה מינימלי
+  min-height: 300px;
 `;
 
 const StyledButton = styled(Link)`
@@ -80,6 +80,15 @@ const StyledButton = styled(Link)`
     transform: translateY(-2px);
     box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
   }
+`;
+
+const CardGrid = styled(Grid)`
+  display: flex;
+  flex-wrap: wrap;
+`;
+
+const CardItem = styled(Grid)`
+  display: flex;
 `;
 
 const LandingPage = () => {
@@ -141,15 +150,16 @@ const LandingPage = () => {
           </Typography>
         </Header>
 
-        <Grid container spacing={4}>
+        <CardGrid container spacing={4}>
           <AnimatePresence>
             {courses.map((course) => (
-              <Grid item xs={12} sm={6} md={4} key={course.id}>
+              <CardItem item xs={12} sm={6} md={4} key={course.id}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
+                  style={{ display: 'flex', width: '100%' }}
                 >
                   <CardContainer>
                     <div>
@@ -178,10 +188,10 @@ const LandingPage = () => {
                     </div>
                   </CardContainer>
                 </motion.div>
-              </Grid>
+              </CardItem>
             ))}
           </AnimatePresence>
-        </Grid>
+        </CardGrid>
 
         {courses.length === 0 && (
           <Typography variant="body1" sx={{ mt: 4, color: '#666' }}>
