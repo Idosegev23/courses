@@ -44,7 +44,7 @@ const PageContainer = styled.div`
 const PageTitle = styled.h1`
   font-size: 2rem;
   font-weight: bold;
-  color: #F25C78;
+  color: #62238C; /* Changed to primary brand color */
   margin-bottom: 2rem;
   text-align: center;
   position: relative;
@@ -68,14 +68,14 @@ const PriceContainer = styled.div`
 
 const OriginalPrice = styled.span`
   font-size: 1.25rem;
-  color: #333;
+  color: #BF4B81; /* Changed to secondary brand color */
   text-decoration: line-through;
   margin-right: 1rem;
 `;
 
 const DiscountedPrice = styled.h2`
   font-size: 1.5rem;
-  color: #F25C78;
+  color: #62238C; /* Changed to primary brand color */
   display: inline;
 `;
 
@@ -92,7 +92,7 @@ const StyledButton = styled.button`
   border-radius: 1rem;
   text-decoration: none;
   color: #fff;
-  background-color: ${props => props.isPurchase ? '#BF4B81' : '#F25C78'};
+  background-color: ${props => props.isPurchase ? '#62238C' : '#BF4B81'};
   transition: background-color 0.3s, transform 0.3s;
   border: none;
   font-size: 1rem;
@@ -101,7 +101,7 @@ const StyledButton = styled.button`
   z-index: 1;
 
   &:hover {
-    background-color: ${props => props.isPurchase ? '#62238C' : '#BF4B81'};
+    background-color: ${props => props.isPurchase ? '#BF4B81' : '#62238C'};
     transform: translateY(-2px);
   }
 
