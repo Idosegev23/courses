@@ -147,6 +147,10 @@ const DiscountInfo = styled.div`
   color: #333;
 `;
 
+const MeetingButtonContainer = styled.div`
+  margin-top: 2rem;
+`;
+
 const PersonalArea = () => {
   const [user, setUser] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
@@ -293,6 +297,7 @@ const PersonalArea = () => {
 
         setMeetingUsed(true);
         Swal.fire('הבקשה נשלחה!', 'הבקשה לפגישה נשלחה בהצלחה!', 'success');
+        window.location.href = 'https://calendly.com/your-calendly-link';
       } catch (error) {
         console.error('Unexpected error:', error);
         alert('אירעה שגיאה בבקשה לפגישה.');
@@ -390,17 +395,15 @@ const PersonalArea = () => {
           </Grid>
         </Box>
 
-        <StyledButton
-          component="a"
-          href="https://calendly.com/your-calendly-link"
-          target="_blank"
-          rel="noopener noreferrer"
-          disabled={meetingUsed}
-          startIcon={<FaCalendarAlt />}
-          onClick={handleMeetingRequest}
-        >
-          קביעת פגישה אישית עם עידו
-        </StyledButton>
+        <MeetingButtonContainer>
+          <StyledButton
+            disabled={meetingUsed}
+            startIcon={<FaCalendarAlt />}
+            onClick={handleMeetingRequest}
+          >
+            קביעת פגישה אישית עם עידו
+          </StyledButton>
+        </MeetingButtonContainer>
       </PageContainer>
     </ThemeProvider>
   );
