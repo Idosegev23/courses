@@ -296,13 +296,19 @@ const PersonalArea = () => {
         }
 
         setMeetingUsed(true);
-        Swal.fire('הבקשה נשלחה!', 'הבקשה לפגישה נשלחה בהצלחה!', 'success');
-        window.location.href = 'https://calendly.com/your-calendly-link';
+        Swal.fire('הבקשה נשלחה!', 'הבקשה לפגישה נשלחה בהצלחה!', 'success').then(() => {
+          window.location.href = 'https://calendly.com/your-calendly-link';
+        });
       } catch (error) {
         console.error('Unexpected error:', error);
         alert('אירעה שגיאה בבקשה לפגישה.');
       }
     }
+  };
+
+  const handleCourseEnter = (courseId, currentLesson) => {
+    const nextLesson = currentLesson + 1;
+    navigate(`/course-learning/${courseId}?lesson=${nextLesson}`);
   };
 
   if (!user) return <div>Loading...</div>;
@@ -354,7 +360,7 @@ const PersonalArea = () => {
                   {enrollments.map((enrollment) => {
                     const course = courses.find((c) => c.id === enrollment.course_id);
                     if (!course) return null;
-                    const progressPercent = Math.round((enrollment.current_lesson / (course.total_lessons || 1)) * 100);
+                    const progressPercent = Math.round((enrollment.current_lesson / course.total_lessons) * 100);
                     return (
                       <TableRow key={enrollment.id}>
                         <TableCell>{course.title}</TableCell>
@@ -365,7 +371,7 @@ const PersonalArea = () => {
                           </ProgressBar>
                         </TableCell>
                         <TableCell align="center">
-                          <StyledButton component={Link} to={`/course-learning/${course.id}`}>
+                          <StyledButton onClick={() => handleCourseEnter(course.id, enrollment.current_lesson)}>
                             כניסה לקורס
                           </StyledButton>
                         </TableCell>
@@ -398,7 +404,7 @@ const PersonalArea = () => {
         <MeetingButtonContainer>
           <StyledButton
             disabled={meetingUsed}
-            startIcon={<FaCalendarAlt />}
+            startIcon={<FaCalendarAlt style={{ marginRight: '8px' }} />}
             onClick={handleMeetingRequest}
           >
             קביעת פגישה אישית עם עידו
