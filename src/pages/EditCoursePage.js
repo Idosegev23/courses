@@ -84,6 +84,7 @@ const EditCoursePage = () => {
     description: '',
     price: 0,
     discountPrice: 0,
+    discountPercentage: 0,
     duration: '',
     details: '',
     lessons: [{ title: '', videoLink: '', duration: '', summary: '', faq: [], exercises: [] }],
@@ -108,6 +109,7 @@ const EditCoursePage = () => {
         description: data.description,
         price: data.price,
         discountPrice: data.discountPrice || 0,
+        discountPercentage: data.discountPercentage || 0,
         duration: data.duration,
         details: data.details,
         lessons: data.lessons || [],
@@ -123,6 +125,44 @@ const EditCoursePage = () => {
       ...prevCourse,
       [name]: value,
     }));
+
+    if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
+      handleDiscountCalculation(name, value);
+    }
+  };
+
+  const handleDiscountCalculation = (name, value) => {
+    let newCourse = { ...course, [name]: value };
+
+    if (name === 'price') {
+      if (course.discountPrice) {
+        newCourse.discountPercentage = calculateDiscountPercentage(value, course.discountPrice);
+      }
+    } else if (name === 'discountPrice') {
+      if (course.price) {
+        newCourse.discountPercentage = calculateDiscountPercentage(course.price, value);
+      }
+    } else if (name === 'discountPercentage') {
+      if (course.price) {
+        newCourse.discountPrice = calculateDiscountPrice(course.price, value);
+      }
+    }
+
+    setCourse(newCourse);
+  };
+
+  const calculateDiscountPercentage = (price, discountPrice) => {
+    if (price && discountPrice) {
+      return ((price - discountPrice) / price * 100).toFixed(2);
+    }
+    return '';
+  };
+
+  const calculateDiscountPrice = (price, discountPercentage) => {
+    if (price && discountPercentage) {
+      return (price - (price * discountPercentage / 100)).toFixed(2);
+    }
+    return '';
   };
 
   const handleLessonChange = (index, name, value) => {
@@ -246,6 +286,16 @@ const EditCoursePage = () => {
             name="discountPrice"
             variant="outlined"
             value={course.discountPrice}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            type="number"
+            label="אחוז הנחה (אופציונלי)"
+            name="discountPercentage"
+            variant="outlined"
+            value={course.discountPercentage}
             onChange={handleChange}
             margin="normal"
           />
