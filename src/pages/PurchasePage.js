@@ -60,12 +60,29 @@ const CourseDescription = styled.p`
   z-index: 1;
 `;
 
-const PriceTag = styled.h2`
-  font-size: 1.5rem;
-  color: #000;
+const PriceContainer = styled.div`
   margin-bottom: 2rem;
   position: relative;
   z-index: 1;
+`;
+
+const OriginalPrice = styled.span`
+  font-size: 1.25rem;
+  color: #333;
+  text-decoration: line-through;
+  margin-right: 1rem;
+`;
+
+const DiscountedPrice = styled.h2`
+  font-size: 1.5rem;
+  color: #F25C78;
+  display: inline;
+`;
+
+const DiscountPercentage = styled.span`
+  font-size: 1.25rem;
+  color: #333;
+  margin-left: 1rem;
 `;
 
 const StyledButton = styled.button`
@@ -241,6 +258,14 @@ const PurchasePage = () => {
     }
   };
 
+  const calculateDiscount = (originalPrice, newPrice) => {
+    if (originalPrice && newPrice && originalPrice > newPrice) {
+      const discount = ((originalPrice - newPrice) / originalPrice) * 100;
+      return Math.round(discount);
+    }
+    return 0;
+  };
+
   if (loading) {
     return <Message>טוען...</Message>;
   }
@@ -249,13 +274,26 @@ const PurchasePage = () => {
     return <Message>לא נמצא קורס עם המזהה הזה.</Message>;
   }
 
+  const discountPercentage = calculateDiscount(course.original_price, course.price);
+
   return (
     <>
       <GlobalStyle />
       <PageContainer>
         <PageTitle>{course.title}</PageTitle>
         <CourseDescription>{course.description}</CourseDescription>
-        <PriceTag>עלות: {course.price} ש"ח</PriceTag>
+        <PriceContainer>
+          {course.original_price && course.original_price > course.price && (
+            <>
+              <OriginalPrice>{course.original_price} ש"ח</OriginalPrice>
+              <DiscountedPrice>{course.price} ש"ח</DiscountedPrice>
+              <DiscountPercentage>({discountPercentage}% הנחה)</DiscountPercentage>
+            </>
+          )}
+          {!course.original_price || course.original_price <= course.price ? (
+            <DiscountedPrice>{course.price} ש"ח</DiscountedPrice>
+          ) : null}
+        </PriceContainer>
         {course.is_available ? (
           <StyledButton onClick={handlePurchase} isPurchase>רכוש קורס</StyledButton>
         ) : (
