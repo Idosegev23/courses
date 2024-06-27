@@ -45,7 +45,6 @@ const CardContainer = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
   height: 100%;
-  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
