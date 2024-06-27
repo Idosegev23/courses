@@ -69,6 +69,9 @@ const StyledButton = styled(Button)`
   transition: all 0.3s;
   border: none;
   box-shadow: 0 3px 5px 2px rgba(191, 75, 129, .3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     transform: translateY(-2px);
@@ -78,6 +81,10 @@ const StyledButton = styled(Button)`
   @media (max-width: 768px) {
     padding: 0.75rem 1.5rem;
     font-size: 0.875rem;
+  }
+
+  svg {
+    margin-left: 8px;
   }
 `;
 
@@ -150,6 +157,14 @@ const DiscountInfo = styled.div`
   text-align: center;
   font-size: 1rem;
   color: #333;
+`;
+
+const CourseGrid = styled(Grid)`
+  margin-top: 2rem;
+`;
+
+const CourseCard = styled(Grid)`
+  display: flex;
 `;
 
 const PersonalArea = () => {
@@ -328,14 +343,6 @@ const PersonalArea = () => {
           </DiscountInfo>
         )}
 
-        <StyledButton
-          disabled={meetingUsed}
-          startIcon={<FaCalendarAlt style={{ marginRight: '8px' }} />}
-          onClick={handleMeetingRequest}
-        >
-          קביעת פגישה אישית עם עידו
-        </StyledButton>
-
         {notifications.length > 0 && (
           <NotificationContainer>
             <Typography variant="h4" gutterBottom>הודעות</Typography>
@@ -393,11 +400,21 @@ const PersonalArea = () => {
           )}
         </Box>
 
+        <Box mb={4} mt={4}>
+          <StyledButton
+            disabled={meetingUsed}
+            onClick={handleMeetingRequest}
+          >
+            <FaCalendarAlt style={{ marginRight: '8px' }} />
+            קביעת פגישה אישית עם עידו
+          </StyledButton>
+        </Box>
+
         <Box mb={4}>
           <Typography variant="h4" gutterBottom>קורסים נוספים</Typography>
-          <Grid container spacing={3}>
+          <CourseGrid container spacing={3}>
             {nonEnrolledCourses.map((course) => (
-              <Grid item xs={12} sm={6} md={4} key={course.id}>
+              <CourseCard item xs={12} sm={6} md={4} key={course.id}>
                 <CardContainer>
                   <Typography variant="h5">{course.title}</Typography>
                   <Typography>{course.description}</Typography>
@@ -405,13 +422,13 @@ const PersonalArea = () => {
                     רכוש קורס
                   </StyledButton>
                 </CardContainer>
-              </Grid>
+              </CourseCard>
             ))}
-          </Grid>
+          </CourseGrid>
         </Box>
       </PageContainer>
-    </ThemeProvider>
+      </ThemeProvider>
   );
 };
-
 export default PersonalArea;
+
