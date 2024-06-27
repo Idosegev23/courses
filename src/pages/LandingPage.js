@@ -44,7 +44,7 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 100%; // הוספת שורה זו
+  height: 75%; // הוספת שורה זו
   display: flex;
   flex-direction: column;
   justify-content: space-between;
