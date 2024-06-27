@@ -66,6 +66,7 @@ const AddCoursePage = () => {
     description: '',
     price: '',
     discountPrice: '',
+    discountPercentage: '',
     duration: '',
     details: '',
     lessons: [{ title: '', videoLink: '', duration: '', faq: [], exercises: [], summary: '' }],
@@ -83,6 +84,44 @@ const AddCoursePage = () => {
       [name]: value,
     }));
     setErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
+
+    if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
+      handleDiscountCalculation(name, value);
+    }
+  };
+
+  const handleDiscountCalculation = (name, value) => {
+    let newCourse = { ...course, [name]: value };
+
+    if (name === 'price') {
+      if (course.discountPrice) {
+        newCourse.discountPercentage = calculateDiscountPercentage(value, course.discountPrice);
+      }
+    } else if (name === 'discountPrice') {
+      if (course.price) {
+        newCourse.discountPercentage = calculateDiscountPercentage(course.price, value);
+      }
+    } else if (name === 'discountPercentage') {
+      if (course.price) {
+        newCourse.discountPrice = calculateDiscountPrice(course.price, value);
+      }
+    }
+
+    setCourse(newCourse);
+  };
+
+  const calculateDiscountPercentage = (price, discountPrice) => {
+    if (price && discountPrice) {
+      return ((price - discountPrice) / price * 100).toFixed(2);
+    }
+    return '';
+  };
+
+  const calculateDiscountPrice = (price, discountPercentage) => {
+    if (price && discountPercentage) {
+      return (price - (price * discountPercentage / 100)).toFixed(2);
+    }
+    return '';
   };
 
   const handleLessonChange = (index, name, value) => {
@@ -295,6 +334,17 @@ const AddCoursePage = () => {
               onChange={handleChange}
               error={!!errors.discountPrice}
               helperText={errors.discountPrice}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label="אחוז הנחה (אופציונלי)"
+              name="discountPercentage"
+              value={course.discountPercentage}
+              onChange={handleChange}
+              error={!!errors.discountPercentage}
+              helperText={errors.discountPercentage}
               margin="normal"
             />
             <TextField
