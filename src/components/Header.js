@@ -27,7 +27,7 @@ const ButtonContainer = styled.div`
   align-items: center;
   flex-wrap: wrap;
   gap: 4rem;
-  margin-top: 1rem;
+  margin-top: auto;
 `;
 
 const StyledButton = styled(Link)`
