@@ -6,20 +6,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Container, Grid } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
+// יצירת ערכת נושא מותאמת אישית של Material-UI
 const theme = createTheme({
   palette: {
-    primary: {
-      main: '#62238C',
-    },
-    secondary: {
-      main: '#BF4B81',
-    },
+    primary: { main: '#62238C' },
+    secondary: { main: '#BF4B81' },
   },
-  typography: {
-    fontFamily: 'Heebo, sans-serif',
-  },
+  typography: { fontFamily: 'Heebo, sans-serif' },
 });
 
+// סגנונות גלובליים
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap');
   
@@ -32,6 +28,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+// רכיבים מעוצבים
 const PageContainer = styled(Container)`
   padding: 2rem;
   text-align: center;
@@ -41,11 +38,6 @@ const PageContainer = styled(Container)`
 
 const Header = styled.header`
   margin-bottom: 4rem;
-`;
-
-const Logo = styled.img`
-  height: 100px;
-  margin-bottom: 1rem;
 `;
 
 const CardContainer = styled(motion.div)`
@@ -91,6 +83,7 @@ const CardItem = styled(Grid)`
   display: flex;
 `;
 
+// הקומפוננטה הראשית
 const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [userEnrollments, setUserEnrollments] = useState([]);
@@ -101,6 +94,7 @@ const LandingPage = () => {
       if (userData && userData.user) {
         const userId = userData.user.id;
 
+        // שליפת הקורסים
         const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
         if (coursesError) {
           console.error('Error fetching courses:', coursesError);
@@ -108,6 +102,7 @@ const LandingPage = () => {
           setCourses(coursesData);
         }
 
+        // שליפת ההרשמות של המשתמש
         const { data: enrollmentsData, error: enrollmentsError } = await supabase
           .from('enrollments')
           .select('course_id')
@@ -119,6 +114,7 @@ const LandingPage = () => {
           setUserEnrollments(enrollmentsData.map(enrollment => enrollment.course_id));
         }
       } else {
+        // אם המשתמש לא מחובר, שליפת הקורסים בלבד
         const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
         if (coursesError) {
           console.error('Error fetching courses:', coursesError);
@@ -136,7 +132,6 @@ const LandingPage = () => {
       <GlobalStyle />
       <PageContainer maxWidth="lg">
         <Header>
-          <Logo src="/path-to-your-logo.png" alt="Logo" />
           <Typography variant="h2" component="h1" sx={{
             fontWeight: 'bold',
             color: '#62238C',
