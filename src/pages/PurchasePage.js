@@ -44,7 +44,7 @@ const PageContainer = styled.div`
 const PageTitle = styled.h1`
   font-size: 2rem;
   font-weight: bold;
-  color: #62238C; /* Changed to primary brand color */
+  color: #62238C; /* Primary brand color */
   margin-bottom: 2rem;
   text-align: center;
   position: relative;
@@ -68,14 +68,14 @@ const PriceContainer = styled.div`
 
 const OriginalPrice = styled.span`
   font-size: 1.25rem;
-  color: #BF4B81; /* Changed to secondary brand color */
+  color: #BF4B81; /* Secondary brand color */
   text-decoration: line-through;
   margin-right: 1rem;
 `;
 
 const DiscountedPrice = styled.h2`
   font-size: 1.5rem;
-  color: #62238C; /* Changed to primary brand color */
+  color: #62238C; /* Primary brand color */
   display: inline;
 `;
 
