@@ -3,10 +3,9 @@ import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Typography, Container, Grid } from '@mui/material';
+import { Typography, Container, Grid, Box } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-// יצירת ערכת נושא מותאמת אישית של Material-UI
 const theme = createTheme({
   palette: {
     primary: { main: '#62238C' },
@@ -15,7 +14,6 @@ const theme = createTheme({
   typography: { fontFamily: 'Heebo, sans-serif' },
 });
 
-// סגנונות גלובליים
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap');
   
@@ -28,7 +26,6 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-// רכיבים מעוצבים
 const PageContainer = styled(Container)`
   padding: 2rem;
   text-align: center;
@@ -48,10 +45,10 @@ const CardContainer = styled(motion.div)`
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
   height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 300px;
 `;
 
 const StyledButton = styled(Link)`
@@ -74,16 +71,19 @@ const StyledButton = styled(Link)`
   }
 `;
 
-const CardGrid = styled(Grid)`
+const CardContent = styled.div`
+  flex-grow: 1;
   display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
   flex-wrap: wrap;
 `;
 
-const CardItem = styled(Grid)`
-  display: flex;
-`;
-
-// הקומפוננטה הראשית
 const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [userEnrollments, setUserEnrollments] = useState([]);
@@ -94,7 +94,6 @@ const LandingPage = () => {
       if (userData && userData.user) {
         const userId = userData.user.id;
 
-        // שליפת הקורסים
         const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
         if (coursesError) {
           console.error('Error fetching courses:', coursesError);
@@ -102,7 +101,6 @@ const LandingPage = () => {
           setCourses(coursesData);
         }
 
-        // שליפת ההרשמות של המשתמש
         const { data: enrollmentsData, error: enrollmentsError } = await supabase
           .from('enrollments')
           .select('course_id')
@@ -114,7 +112,6 @@ const LandingPage = () => {
           setUserEnrollments(enrollmentsData.map(enrollment => enrollment.course_id));
         }
       } else {
-        // אם המשתמש לא מחובר, שליפת הקורסים בלבד
         const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
         if (coursesError) {
           console.error('Error fetching courses:', coursesError);
@@ -145,48 +142,52 @@ const LandingPage = () => {
           </Typography>
         </Header>
 
-        <CardGrid container spacing={4}>
+        <Grid container spacing={4}>
           <AnimatePresence>
             {courses.map((course) => (
-              <CardItem item xs={12} sm={6} md={4} key={course.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ display: 'flex', width: '100%' }}
-                >
-                  <CardContainer>
-                    <div>
-                      <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
-                        {course.title}
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
-                        {course.description}
-                      </Typography>
-                    </div>
-                    <div>
-                      {userEnrollments.includes(course.id) ? (
-                        <StyledButton to={`/course-learning/${course.id}`} isPrimary>
-                          כניסה לקורס
-                        </StyledButton>
-                      ) : (
-                        <>
-                          <StyledButton to={`/course/${course.id}`}>
-                            פרטים נוספים
-                          </StyledButton>
-                          <StyledButton to={`/purchase/${course.id}`} isPrimary>
-                            רכוש עכשיו
-                          </StyledButton>
-                        </>
-                      )}
-                    </div>
-                  </CardContainer>
-                </motion.div>
-              </CardItem>
+              <Grid item xs={12} sm={6} md={4} key={course.id}>
+                <Box display="flex" height="100%">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ width: '100%' }}
+                  >
+                    <CardContainer>
+                      <CardContent>
+                        <div>
+                          <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
+                            {course.title}
+                          </Typography>
+                          <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
+                            {course.description}
+                          </Typography>
+                        </div>
+                        <ButtonContainer>
+                          {userEnrollments.includes(course.id) ? (
+                            <StyledButton to={`/course-learning/${course.id}`} isPrimary>
+                              כניסה לקורס
+                            </StyledButton>
+                          ) : (
+                            <>
+                              <StyledButton to={`/course/${course.id}`}>
+                                פרטים נוספים
+                              </StyledButton>
+                              <StyledButton to={`/purchase/${course.id}`} isPrimary>
+                                רכוש עכשיו
+                              </StyledButton>
+                            </>
+                          )}
+                        </ButtonContainer>
+                      </CardContent>
+                    </CardContainer>
+                  </motion.div>
+                </Box>
+              </Grid>
             ))}
           </AnimatePresence>
-        </CardGrid>
+        </Grid>
 
         {courses.length === 0 && (
           <Typography variant="body1" sx={{ mt: 4, color: '#666' }}>
