@@ -61,7 +61,7 @@ const PageContainer = styled(Container)`
 
 const StyledButton = styled(Button)`
   margin: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 2rem;
   border-radius: 1rem;
   text-decoration: none;
   color: #fff !important;
@@ -73,6 +73,11 @@ const StyledButton = styled(Button)`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
   }
 `;
 
@@ -145,10 +150,6 @@ const DiscountInfo = styled.div`
   text-align: center;
   font-size: 1rem;
   color: #333;
-`;
-
-const MeetingButtonContainer = styled.div`
-  margin-top: 2rem;
 `;
 
 const PersonalArea = () => {
@@ -327,6 +328,14 @@ const PersonalArea = () => {
           </DiscountInfo>
         )}
 
+        <StyledButton
+          disabled={meetingUsed}
+          startIcon={<FaCalendarAlt style={{ marginRight: '8px' }} />}
+          onClick={handleMeetingRequest}
+        >
+          קביעת פגישה אישית עם עידו
+        </StyledButton>
+
         {notifications.length > 0 && (
           <NotificationContainer>
             <Typography variant="h4" gutterBottom>הודעות</Typography>
@@ -400,16 +409,6 @@ const PersonalArea = () => {
             ))}
           </Grid>
         </Box>
-
-        <MeetingButtonContainer>
-          <StyledButton
-            disabled={meetingUsed}
-            startIcon={<FaCalendarAlt style={{ marginRight: '8px' }} />}
-            onClick={handleMeetingRequest}
-          >
-            קביעת פגישה אישית עם עידו
-          </StyledButton>
-        </MeetingButtonContainer>
       </PageContainer>
     </ThemeProvider>
   );
