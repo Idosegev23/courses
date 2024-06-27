@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import { Typography, Container, Grid, Button, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
+import Swal from 'sweetalert2';
+import { FaCalendarAlt } from 'react-icons/fa';
 
 const theme = createTheme({
   palette: {
@@ -62,7 +64,7 @@ const StyledButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
   text-decoration: none;
-  color: #fff;
+  color: #fff !important;
   background: linear-gradient(45deg, #62238C 30%, #BF4B81 90%);
   transition: all 0.3s;
   border: none;
@@ -266,22 +268,35 @@ const PersonalArea = () => {
   };
 
   const handleMeetingRequest = async () => {
-    try {
-      const { error } = await supabase
-        .from('meetings')
-        .insert({ user_id: user.id });
+    const result = await Swal.fire({
+      title: 'האם אתה בטוח?',
+      text: "זוהי פגישה חד פעמית של 30 דקות.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'כן, קבע פגישה!',
+      cancelButtonText: 'ביטול'
+    });
 
-      if (error) {
-        console.error('Error requesting meeting:', error);
+    if (result.isConfirmed) {
+      try {
+        const { error } = await supabase
+          .from('meetings')
+          .insert({ user_id: user.id });
+
+        if (error) {
+          console.error('Error requesting meeting:', error);
+          alert('אירעה שגיאה בבקשה לפגישה.');
+          return;
+        }
+
+        setMeetingUsed(true);
+        Swal.fire('הבקשה נשלחה!', 'הבקשה לפגישה נשלחה בהצלחה!', 'success');
+      } catch (error) {
+        console.error('Unexpected error:', error);
         alert('אירעה שגיאה בבקשה לפגישה.');
-        return;
       }
-
-      setMeetingUsed(true);
-      alert('הבקשה לפגישה נשלחה בהצלחה!');
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      alert('אירעה שגיאה בבקשה לפגישה.');
     }
   };
 
@@ -381,6 +396,8 @@ const PersonalArea = () => {
           target="_blank"
           rel="noopener noreferrer"
           disabled={meetingUsed}
+          startIcon={<FaCalendarAlt />}
+          onClick={handleMeetingRequest}
         >
           קביעת פגישה אישית עם עידו
         </StyledButton>
