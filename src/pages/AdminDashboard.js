@@ -146,21 +146,37 @@ const AdminDashboard = () => {
   };
 
   const fetchUserProgress = async () => {
-    const { data, error } = await supabase
+    const { data: progressData, error: progressError } = await supabase
       .from('user_progress')
       .select('*');
-    
-    if (error) {
-      console.error('Error fetching user progress:', error);
-    } else {
-      const progressMap = {};
-      data.forEach(progress => {
-        progressMap[progress.user_id] = progress;
-      });
-      setUserProgress(progressMap);
+  
+    if (progressError) {
+      console.error('Error fetching user progress:', progressError);
+      return;
     }
+  
+    const { data: enrollmentsData, error: enrollmentsError } = await supabase
+      .from('enrollments')
+      .select(`
+        *,
+        courses (title, total_lessons)
+      `)
+      .eq('user_id', userId); // Make sure to pass the userId when calling this function
+  
+    if (enrollmentsError) {
+      console.error('Error fetching enrollments:', enrollmentsError);
+      return;
+    }
+  
+    const progressMap = {};
+    progressData.forEach(progress => {
+      progressMap[progress.user_id] = progress;
+    });
+    
+    setUserProgress(progressMap);
+    setEnrollments(enrollmentsData || []);
   };
-
+  
   const checkAndSendAutomatedEmails = async () => {
     for (const userId in userProgress) {
       const progress = userProgress[userId];
@@ -262,24 +278,38 @@ const AdminDashboard = () => {
   const handleViewUser = async (userId) => {
     const user = users.find((user) => user.id === userId);
     if (user) {
+      const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
+  
+      let enrollmentDetails = '';
+      userEnrollments.forEach(enrollment => {
+        const course = courses.find(course => course.id === enrollment.course_id);
+        if (course) {
+          enrollmentDetails += `
+            <p><strong>Course:</strong> ${course.title}</p>
+            <p><strong>Progress:</strong> ${enrollment.current_lesson} / ${course.total_lessons}</p>
+          `;
+        }
+      });
+  
       const result = await Swal.fire({
-        title: `פרטי משתמש: ${user.username}`,
+        title: `User Details: ${user.username}`,
         html: `
           <p><strong>אימייל:</strong> ${user.email}</p>
           <p><strong>הנחה:</strong> ${user.discount}%</p>
           <p><strong>שם משתמש:</strong> ${user.username}</p>
+          ${enrollmentDetails}
         `,
         showCancelButton: true,
-        confirmButtonText: 'ערוך',
+        confirmButtonText: 'עריכה',
         cancelButtonText: 'סגור'
       });
-
+  
       if (result.isConfirmed) {
         handleEditUserDetails(userId);
       }
     }
   };
-
+  
   const handleDeleteUser = async (userId) => {
     const result = await Swal.fire({
       title: 'האם אתה בטוח?',
