@@ -128,7 +128,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    fetchUserProgress();
   }, []);
 
   const fetchData = async () => {
@@ -150,12 +149,12 @@ const AdminDashboard = () => {
       .from('user_progress')
       .select('*')
       .eq('user_id', userId);
-  
+
     if (progressError) {
       console.error('Error fetching user progress:', progressError);
       return;
     }
-  
+
     const { data: enrollmentsData, error: enrollmentsError } = await supabase
       .from('enrollments')
       .select(`
@@ -163,109 +162,63 @@ const AdminDashboard = () => {
         courses (title, total_lessons)
       `)
       .eq('user_id', userId);
-  
+
     if (enrollmentsError) {
       console.error('Error fetching enrollments:', enrollmentsError);
       return;
     }
-  
+
     const progressMap = {};
     progressData.forEach(progress => {
       progressMap[progress.user_id] = progress;
     });
-  
+
     setUserProgress(prevState => ({
       ...prevState,
       [userId]: progressMap
     }));
     setEnrollments(enrollmentsData || []);
   };
-  
-  const sendCourseRecommendationEmail = async (userId) => {
-    // קוד לשליחת אימייל המלצה לקורסים נוספים
-    console.log(`Sending course recommendation email to user ${userId}`);
-    // כאן תוכל להוסיף את הלוגיקה לשליחת אימייל אמיתי
-  };
 
-  const sendMotivationEmail = async (userId) => {
-    // קוד לשליחת אימייל מוטיבציה
-    console.log(`Sending motivation email to user ${userId}`);
-    // כאן תוכל להוסיף את הלוגיקה לשליחת אימייל אמיתי
-  };
+  const checkAndSendAutomatedEmails = async () => {
+    for (const userId in userProgress) {
+      const progress = userProgress[userId];
 
-  const handleEditCourse = (courseId) => {
-    navigate(`/courses/${courseId}/edit`);
-  };
+      // Check for 80% course completion
+      if (progress.completion_percentage >= 80) {
+        await sendCourseRecommendationEmail(userId);
+      }
 
-  const handleDeleteCourse = async (courseId) => {
-    const result = await Swal.fire({
-      title: 'האם אתה בטוח?',
-      text: "לא ניתן לשחזר פעולה זו!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'כן, מחק!'
-    });
+      // Check for inactivity
+      const lastActivityDate = new Date(progress.last_activity);
+      const currentDate = new Date();
+      const daysSinceLastActivity = (currentDate - lastActivityDate) / (1000 * 60 * 60 * 24);
 
-    if (result.isConfirmed) {
-      try {
-        const { error } = await supabase.from('courses').delete().eq('id', courseId);
-        if (error) throw error;
-        setCourses(courses.filter(course => course.id !== courseId));
-        Swal.fire('נמחק!', 'הקורס נמחק בהצלחה.', 'success');
-      } catch (error) {
-        console.error('Error deleting course:', error);
-        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת הקורס', 'error');
+      if (daysSinceLastActivity > 7) {  // If inactive for more than a week
+        await sendMotivationEmail(userId);
       }
     }
   };
 
-  const handleAddDiscount = (userId) => {
-    const user = users.find((user) => user.id === userId);
-    if (user) {
-      setEditingUserId(userId);
-      setEditingUserDiscount(user.discount);
-      setShowEditUserModal(true);
-    }
+  const sendCourseRecommendationEmail = async (userId) => {
+    // Code to send course recommendation email
+    console.log(`Sending course recommendation email to user ${userId}`);
+    // Add logic to send a real email here
   };
 
-  const handleUpdateUserDiscount = async () => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ discount: editingUserDiscount })
-        .eq('id', editingUserId);
-
-      if (error) throw error;
-
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === editingUserId ? { ...user, discount: editingUserDiscount } : user
-        )
-      );
-
-      setShowEditUserModal(false);
-      setEditingUserId(null);
-      setEditingUserDiscount('');
-      Swal.fire('עודכן בהצלחה', 'ההנחה עודכנה בהצלחה', 'success');
-    } catch (error) {
-      console.error('Error updating user discount:', error);
-      Swal.fire('שגיאה', 'אירעה שגיאה בעדכון ההנחה', 'error');
-    }
-  };
-
-  const handleViewCourse = (courseId) => {
-    navigate(`/course-learning/${courseId}`);
+  const sendMotivationEmail = async (userId) => {
+    // Code to send motivation email
+    console.log(`Sending motivation email to user ${userId}`);
+    // Add logic to send a real email here
   };
 
   const handleViewUser = async (userId) => {
     await fetchUserProgress(userId);
-  
+
     const user = users.find((user) => user.id === userId);
     if (user) {
       const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
-  
+
       let enrollmentDetails = '';
       userEnrollments.forEach(enrollment => {
         const course = courses.find(course => course.id === enrollment.course_id);
@@ -276,131 +229,22 @@ const AdminDashboard = () => {
           `;
         }
       });
-  
+
       const result = await Swal.fire({
         title: `User Details: ${user.username}`,
         html: `
-          <p><strong>אימייל:</strong> ${user.email}</p>
-          <p><strong>הנחה:</strong> ${user.discount}%</p>
-          <p><strong>שם משתמש:</strong> ${user.username}</p>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>Discount:</strong> ${user.discount}%</p>
+          <p><strong>Username:</strong> ${user.username}</p>
           ${enrollmentDetails}
         `,
         showCancelButton: true,
-        confirmButtonText: 'עריכה',
-        cancelButtonText: 'סגור'
+        confirmButtonText: 'Edit',
+        cancelButtonText: 'Close'
       });
-  
+
       if (result.isConfirmed) {
         handleEditUserDetails(userId);
-      }
-    }
-  };
-  
-  const handleDeleteUser = async (userId) => {
-    const result = await Swal.fire({
-      title: 'האם אתה בטוח?',
-      text: "לא ניתן לשחזר פעולה זו!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'כן, מחק!'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const { error } = await supabase.from('users').delete().eq('id', userId);
-        if (error) throw error;
-        setUsers(users.filter(user => user.id !== userId));
-        Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת המשתמש', 'error');
-      }
-    }
-  };
-
-  const handleSaveNewUser = async () => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-        options: {
-          data: {
-            username: newUsername,
-            discount: newUserDiscount,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      Swal.fire('נוצר בהצלחה', 'המשתמש נוצר בהצלחה', 'success');
-      setShowAddUserModal(false);
-      setNewUserEmail('');
-      setNewUserPassword('');
-      setNewUsername('');
-      setNewUserDiscount('');
-
-      fetchData();
-    } catch (error) {
-      console.error('Error creating user:', error);
-      Swal.fire('שגיאה', 'אירעה שגיאה ביצירת המשתמש', 'error');
-    }
-  };
-
-  const handleEditUserDetails = (userId) => {
-    const user = users.find((user) => user.id === userId);
-    setEditingUserId(userId);
-    setNewUsername(user ? user.username : '');
-    setShowEditUserModal(true);
-  };
-
-  const handleUpdateUserDetails = async () => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ username: newUsername })
-        .eq('id', editingUserId);
-
-      if (error) throw error;
-
-      Swal.fire('עודכן בהצלחה', 'פרטי המשתמש עודכנו בהצלחה', 'success');
-      setUsers(prevUsers =>
-        prevUsers.map(user =>
-          user.id === editingUserId ? { ...user, username: newUsername } : user
-        )
-      );
-
-      setShowEditUserModal(false);
-      setEditingUserId(null);
-      setNewUsername('');
-    } catch (error) {
-      console.error('Error updating user details:', error);
-      Swal.fire('שגיאה', 'אירעה שגיאה בעדכון פרטי המשתמש', 'error');
-    }
-  };
-
-  const handleDeleteEnrollment = async (enrollmentId) => {
-    const result = await Swal.fire({
-      title: 'האם אתה בטוח?',
-      text: "לא ניתן לשחזר פעולה זו!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'כן, מחק!'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const { error } = await supabase.from('enrollments').delete().eq('id', enrollmentId);
-        if (error) throw error;
-        setEnrollments(enrollments.filter(enrollment => enrollment.id !== enrollmentId));
-        Swal.fire('נמחק!', 'ההרשמה נמחקה בהצלחה.', 'success');
-      } catch (error) {
-        console.error('Error deleting enrollment:', error);
-        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת ההרשמה', 'error');
       }
     }
   };
