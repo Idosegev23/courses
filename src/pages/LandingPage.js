@@ -44,7 +44,7 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 75%; // הוספת שורה זו
+  height: 75%; // עדכון שורה זו
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -71,16 +71,16 @@ const StyledButton = styled(Link)`
 `;
 
 const CardContent = styled.div`
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  height: 100%;
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
+  margin-top: auto; // לשמור על יישור הכפתורים לתחתית הכרטיסייה
 `;
 
 const LandingPage = () => {
