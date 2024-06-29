@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import Swal from 'sweetalert2';
+import confetti from 'canvas-confetti';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 
 const GlobalStyle = createGlobalStyle`
@@ -201,16 +202,19 @@ const CheckboxLabel = styled.label`
 
 const CourseLearningPage = () => {
   const { courseId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [lessons, setLessons] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [exercisesCompleted, setExercisesCompleted] = useState({});
+  const [totalLessons, setTotalLessons] = useState(0);
 
   useEffect(() => {
     const fetchCourseContent = async () => {
       const { data, error } = await supabase
         .from('courses')
-        .select('lessons, faq')
+        .select('lessons, faq, total_lessons')
         .eq('id', courseId)
         .single();
       if (error) {
@@ -218,11 +222,41 @@ const CourseLearningPage = () => {
       } else {
         setLessons(data.lessons || []);
         setFaqs(data.faq || []);
+        setTotalLessons(data.total_lessons || 0);
+        
+        // Set current lesson based on URL parameter
+        const urlParams = new URLSearchParams(location.search);
+        const lessonParam = urlParams.get('lesson');
+        if (lessonParam) {
+          const lessonIndex = parseInt(lessonParam) - 1;
+          if (lessonIndex >= 0 && lessonIndex < data.lessons.length) {
+            setCurrentLessonIndex(lessonIndex);
+          }
+        }
+
+        // Check if this is the last lesson
+        if (parseInt(lessonParam) === data.total_lessons) {
+          showCourseCompletionCelebration();
+        }
       }
     };
 
     fetchCourseContent();
-  }, [courseId]);
+  }, [courseId, location.search]);
+
+  const showCourseCompletionCelebration = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    Swal.fire({
+      title: 'כל הכבוד!',
+      text: 'סיימת את הקורס בהצלחה!',
+      icon: 'success',
+      confirmButtonText: 'תודה!'
+    });
+  };
 
   const handleNextLesson = async () => {
     if (currentLessonIndex < lessons.length - 1) {
@@ -235,9 +269,15 @@ const CourseLearningPage = () => {
         cancelButtonText: 'לא, עדיין לא',
       }).then(async (result) => {
         if (result.isConfirmed) {
-          setCurrentLessonIndex(currentLessonIndex + 1);
-          await updateProgress(currentLessonIndex + 1);
+          const nextLessonIndex = currentLessonIndex + 1;
+          setCurrentLessonIndex(nextLessonIndex);
+          await updateProgress(nextLessonIndex);
+          navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
           Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
+
+          if (nextLessonIndex === lessons.length - 1) {
+            showCourseCompletionCelebration();
+          }
         }
       });
     }
@@ -246,6 +286,7 @@ const CourseLearningPage = () => {
   const handlePrevLesson = () => {
     if (currentLessonIndex > 0) {
       setCurrentLessonIndex(currentLessonIndex - 1);
+      navigate(`/course-learning/${courseId}?lesson=${currentLessonIndex}`);
     }
   };
 
