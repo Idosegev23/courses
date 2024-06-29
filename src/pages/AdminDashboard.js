@@ -249,6 +249,152 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleEditUserDetails = (userId) => {
+    const user = users.find((user) => user.id === userId);
+    setEditingUserId(userId);
+    setNewUsername(user ? user.username : '');
+    setShowEditUserModal(true);
+  };
+
+  const handleAddDiscount = (userId) => {
+    const user = users.find((user) => user.id === userId);
+    if (user) {
+      setEditingUserId(userId);
+      setEditingUserDiscount(user.discount);
+      setShowEditUserModal(true);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    const result = await Swal.fire({
+      title: 'האם אתה בטוח?',
+      text: "לא ניתן לשחזר פעולה זו!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'כן, מחק!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const { error } = await supabase.from('users').delete().eq('id', userId);
+        if (error) throw error;
+        setUsers(users.filter(user => user.id !== userId));
+        Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת המשתמש', 'error');
+      }
+    }
+  };
+
+  const handleEditCourse = (courseId) => {
+    navigate(`/courses/${courseId}/edit`);
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    const result = await Swal.fire({
+      title: 'האם אתה בטוח?',
+      text: "לא ניתן לשחזר פעולה זו!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'כן, מחק!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const { error } = await supabase.from('courses').delete().eq('id', courseId);
+        if (error) throw error;
+        setCourses(courses.filter(course => course.id !== courseId));
+        Swal.fire('נמחק!', 'הקורס נמחק בהצלחה.', 'success');
+      } catch (error) {
+        console.error('Error deleting course:', error);
+        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת הקורס', 'error');
+      }
+    }
+  };
+
+  const handleSaveNewUser = async () => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          data: {
+            username: newUsername,
+            discount: newUserDiscount,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      Swal.fire('נוצר בהצלחה', 'המשתמש נוצר בהצלחה', 'success');
+      setShowAddUserModal(false);
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUsername('');
+      setNewUserDiscount('');
+
+      fetchData();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      Swal.fire('שגיאה', 'אירעה שגיאה ביצירת המשתמש', 'error');
+    }
+  };
+
+  const handleUpdateUserDetails = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ username: newUsername })
+        .eq('id', editingUserId);
+
+      if (error) throw error;
+
+      Swal.fire('עודכן בהצלחה', 'פרטי המשתמש עודכנו בהצלחה', 'success');
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === editingUserId ? { ...user, username: newUsername } : user
+        )
+      );
+
+      setShowEditUserModal(false);
+      setEditingUserId(null);
+      setNewUsername('');
+    } catch (error) {
+      console.error('Error updating user details:', error);
+      Swal.fire('שגיאה', 'אירעה שגיאה בעדכון פרטי המשתמש', 'error');
+    }
+  };
+
+  const handleDeleteEnrollment = async (enrollmentId) => {
+    const result = await Swal.fire({
+      title: 'האם אתה בטוח?',
+      text: "לא ניתן לשחזר פעולה זו!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'כן, מחק!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const { error } = await supabase.from('enrollments').delete().eq('id', enrollmentId);
+        if (error) throw error;
+        setEnrollments(enrollments.filter(enrollment => enrollment.id !== enrollmentId));
+        Swal.fire('נמחק!', 'ההרשמה נמחקה בהצלחה.', 'success');
+      } catch (error) {
+        console.error('Error deleting enrollment:', error);
+        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת ההרשמה', 'error');
+      }
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
