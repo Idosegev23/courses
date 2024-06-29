@@ -378,7 +378,7 @@ const PersonalArea = () => {
             
             const currentLesson = enrollment.current_lesson || 0;
             const totalLessons = course.total_lessons || 1;
-            const progressPercent = Math.round((currentLesson / totalLessons) * 100);
+            const progressPercent = Math.min(Math.round((currentLesson / totalLessons) * 100), 100);
 
             console.log('Current Lesson:', currentLesson);
             console.log('Total Lessons:', totalLessons);
@@ -390,8 +390,8 @@ const PersonalArea = () => {
                 <TableCell>{currentLesson || 'אין נתונים'}</TableCell>
                 <TableCell>
                   <ProgressBar>
-                    <Progress percent={isNaN(progressPercent) ? 0 : progressPercent}>
-                      {isNaN(progressPercent) ? '0%' : `${progressPercent}%`}
+                    <Progress percent={progressPercent}>
+                      {`${progressPercent}%`}
                     </Progress>
                   </ProgressBar>
                 </TableCell>
