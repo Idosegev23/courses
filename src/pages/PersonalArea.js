@@ -95,7 +95,7 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 100%;
+  height: 75%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
