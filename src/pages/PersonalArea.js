@@ -356,49 +356,58 @@ const PersonalArea = () => {
             ))}
           </NotificationContainer>
         )}
+<Box mb={4}>
+  <Typography variant="h4" gutterBottom>הקורסים שלי</Typography>
+  {enrollments.length === 0 ? (
+    <Typography>לא נמצאו קורסים רשומים.</Typography>
+  ) : (
+    <TableContainer component={Paper}>
+      <Table aria-label="enrolled courses table">
+        <TableHead>
+          <TableRow>
+            <TableCell>קורס</TableCell>
+            <TableCell>שיעור נוכחי</TableCell>
+            <TableCell>התקדמות</TableCell>
+            <TableCell align="center">כניסה לקורס</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {enrollments.map((enrollment) => {
+            const course = courses.find((c) => c.id === enrollment.course_id);
+            if (!course) return null;
+            
+            const currentLesson = enrollment.current_lesson || 0;
+            const totalLessons = course.total_lessons || 1;
+            const progressPercent = Math.round((currentLesson / totalLessons) * 100);
 
-        <Box mb={4}>
-          <Typography variant="h4" gutterBottom>הקורסים שלי</Typography>
-          {enrollments.length === 0 ? (
-            <Typography>לא נמצאו קורסים רשומים.</Typography>
-          ) : (
-            <TableContainer component={Paper}>
-              <Table aria-label="enrolled courses table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>קורס</TableCell>
-                    <TableCell>שיעור נוכחי</TableCell>
-                    <TableCell>התקדמות</TableCell>
-                    <TableCell align="center">כניסה לקורס</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {enrollments.map((enrollment) => {
-                    const course = courses.find((c) => c.id === enrollment.course_id);
-                    if (!course) return null;
-                    const progressPercent = Math.round((enrollment.current_lesson / course.total_lessons) * 100);
-                    return (
-                      <TableRow key={enrollment.id}>
-                        <TableCell>{course.title}</TableCell>
-                        <TableCell>{enrollment.current_lesson || 'אין נתונים'}</TableCell>
-                        <TableCell>
-                          <ProgressBar>
-                            <Progress percent={progressPercent}>{progressPercent}%</Progress>
-                          </ProgressBar>
-                        </TableCell>
-                        <TableCell align="center">
-                          <StyledButton onClick={() => handleCourseEnter(course.id, enrollment.current_lesson)}>
-                            כניסה לקורס
-                          </StyledButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
+            console.log('Current Lesson:', currentLesson);
+            console.log('Total Lessons:', totalLessons);
+            console.log('Progress Percent:', progressPercent);
+
+            return (
+              <TableRow key={enrollment.id}>
+                <TableCell>{course.title}</TableCell>
+                <TableCell>{currentLesson || 'אין נתונים'}</TableCell>
+                <TableCell>
+                  <ProgressBar>
+                    <Progress percent={isNaN(progressPercent) ? 0 : progressPercent}>
+                      {isNaN(progressPercent) ? '0%' : `${progressPercent}%`}
+                    </Progress>
+                  </ProgressBar>
+                </TableCell>
+                <TableCell align="center">
+                  <StyledButton onClick={() => handleCourseEnter(course.id, currentLesson)}>
+                    כניסה לקורס
+                  </StyledButton>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  )}
+</Box>
 
         <Box mb={4} mt={4}>
           <StyledButton
