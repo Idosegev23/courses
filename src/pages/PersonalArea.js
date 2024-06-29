@@ -95,7 +95,7 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 75%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -322,9 +322,17 @@ const PersonalArea = () => {
     }
   };
 
-  const handleCourseEnter = (courseId, currentLesson) => {
-    const nextLesson = currentLesson + 1;
-    navigate(`/course-learning/${courseId}?lesson=${nextLesson}`);
+  const handleCourseEnter = (courseId, currentLesson, totalLessons) => {
+    if (currentLesson >= totalLessons) {
+      Swal.fire({
+        title: 'סיימת את הקורס!',
+        text: 'כל הכבוד! השלמת את כל השיעורים בקורס זה.',
+        icon: 'success',
+        confirmButtonText: 'תודה!'
+      });
+    } else {
+      navigate(`/course-learning/${courseId}?lesson=${currentLesson + 1}`);
+    }
   };
 
   if (!user) return <div>Loading...</div>;
@@ -356,58 +364,49 @@ const PersonalArea = () => {
             ))}
           </NotificationContainer>
         )}
-<Box mb={4}>
-  <Typography variant="h4" gutterBottom>הקורסים שלי</Typography>
-  {enrollments.length === 0 ? (
-    <Typography>לא נמצאו קורסים רשומים.</Typography>
-  ) : (
-    <TableContainer component={Paper}>
-      <Table aria-label="enrolled courses table">
-        <TableHead>
-          <TableRow>
-            <TableCell>קורס</TableCell>
-            <TableCell>שיעור נוכחי</TableCell>
-            <TableCell>התקדמות</TableCell>
-            <TableCell align="center">כניסה לקורס</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {enrollments.map((enrollment) => {
-            const course = courses.find((c) => c.id === enrollment.course_id);
-            if (!course) return null;
-            
-            const currentLesson = enrollment.current_lesson || 0;
-            const totalLessons = course.total_lessons || 1;
-            const progressPercent = Math.min(Math.round((currentLesson / totalLessons) * 100), 100);
 
-            console.log('Current Lesson:', currentLesson);
-            console.log('Total Lessons:', totalLessons);
-            console.log('Progress Percent:', progressPercent);
-
-            return (
-              <TableRow key={enrollment.id}>
-                <TableCell>{course.title}</TableCell>
-                <TableCell>{currentLesson || 'אין נתונים'}</TableCell>
-                <TableCell>
-                  <ProgressBar>
-                    <Progress percent={progressPercent}>
-                      {`${progressPercent}%`}
-                    </Progress>
-                  </ProgressBar>
-                </TableCell>
-                <TableCell align="center">
-                  <StyledButton onClick={() => handleCourseEnter(course.id, currentLesson)}>
-                    כניסה לקורס
-                  </StyledButton>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  )}
-</Box>
+        <Box mb={4}>
+          <Typography variant="h4" gutterBottom>הקורסים שלי</Typography>
+          {enrollments.length === 0 ? (
+            <Typography>לא נמצאו קורסים רשומים.</Typography>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table aria-label="enrolled courses table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>קורס</TableCell>
+                    <TableCell>שיעור נוכחי</TableCell>
+                    <TableCell>התקדמות</TableCell>
+                    <TableCell align="center">כניסה לקורס</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {enrollments.map((enrollment) => {
+                    const course = courses.find((c) => c.id === enrollment.course_id);
+                    if (!course) return null;
+                    const progressPercent = Math.round((enrollment.current_lesson / course.total_lessons) * 100);
+                    return (
+                      <TableRow key={enrollment.id}>
+                        <TableCell>{course.title}</TableCell>
+                        <TableCell>{enrollment.current_lesson || 'אין נתונים'}</TableCell>
+                        <TableCell>
+                          <ProgressBar>
+                            <Progress percent={progressPercent}>{progressPercent}%</Progress>
+                          </ProgressBar>
+                        </TableCell>
+                        <TableCell align="center">
+                          <StyledButton onClick={() => handleCourseEnter(course.id, enrollment.current_lesson, course.total_lessons)}>
+                            כניסה לקורס
+                          </StyledButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
 
         <Box mb={4} mt={4}>
           <StyledButton
@@ -427,7 +426,7 @@ const PersonalArea = () => {
                 <CardContainer>
                   <Typography variant="h5">{course.title}</Typography>
                   <Typography>{course.description}</Typography>
-                  <StyledButton component={Link} to={`/purchase/${course.id}`}>
+                 <StyledButton component={Link} to={`/purchase/${course.id}`}>
                     רכוש קורס
                   </StyledButton>
                 </CardContainer>
@@ -436,8 +435,8 @@ const PersonalArea = () => {
           </CourseGrid>
         </Box>
       </PageContainer>
-      </ThemeProvider>
+    </ThemeProvider>
   );
 };
-export default PersonalArea;
 
+export default PersonalArea;
