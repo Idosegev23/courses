@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Typography, Container, Grid, Box } from '@mui/material';
+import { Typography, Container, Grid } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
@@ -44,10 +44,23 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 75%; // עדכון שורה זו
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+const CardContent = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  height: 100%;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: auto;
 `;
 
 const StyledButton = styled(Link)`
@@ -68,19 +81,6 @@ const StyledButton = styled(Link)`
     transform: translateY(-2px);
     box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
   }
-`;
-
-const CardContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: auto; // לשמור על יישור הכפתורים לתחתית הכרטיסייה
 `;
 
 const LandingPage = () => {
@@ -145,44 +145,42 @@ const LandingPage = () => {
           <AnimatePresence>
             {courses.map((course) => (
               <Grid item xs={12} sm={6} md={4} key={course.id}>
-                <Box display="flex" height="100%">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    style={{ width: '100%' }}
-                  >
-                    <CardContainer>
-                      <CardContent>
-                        <div>
-                          <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
-                            {course.title}
-                          </Typography>
-                          <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
-                            {course.description}
-                          </Typography>
-                        </div>
-                        <ButtonContainer>
-                          {userEnrollments.includes(course.id) ? (
-                            <StyledButton to={`/course-learning/${course.id}`} isPrimary>
-                              כניסה לקורס
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ height: '100%' }}
+                >
+                  <CardContainer>
+                    <CardContent>
+                      <div>
+                        <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
+                          {course.title}
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
+                          {course.description}
+                        </Typography>
+                      </div>
+                      <ButtonContainer>
+                        {userEnrollments.includes(course.id) ? (
+                          <StyledButton to={`/course-learning/${course.id}`} isPrimary>
+                            כניסה לקורס
+                          </StyledButton>
+                        ) : (
+                          <>
+                            <StyledButton to={`/course/${course.id}`}>
+                              פרטים נוספים
                             </StyledButton>
-                          ) : (
-                            <>
-                              <StyledButton to={`/course/${course.id}`}>
-                                פרטים נוספים
-                              </StyledButton>
-                              <StyledButton to={`/purchase/${course.id}`} isPrimary>
-                                רכוש עכשיו
-                              </StyledButton>
-                            </>
-                          )}
-                        </ButtonContainer>
-                      </CardContent>
-                    </CardContainer>
-                  </motion.div>
-                </Box>
+                            <StyledButton to={`/purchase/${course.id}`} isPrimary>
+                              רכוש עכשיו
+                            </StyledButton>
+                          </>
+                        )}
+                      </ButtonContainer>
+                    </CardContent>
+                  </CardContainer>
+                </motion.div>
               </Grid>
             ))}
           </AnimatePresence>
