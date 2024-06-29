@@ -145,10 +145,11 @@ const AdminDashboard = () => {
     setEnrollments(enrollmentsData || []);
   };
 
-  const fetchUserProgress = async () => {
+  const fetchUserProgress = async (userId) => {
     const { data: progressData, error: progressError } = await supabase
       .from('user_progress')
-      .select('*');
+      .select('*')
+      .eq('user_id', userId);
   
     if (progressError) {
       console.error('Error fetching user progress:', progressError);
@@ -161,7 +162,7 @@ const AdminDashboard = () => {
         *,
         courses (title, total_lessons)
       `)
-      .eq('user_id', userId); // Make sure to pass the userId when calling this function
+      .eq('user_id', userId);
   
     if (enrollmentsError) {
       console.error('Error fetching enrollments:', enrollmentsError);
@@ -172,31 +173,14 @@ const AdminDashboard = () => {
     progressData.forEach(progress => {
       progressMap[progress.user_id] = progress;
     });
-    
-    setUserProgress(progressMap);
+  
+    setUserProgress(prevState => ({
+      ...prevState,
+      [userId]: progressMap
+    }));
     setEnrollments(enrollmentsData || []);
   };
   
-  const checkAndSendAutomatedEmails = async () => {
-    for (const userId in userProgress) {
-      const progress = userProgress[userId];
-      
-      // Check for 80% course completion
-      if (progress.completion_percentage >= 80) {
-        await sendCourseRecommendationEmail(userId);
-      }
-      
-      // Check for inactivity
-      const lastActivityDate = new Date(progress.last_activity);
-      const currentDate = new Date();
-      const daysSinceLastActivity = (currentDate - lastActivityDate) / (1000 * 60 * 60 * 24);
-      
-      if (daysSinceLastActivity > 7) {  // If inactive for more than a week
-        await sendMotivationEmail(userId);
-      }
-    }
-  };
-
   const sendCourseRecommendationEmail = async (userId) => {
     // קוד לשליחת אימייל המלצה לקורסים נוספים
     console.log(`Sending course recommendation email to user ${userId}`);
@@ -276,6 +260,8 @@ const AdminDashboard = () => {
   };
 
   const handleViewUser = async (userId) => {
+    await fetchUserProgress(userId);
+  
     const user = users.find((user) => user.id === userId);
     if (user) {
       const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
