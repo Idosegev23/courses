@@ -243,7 +243,7 @@ const createGreenInvoice = async (user, course, additionalData) => {
       const responseData = await response.json();
       if (response.status === 200 && responseData.errorCode === 0) {
           console.log('Payment form created successfully:', responseData);
-          window.open(responseData.url, '_blank');
+          window.location.href = responseData.url;  // הפנייה באותו הטאב
           return true;
       } else {
           console.error('Failed to create payment form:', responseData);
