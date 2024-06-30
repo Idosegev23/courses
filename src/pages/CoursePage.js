@@ -4,7 +4,6 @@ import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import { FaClock, FaBook } from 'react-icons/fa';
 
-// סגנונות כלליים לדף
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Heebo', sans-serif;
@@ -16,33 +15,49 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const PageContainer = styled.div`
-  padding: 2rem;
+  padding: 1rem;
   background: #ffffff;
   text-align: center;
   max-width: 1200px;
   margin: 0 auto;
-  border-radius: 2rem;
+  border-radius: 1rem;
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+    border-radius: 2rem;
+  }
 `;
 
 const PageTitle = styled.h1`
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: bold;
   color: #F25C78;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   text-align: center;
   position: relative;
   z-index: 1;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+
+  @media (min-width: 768px) {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+  }
 `;
 
 const CoursesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  padding: 0.5rem;
+  
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+  }
 `;
 
 const CourseCard = styled.div`
@@ -60,8 +75,12 @@ const CourseCard = styled.div`
 
 const CourseImage = styled.img`
   width: 100%;
-  height: 200px;
+  height: 150px;
   object-fit: cover;
+  
+  @media (min-width: 768px) {
+    height: 200px;
+  }
 `;
 
 const CourseContent = styled.div`
@@ -70,33 +89,46 @@ const CourseContent = styled.div`
 `;
 
 const CourseTitle = styled.h2`
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
   color: #333;
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const CourseDescription = styled.p`
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #666;
   margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const CourseDetails = styled.p`
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #888;
   margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    font-size: 0.875rem;
+  }
 `;
 
 const CourseLink = styled(Link)`
   display: inline-block;
   margin: 0.5rem 0;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 1rem;
   text-decoration: none;
   color: #fff;
   background-color: #F25C78;
   transition: background-color 0.3s, transform 0.3s;
+  font-size: 0.9rem;
 
   &:hover {
     background-color: #BF4B81;
@@ -110,6 +142,11 @@ const CourseLink = styled(Link)`
   &.purchase:hover {
     background-color: #62238C;
   }
+
+  @media (min-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
 `;
 
 const CourseInfo = styled.div`
@@ -117,8 +154,12 @@ const CourseInfo = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #666;
+
+  @media (min-width: 768px) {
+    font-size: 0.875rem;
+  }
 `;
 
 const SearchInput = styled.input`

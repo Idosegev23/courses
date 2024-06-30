@@ -31,7 +31,7 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const PageContainer = styled(Container)`
-  padding: 2rem;
+  padding: 1rem;
   background: #ffffff;
   text-align: center;
   max-width: 1200px;
@@ -53,55 +53,79 @@ const PageContainer = styled(Container)`
     pointer-events: none;
     z-index: 0;
   }
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 `;
 
 const PageTitle = styled(Typography)`
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: bold;
   color: #F25C78;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+  
+  @media (min-width: 768px) {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+  }
 `;
 
 const PageContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   position: relative;
   z-index: 1;
+  
+  @media (min-width: 768px) {
+    gap: 2rem;
+  }
 `;
 
 const CourseDescription = styled.div`
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #666;
   margin-bottom: 1rem;
   max-width: 800px;
   text-align: right;
+  padding: 0 1rem;
 
   h2 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     color: #F25C78;
     text-align: center;
   }
 
   p {
-    font-size: 1rem;
+    font-size: 0.9rem;
     margin-bottom: 0.5rem;
   }
 
-  @media (max-width: 768px) {
-    font-size: 1rem;
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
+    padding: 0;
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    p {
+      font-size: 1rem;
+    }
   }
 `;
 
 const FaqSection = styled.div`
   text-align: right;
   max-width: 800px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
 
   h2 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     color: #F25C78;
     margin-bottom: 1rem;
     text-align: center;
@@ -120,7 +144,7 @@ const FaqSection = styled.div`
 
       p {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.9rem;
 
         &:first-child {
           font-weight: bold;
@@ -129,24 +153,37 @@ const FaqSection = styled.div`
       }
     }
   }
+
+  @media (min-width: 768px) {
+    margin-bottom: 2rem;
+    padding: 0;
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    ul li p {
+      font-size: 1rem;
+    }
+  }
 `;
 
 const PurchaseButton = styled(Button)`
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 1rem;
   color: #fff;
   background-color: #F25C78;
   transition: background-color 0.3s, transform 0.3s;
-  font-size: 1.2rem;
+  font-size: 1rem;
 
   &:hover {
     background-color: #BF4B81;
     transform: translateY(-2px);
   }
 
-  @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
+  @media (min-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.2rem;
   }
 `;
 
