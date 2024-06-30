@@ -1,4 +1,3 @@
-// mailer.js
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
@@ -9,12 +8,12 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const sendErrorLog = (errorDetails) => {
+const sendNewUserEmail = (user) => {
     const mailOptions = {
-        from: 'triroars@gmail.com',
-        to: 'Triroars@gmail.com', // כתובת המייל שלך לקבלת הלוג
-        subject: 'Error Log from Purchase Page',
-        text: `An error occurred during purchase:\n\n${JSON.stringify(errorDetails, null, 2)}`
+        from: 'ido.segev23@gmail.com',
+        to: 'Triroars@gmail.com', // כתובת המייל שלך לקבלת הפרטים
+        subject: 'New User Registration',
+        text: `A new user has registered:\n\nName: ${user.name}\nEmail: ${user.email}\nPhone: ${user.phone}`
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -26,4 +25,4 @@ const sendErrorLog = (errorDetails) => {
     });
 };
 
-module.exports = { sendErrorLog };
+module.exports = { sendNewUserEmail };
