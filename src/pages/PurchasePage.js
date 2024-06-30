@@ -222,8 +222,8 @@ const createGreenInvoice = async (user, course, additionalData) => {
           mobile: additionalData.phone,
           add: true
       },
-      successUrl: "https://courses-seven-alpha.vercel.app/personal-area?status=success",
-      failureUrl: "https://courses-seven-alpha.vercel.app/purchase/10?status=failure",
+      successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
+      failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
       notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
       custom: "12345"
   };
@@ -266,6 +266,7 @@ const createGreenInvoice = async (user, course, additionalData) => {
 };
 
 
+
 const handlePurchase = async () => {
   try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -277,7 +278,7 @@ const handlePurchase = async () => {
               html:
                   '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
                   '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
-                  '<input id="swal-input3" class="swal2-input" placeholder="אימייל">' +
+                  '<input id="swal-input3" class="swal2-input" type="email" placeholder="אימייל">' +
                   '<input id="swal-input4" class="swal2-input" type="password" placeholder="סיסמה">' +
                   '<input id="swal-input5" class="swal2-input" placeholder="כתובת">' +
                   '<input id="swal-input6" class="swal2-input" placeholder="עיר">' +
@@ -456,6 +457,7 @@ const handlePurchase = async () => {
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
   }
 };
+
 
   const calculateDiscount = (originalPrice, newPrice) => {
     if (originalPrice && newPrice && originalPrice > newPrice) {
