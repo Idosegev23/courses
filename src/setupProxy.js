@@ -7,7 +7,7 @@ module.exports = function(app) {
       target: 'https://sandbox.d.greeninvoice.co.il',
       changeOrigin: true,
       pathRewrite: {
-        '^/api': '/api/v1', // pathRewrite rewrites the path
+        '^/api': '', // מוחק את ה-'/api' לפני השליחה לשרת
       },
     })
   );

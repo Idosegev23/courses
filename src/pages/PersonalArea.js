@@ -95,10 +95,11 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  height: 300px;
+  width: 300px;
 `;
 
 const ProgressBar = styled.div`
@@ -165,6 +166,7 @@ const CourseGrid = styled(Grid)`
 
 const CourseCard = styled(Grid)`
   display: flex;
+  align-items: stretch;
 `;
 
 const PersonalArea = () => {
@@ -175,19 +177,36 @@ const PersonalArea = () => {
   const [notifications, setNotifications] = useState([]);
   const [discount, setDiscount] = useState(0);
   const [meetingUsed, setMeetingUsed] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Error fetching session:', sessionError);
+          navigate('/login');
+          return;
+        }
+
+        if (!session) {
+          console.log('No active session');
+          navigate('/login');
+          return;
+        }
+
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error('Error fetching user:', userError);
+          navigate('/login');
           return;
         }
 
         if (!userData || !userData.user) {
-          alert('אנא התחבר כדי לגשת לאזור האישי.');
+          console.log('No user data');
           navigate('/login');
           return;
         }
@@ -263,6 +282,8 @@ const PersonalArea = () => {
         }
       } catch (error) {
         console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -329,7 +350,7 @@ const PersonalArea = () => {
         .select('completed_exercises, completion_percentage')
         .eq('user_id', user.id)
         .eq('course_id', courseId)
-        .single(); // Ensure we expect a single row
+        .single();
 
       if (progressError) {
         if (progressError.code === 'PGRST116') {
@@ -387,8 +408,8 @@ const PersonalArea = () => {
   };
 
   const showSummaryExercises = (courseId) => {
-    // Fetch and display all exercises from the course for the user to complete
     // Implement the logic to fetch and show exercises in a modal or another UI component
+    console.log('Showing summary exercises for course:', courseId);
   };
 
   const handleCourseButton = (courseId, currentLesson, totalLessons) => {
@@ -407,23 +428,23 @@ const PersonalArea = () => {
     }
   };
 
-  if (!user) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Please log in to access this page.</div>;
 
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
-      <Typography variant="h2" component="h1" gutterBottom color="primary" align="center" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem', md: '3rem' } }}>
-  שלום, {user.email}
-</Typography>
-
+        <Typography variant="h2" component="h1" gutterBottom color="primary" align="center" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem', md: '3rem' } }}>
+          שלום, {user.email}
+        </Typography>
 
         {discount > 0 && (
           <DiscountInfo>
-            <Typography variant="h6">יש לך הנחה של {discount}% לקורסים שלנו!</Typography>
+            יש לך הנחה של {discount}% לקורסים שלנו!
           </DiscountInfo>
         )}
-
+        
         {notifications.length > 0 && (
           <NotificationContainer>
             <Typography variant="h4" gutterBottom>הודעות</Typography>
@@ -495,9 +516,11 @@ const PersonalArea = () => {
             {nonEnrolledCourses.map((course) => (
               <CourseCard item xs={12} sm={6} md={4} key={course.id}>
                 <CardContainer>
-                  <Typography variant="h5">{course.title}</Typography>
-                  <Typography>{course.description}</Typography>
-                 <StyledButton component={Link} to={`/purchase/${course.id}`}>
+                  <div>
+                    <Typography variant="h5" gutterBottom style={{ height: '3em', overflow: 'hidden' }}>{course.title}</Typography>
+                    <Typography variant="body2" style={{ height: '4.5em', overflow: 'hidden' }}>{course.description}</Typography>
+                  </div>
+                  <StyledButton component={Link} to={`/purchase/${course.id}`}>
                     רכוש קורס
                   </StyledButton>
                 </CardContainer>
