@@ -158,14 +158,18 @@ const PurchasePage = () => {
 
   const getJwtToken = async () => {
     try {
-      const response = await axios.post('https://sandbox.d.greeninvoice.co.il/api/v1/account/token', {
-        id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
-        secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await axios.post('https://sandbox.d.greeninvoice.co.il/api/v1/account/token', 
+        {
+          id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
+          secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
         }
-      });
+      );
       return response.data.token;
     } catch (error) {
       console.error('Error obtaining JWT token:', error);
