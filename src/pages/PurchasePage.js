@@ -159,26 +159,192 @@ const PurchasePage = () => {
   const getJwtToken = async () => {
     try {
       const response = await axios.post('https://sandbox.d.greeninvoice.co.il/api/v1/account/token', {
-        id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
-        secret: 'f5gxE9n2H43sY4d-P-Ivhg'
+        id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
+        secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
       }, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      console.log('JWT Token:', response.data.token);
       return response.data.token;
     } catch (error) {
       console.error('Error obtaining JWT token:', error);
       throw new Error('Failed to obtain JWT token');
     }
   };
+  
+  const createGreenInvoice = async (user, course, additionalData) => {
+    const token = await getJwtToken();
+    if (!token) {
+      Swal.fire({
+        title: 'שגיאה',
+        text: 'אירעה שגיאה בהשגת אסימון אימות. אנא נסה שוב מאוחר יותר.',
+        icon: 'error'
+      });
+      return false;
+    }
+
+    const invoiceData = {
+      description: course.title,
+      type: 400,
+      date: new Date().toISOString().split('T')[0], // current date
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0], // 30 days from now
+      lang: "he",
+      currency: "ILS",
+      vatType: 0,
+      amount: course.price,
+      maxPayments: 1,
+      group: 100,
+      pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
+      client: {
+        name: additionalData.username,
+        emails: [additionalData.email],
+        taxId: additionalData.taxId || "000000000",
+        address: additionalData.address || "Unknown address",
+        city: additionalData.city || "Unknown city",
+        zip: additionalData.zip || "0000000",
+        country: "IL",
+        phone: additionalData.phone,
+        mobile: additionalData.phone,
+        add: true
+      },
+      successUrl: "https://www.your-site-here.com",
+      failureUrl: "https://www.your-site-here.com",
+      notifyUrl: "https://www.your-site-here.com",
+      custom: "12345"
+    };
+
+    try {
+      const response = await axios.post('https://sandbox.d.greeninvoice.co.il/api/v1/payments/form', invoiceData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 200 && response.data.errorCode === 0) {
+        console.log('Payment form created successfully:', response.data);
+        window.open(response.data.url, '_blank');
+        return true;
+      } else {
+        console.error('Failed to create payment form:', response.data);
+        Swal.fire({
+          title: 'שגיאה',
+          text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
+          icon: 'error'
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Error creating payment form:', error);
+      Swal.fire({
+        title: 'שגיאה',
+        text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
+        icon: 'error'
+      });
+      return false;
+    }
+  };
 
   const handlePurchase = async () => {
     try {
-      const token = await getJwtToken();
-      console.log('JWT Token:', token);
-      Swal.fire('Token', `JWT Token: ${token}`, 'success');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // User is not logged in, show sign-up and payment form
+        const { value: formValues } = await Swal.fire({
+          title: 'הרשמה',
+          html:
+            '<input id="swal-input1" class="swal2-input" placeholder="שם משתמש">' +
+            '<input id="swal-input2" class="swal2-input" type="email" placeholder="אימייל">' +
+            '<input id="swal-input3" class="swal2-input" type="password" placeholder="סיסמה">' +
+            '<input id="swal-input4" class="swal2-input" placeholder="כתובת">' +
+            '<input id="swal-input5" class="swal2-input" placeholder="עיר">' +
+            '<input id="swal-input6" class="swal2-input" placeholder="מיקוד">' +
+            '<input id="swal-input7" class="swal2-input" placeholder="מספר טלפון">',
+          focusConfirm: false,
+          preConfirm: () => {
+            return {
+              username: document.getElementById('swal-input1').value,
+              email: document.getElementById('swal-input2').value,
+              password: document.getElementById('swal-input3').value,
+              address: document.getElementById('swal-input4').value,
+              city: document.getElementById('swal-input5').value,
+              zip: document.getElementById('swal-input6').value,
+              phone: document.getElementById('swal-input7').value,
+            };
+          }
+        });
+
+        if (formValues) {
+          const { username, email, password, address, city, zip, phone } = formValues;
+
+          console.log('Form values:', formValues);
+
+          // Perform sign-up
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                username,
+              },
+            },
+          });
+
+          if (signUpError) throw signUpError;
+
+          const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
+
+          // Create Green Invoice
+          const invoiceCreated = await createGreenInvoice(newUser, course, { username, email, address, city, zip, phone });
+          if (!invoiceCreated) throw new Error('Failed to create invoice');
+
+          // Perform purchase
+          const { error: purchaseError } = await supabase
+            .from('enrollments')
+            .insert({
+              user_id: newUser.id,
+              course_id: courseId,
+              current_lesson: 1,
+              amount_paid: course.price,
+              course_title: course.title,
+            });
+
+          if (purchaseError) throw purchaseError;
+
+          Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+          navigate('/personal-area');
+        }
+      } else {
+        // User is logged in, create Green Invoice
+        const additionalData = {
+          username: user.user_metadata.username,
+          email: user.email,
+          address: user.user_metadata.address || '',
+          city: user.user_metadata.city || '',
+          zip: user.user_metadata.zip || '',
+          phone: user.user_metadata.phone || ''
+        };
+
+        const invoiceCreated = await createGreenInvoice(user, course, additionalData);
+        if (!invoiceCreated) throw new Error('Failed to create invoice');
+
+        // Perform purchase
+        const { error } = await supabase
+          .from('enrollments')
+          .insert({
+            user_id: user.id,
+            course_id: courseId,
+            current_lesson: 1,
+            amount_paid: course.price,
+            course_title: course.title,
+          });
+
+        if (error) throw error;
+
+        Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+      }
     } catch (error) {
       console.error('Error during purchase:', error);
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
