@@ -156,25 +156,30 @@ const PurchasePage = () => {
     fetchCourse();
   }, [courseId]);
 
-  const getJwtToken = async () => {
-    try {
-      const response = await fetch('https://sandbox.d.greeninvoice.co.il/api/v1/account/token', {
-        method: 'POST',
-        mode: 'cors', // Add this line
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
-          secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
-        })
-      });
-      return response.data.token;
-    } catch (error) {
-      console.error('Error obtaining JWT token:', error);
-      throw new Error('Failed to obtain JWT token');
-    }
+  const getJwtToken = () => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://sandbox.d.greeninvoice.co.il/api/v1/account/token', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Accept', 'application/json');
+      
+      xhr.onload = function() {
+        if (this.status >= 200 && this.status < 300) {
+          resolve(JSON.parse(xhr.response).token);
+        } else {
+          reject(new Error(xhr.statusText));
+        }
+      };
+      
+      xhr.onerror = function() {
+        reject(new Error('Network Error'));
+      };
+      
+      xhr.send(JSON.stringify({
+        id: d8281ab1-2ebc-44a9-a53f-e19a46b879dc,
+        secret: f5gxE9n2H43sY4d-P-Ivhg
+      }));
+    });
   };
   
   const createGreenInvoice = async (user, course, additionalData) => {
