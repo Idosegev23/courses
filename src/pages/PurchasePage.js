@@ -267,196 +267,223 @@ const createGreenInvoice = async (user, course, additionalData) => {
 
 
 
+const { sendErrorLog } = require('./mailer');
+
 const handlePurchase = async () => {
-  try {
-      const { data: { user } } = await supabase.auth.getUser();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-          // User is not logged in, show sign-up and payment form
-          const { value: formValues } = await Swal.fire({
-              title: 'הרשמה',
-              html:
-                  '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
-                  '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
-                  '<input id="swal-input3" class="swal2-input" type="email" placeholder="אימייל">' +
-                  '<input id="swal-input4" class="swal2-input" type="password" placeholder="סיסמה">' +
-                  '<input id="swal-input5" class="swal2-input" placeholder="כתובת">' +
-                  '<input id="swal-input6" class="swal2-input" placeholder="עיר">' +
-                  '<input id="swal-input7" class="swal2-input" placeholder="מיקוד">' +
-                  '<input id="swal-input8" class="swal2-input" placeholder="מספר טלפון">',
-              focusConfirm: false,
-              preConfirm: () => {
-                  return {
-                      firstName: document.getElementById('swal-input1').value,
-                      lastName: document.getElementById('swal-input2').value,
-                      email: document.getElementById('swal-input3').value,
-                      password: document.getElementById('swal-input4').value,
-                      address: document.getElementById('swal-input5').value,
-                      city: document.getElementById('swal-input6').value,
-                      zip: document.getElementById('swal-input7').value,
-                      phone: document.getElementById('swal-input8').value,
-                  };
-              }
-          });
+        if (!user) {
+            // User is not logged in, show sign-up and payment form
+            const { value: formValues } = await Swal.fire({
+                title: 'הרשמה',
+                html:
+                    '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
+                    '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
+                    '<input id="swal-input3" class="swal2-input" placeholder="אימייל">' +
+                    '<input id="swal-input4" class="swal2-input" type="password" placeholder="סיסמה">' +
+                    '<input id="swal-input5" class="swal2-input" placeholder="כתובת">' +
+                    '<input id="swal-input6" class="swal2-input" placeholder="עיר">' +
+                    '<input id="swal-input7" class="swal2-input" placeholder="מיקוד">' +
+                    '<input id="swal-input8" class="swal2-input" placeholder="מספר טלפון">',
+                focusConfirm: false,
+                preConfirm: () => {
+                    return {
+                        firstName: document.getElementById('swal-input1').value,
+                        lastName: document.getElementById('swal-input2').value,
+                        email: document.getElementById('swal-input3').value,
+                        password: document.getElementById('swal-input4').value,
+                        address: document.getElementById('swal-input5').value,
+                        city: document.getElementById('swal-input6').value,
+                        zip: document.getElementById('swal-input7').value,
+                        phone: document.getElementById('swal-input8').value,
+                    };
+                }
+            });
 
-          if (formValues) {
-              const { firstName, lastName, email, password, address, city, zip, phone } = formValues;
+            if (formValues) {
+                const { firstName, lastName, email, password, address, city, zip, phone } = formValues;
 
-              console.log('Form values:', formValues);
+                console.log('Form values:', formValues);
 
-              // Perform sign-up
-              const { error: signUpError } = await supabase.auth.signUp({
-                  email,
-                  password,
-                  options: {
-                      data: {
-                          first_name: firstName,
-                          last_name: lastName,
-                          phone_num: phone
-                      },
-                  },
-              });
+                // Perform sign-up
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            phone_num: phone
+                        },
+                    },
+                });
 
-              if (signUpError) throw signUpError;
+                if (signUpError) {
+                    sendErrorLog({ error: signUpError, user: formValues });
+                    throw signUpError;
+                }
 
-              const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
+                const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
 
-              // Create Green Invoice
-              const invoiceCreated = await createGreenInvoice(newUser, course, { firstName, lastName, email, address, city, zip, phone });
-              if (!invoiceCreated) throw new Error('Failed to create invoice');
+                // Create Green Invoice
+                const invoiceCreated = await createGreenInvoice(newUser, course, { firstName, lastName, email, address, city, zip, phone });
+                if (!invoiceCreated) {
+                    const error = new Error('Failed to create invoice');
+                    sendErrorLog({ error, user: newUser, course });
+                    throw error;
+                }
 
-              // Perform purchase
-              const { error: purchaseError } = await supabase
-                  .from('enrollments')
-                  .insert({
-                      user_id: newUser.id,
-                      course_id: courseId,
-                      current_lesson: 1,
-                      amount_paid: course.price,
-                      course_title: course.title,
-                  });
+                // Perform purchase
+                const { error: purchaseError } = await supabase
+                    .from('enrollments')
+                    .insert({
+                        user_id: newUser.id,
+                        course_id: courseId,
+                        current_lesson: 1,
+                        amount_paid: course.price,
+                        course_title: course.title,
+                    });
 
-              if (purchaseError) throw purchaseError;
+                if (purchaseError) {
+                    sendErrorLog({ error: purchaseError, user: newUser, course });
+                    throw purchaseError;
+                }
 
-              Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
-              navigate('/personal-area');
-          }
-      } else {
-          // Fetch user details from Supabase users table
-          const { data: userData, error: userError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', user.id)
-              .single();
+                Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+                navigate('/personal-area');
+            }
+        } else {
+            // Fetch user details from Supabase users table
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
 
-          if (userError) throw userError;
+            if (userError) {
+                sendErrorLog({ error: userError, user });
+                throw userError;
+            }
 
-          let { first_name: firstName, last_name: lastName, phone_num: phone } = userData;
-          if (!phone || !firstName || !lastName) {
-              // Ask user for first name, last name, and phone number if not present in the database
-              const { value: formValues } = await Swal.fire({
-                  title: 'עדכון פרטים',
-                  html:
-                      '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
-                      '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
-                      '<input id="swal-input3" class="swal2-input" placeholder="מספר טלפון">',
-                  focusConfirm: false,
-                  preConfirm: () => {
-                      return {
-                          firstName: document.getElementById('swal-input1').value,
-                          lastName: document.getElementById('swal-input2').value,
-                          phone: document.getElementById('swal-input3').value,
-                      };
-                  }
-              });
+            let { first_name: firstName, last_name: lastName, phone_num: phone } = userData;
+            if (!phone || !firstName || !lastName) {
+                // Ask user for first name, last name, and phone number if not present in the database
+                const { value: formValues } = await Swal.fire({
+                    title: 'עדכון פרטים',
+                    html:
+                        '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
+                        '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
+                        '<input id="swal-input3" class="swal2-input" placeholder="מספר טלפון">',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        return {
+                            firstName: document.getElementById('swal-input1').value,
+                            lastName: document.getElementById('swal-input2').value,
+                            phone: document.getElementById('swal-input3').value,
+                        };
+                    }
+                });
 
-              if (!formValues.firstName || !formValues.lastName || !formValues.phone) {
-                  Swal.fire('שגיאה', 'כל הפרטים נדרשים.', 'error');
-                  return;
-              }
+                if (!formValues.firstName || !formValues.lastName || !formValues.phone) {
+                    Swal.fire('שגיאה', 'כל הפרטים נדרשים.', 'error');
+                    return;
+                }
 
-              firstName = formValues.firstName;
-              lastName = formValues.lastName;
-              phone = formValues.phone;
+                firstName = formValues.firstName;
+                lastName = formValues.lastName;
+                phone = formValues.phone;
 
-              // Update the user's details in the database
-              const { error: updateError } = await supabase
-                  .from('users')
-                  .update({ first_name: firstName, last_name: lastName, phone_num: phone })
-                  .eq('id', user.id);
+                // Update the user's details in the database
+                const { error: updateError } = await supabase
+                    .from('users')
+                    .update({ first_name: firstName, last_name: lastName, phone_num: phone })
+                    .eq('id', user.id);
 
-              if (updateError) throw updateError;
-          }
+                if (updateError) {
+                    sendErrorLog({ error: updateError, user });
+                    throw updateError;
+                }
+            }
 
-          const { value: updateAddress } = await Swal.fire({
-              title: 'עדכון כתובת',
-              text: 'האם תרצה לעדכן את הכתובת לקבלה?',
-              icon: 'question',
-              showCancelButton: true,
-              confirmButtonText: 'כן',
-              cancelButtonText: 'לא'
-          });
+            const { value: updateAddress } = await Swal.fire({
+                title: 'עדכון כתובת',
+                text: 'האם תרצה לעדכן את הכתובת לקבלה?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'כן',
+                cancelButtonText: 'לא'
+            });
 
-          let address = userData.address;
-          let city = userData.city;
-          let zip = userData.zip;
+            let address = userData.address;
+            let city = userData.city;
+            let zip = userData.zip;
 
-          if (updateAddress) {
-              const { value: addressValues } = await Swal.fire({
-                  title: 'הזן כתובת',
-                  html:
-                      '<input id="swal-input4" class="swal2-input" placeholder="כתובת">' +
-                      '<input id="swal-input5" class="swal2-input" placeholder="עיר">' +
-                      '<input id="swal-input6" class="swal2-input" placeholder="מיקוד">',
-                  focusConfirm: false,
-                  preConfirm: () => {
-                      return {
-                          address: document.getElementById('swal-input4').value,
-                          city: document.getElementById('swal-input5').value,
-                          zip: document.getElementById('swal-input6').value,
-                      };
-                  }
-              });
+            if (updateAddress) {
+                const { value: addressValues } = await Swal.fire({
+                    title: 'הזן כתובת',
+                    html:
+                        '<input id="swal-input4" class="swal2-input" placeholder="כתובת">' +
+                        '<input id="swal-input5" class="swal2-input" placeholder="עיר">' +
+                        '<input id="swal-input6" class="swal2-input" placeholder="מיקוד">',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        return {
+                            address: document.getElementById('swal-input4').value,
+                            city: document.getElementById('swal-input5').value,
+                            zip: document.getElementById('swal-input6').value,
+                        };
+                    }
+                });
 
-              address = addressValues.address;
-              city = addressValues.city;
-              zip = addressValues.zip;
-          }
+                address = addressValues.address;
+                city = addressValues.city;
+                zip = addressValues.zip;
+            }
 
-          const additionalData = {
-              firstName,
-              lastName,
-              email: user.email,
-              address: address || 'Unknown address',
-              city: city || 'Unknown city',
-              zip: zip || '0000000',
-              phone,
-              taxId: '300700556'
-          };
+            const additionalData = {
+                firstName,
+                lastName,
+                email: user.email,
+                address: address || 'Unknown address',
+                city: city || 'Unknown city',
+                zip: zip || '0000000',
+                phone,
+                taxId: '300700556'
+            };
 
-          const invoiceCreated = await createGreenInvoice(user, course, additionalData);
-          if (!invoiceCreated) throw new Error('Failed to create invoice');
+            const invoiceCreated = await createGreenInvoice(user, course, additionalData);
+            if (!invoiceCreated) {
+                const error = new Error('Failed to create invoice');
+                sendErrorLog({ error, user, course });
+                throw error;
+            }
 
-          // Perform purchase
-          const { error } = await supabase
-              .from('enrollments')
-              .insert({
-                  user_id: user.id,
-                  course_id: courseId,
-                  current_lesson: 1,
-                  amount_paid: course.price,
-                  course_title: course.title,
-              });
+            // Perform purchase
+            const { error } = await supabase
+                .from('enrollments')
+                .insert({
+                    user_id: user.id,
+                    course_id: courseId,
+                    current_lesson: 1,
+                    amount_paid: course.price,
+                    course_title: course.title,
+                });
 
-          if (error) throw error;
+            if (error) {
+                sendErrorLog({ error, user, course });
+                throw error;
+            }
 
-          Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
-      }
-  } catch (error) {
-      console.error('Error during purchase:', error);
-      Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
-  }
+            Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+        }
+    } catch (error) {
+        console.error('Error during purchase:', error);
+        sendErrorLog({ error, user, course });
+        Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
+    }
 };
+
 
 
   const calculateDiscount = (originalPrice, newPrice) => {
