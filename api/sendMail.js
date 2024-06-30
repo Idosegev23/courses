@@ -15,7 +15,7 @@ const sendNewUserEmail = (req, res) => {
         from: process.env.EMAIL_USER,
         to: 'Triroars@gmail.com',
         subject: 'New User Registration',
-        text: `משתמש חדש נרשם:\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`
+        text: `A new user has registered:\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
