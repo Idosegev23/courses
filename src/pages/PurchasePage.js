@@ -176,11 +176,12 @@ const PurchasePage = () => {
       };
       
       xhr.send(JSON.stringify({
-        id: d8281ab1-2ebc-44a9-a53f-e19a46b879dc,
-        secret: f5gxE9n2H43sY4d-P-Ivhg
+        id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
+        secret: 'f5gxE9n2H43sY4d-P-Ivhg'
       }));
     });
   };
+  
   
   const createGreenInvoice = async (user, course, additionalData) => {
     const token = await getJwtToken();
