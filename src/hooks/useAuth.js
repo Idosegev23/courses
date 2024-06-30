@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { sendNewUserEmail } from '../mailer'; // ייבוא הפונקציה הנכונה
 
 const AuthContext = createContext();
 
@@ -8,12 +7,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // מאזין לשינויים במצב ההתחברות של המשתמש
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
     });
 
-    // החזרת הפונקציה לביטול המאזין
     return () => {
       subscription?.unsubscribe();
     };
@@ -40,8 +37,13 @@ export const AuthProvider = ({ children }) => {
       return { error: updateUserError };
     }
 
-    // שליחת מייל עם פרטי המשתמש החדש
-    sendNewUserEmail({ name, email, phone });
+    await fetch('/api/sendMail', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, email, phone })
+    });
 
     setUser(user);
     return { user };
@@ -52,7 +54,7 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       console.error('Error signing out:', error.message);
     } else {
-      setUser(null); // שינוי המצב המקומי
+      setUser(null);
     }
   };
 

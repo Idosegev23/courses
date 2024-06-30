@@ -23,5 +23,16 @@
         }
       ]
     }
+  ],
+  "functions": {
+    "api/sendMail.js": {
+      "runtime": "nodejs16.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/sendMail",
+      "dest": "/api/sendMail.js"
+    }
   ]
 }
