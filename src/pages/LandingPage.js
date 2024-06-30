@@ -15,8 +15,6 @@ const theme = createTheme({
 });
 
 const GlobalStyle = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap');
-  
   body {
     font-family: 'Heebo', sans-serif;
     background-color: #ffffff;
@@ -70,9 +68,10 @@ const StyledButton = styled(Link)`
   border-radius: 1rem;
   text-decoration: none;
   color: #fff;
-  background: ${props => props.isPrimary ? 
-    'linear-gradient(45deg, #62238C 30%, #BF4B81 90%)' : 
-    'linear-gradient(45deg, #BF4B81 30%, #F25C78 90%)'};
+  background: ${(props) =>
+    props.isprimary
+      ? 'linear-gradient(45deg, #62238C 30%, #BF4B81 90%)'
+      : 'linear-gradient(45deg, #BF4B81 30%, #F25C78 90%)'};
   transition: all 0.3s;
   border: none;
   box-shadow: 0 3px 5px 2px rgba(191, 75, 129, .3);
@@ -164,7 +163,7 @@ const LandingPage = () => {
                       </div>
                       <ButtonContainer>
                         {userEnrollments.includes(course.id) ? (
-                          <StyledButton to={`/course-learning/${course.id}`} isPrimary>
+                          <StyledButton to={`/course-learning/${course.id}`} isprimary="true">
                             כניסה לקורס
                           </StyledButton>
                         ) : (
@@ -172,7 +171,7 @@ const LandingPage = () => {
                             <StyledButton to={`/course/${course.id}`}>
                               פרטים נוספים
                             </StyledButton>
-                            <StyledButton to={`/purchase/${course.id}`} isPrimary>
+                            <StyledButton to={`/purchase/${course.id}`} isprimary="true">
                               רכוש עכשיו
                             </StyledButton>
                           </>

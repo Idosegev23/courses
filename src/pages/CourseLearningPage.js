@@ -260,26 +260,39 @@ const CourseLearningPage = () => {
 
   const handleNextLesson = async () => {
     if (currentLessonIndex < lessons.length - 1) {
-      Swal.fire({
-        title: 'סיימת את השיעור?',
-        text: "האם אתה בטוח שברצונך לעבור לשיעור הבא?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'כן, סיימתי!',
-        cancelButtonText: 'לא, עדיין לא',
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          const nextLessonIndex = currentLessonIndex + 1;
-          setCurrentLessonIndex(nextLessonIndex);
-          await updateProgress(nextLessonIndex);
-          navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
-          Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
+      const currentLesson = lessons[currentLessonIndex];
+      if (currentLesson.exercises && currentLesson.exercises.length > 0) {
+        Swal.fire({
+          title: 'לא סיימת עם התרגולים',
+          text: 'האם אתה בטוח שברצונך לעבור לשיעור הבא?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'כן, סיימתי!',
+          cancelButtonText: 'לא, עדיין לא',
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            const nextLessonIndex = currentLessonIndex + 1;
+            setCurrentLessonIndex(nextLessonIndex);
+            await updateProgress(nextLessonIndex);
+            navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
+            Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
 
-          if (nextLessonIndex === lessons.length - 1) {
-            showCourseCompletionCelebration();
+            if (nextLessonIndex === lessons.length - 1) {
+              showCourseCompletionCelebration();
+            }
           }
+        });
+      } else {
+        const nextLessonIndex = currentLessonIndex + 1;
+        setCurrentLessonIndex(nextLessonIndex);
+        await updateProgress(nextLessonIndex);
+        navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
+        Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
+
+        if (nextLessonIndex === lessons.length - 1) {
+          showCourseCompletionCelebration();
         }
-      });
+      }
     }
   };
 

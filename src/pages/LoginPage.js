@@ -66,8 +66,8 @@ const ActionButton = styled.button`
 `;
 
 const OAuthButton = styled.button`
-  background-color: ${(props) => (props.bgColor || '#fff')};
-  color: ${(props) => (props.color || '#000')};
+  background-color: ${(props) => (props.$bgColor || '#fff')};
+  color: ${(props) => (props.$color || '#000')};
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
@@ -82,7 +82,7 @@ const OAuthButton = styled.button`
   gap: 0.5rem;
 
   &:hover {
-    background-color: ${(props) => (props.hoverBgColor || '#e0e0e0')};
+    background-color: ${(props) => (props.$hoverBgColor || '#e0e0e0')};
   }
 `;
 
@@ -159,6 +159,7 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
             <Input
               type="password"
@@ -166,6 +167,7 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
             {error && <Message style={{ color: 'red' }}>{error}</Message>}
             <ActionButton type="submit">התחבר</ActionButton>
@@ -173,9 +175,9 @@ const LoginPage = () => {
           <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
             <OAuthButton
               onClick={() => handleOAuthSignIn('google')}
-              bgColor="#DB4437"
-              color="#fff"
-              hoverBgColor="#C33D2E"
+              $bgColor="#DB4437"
+              $color="#fff"
+              $hoverBgColor="#C33D2E"
             >
               <FaGoogle /> התחברות עם גוגל
             </OAuthButton>

@@ -12,7 +12,8 @@ module.exports = function override(config) {
     "buffer": require.resolve("buffer/"),
     "https": require.resolve("https-browserify"),
     "http": require.resolve("stream-http"),
-    "process": require.resolve("process/browser")
+    "process": require.resolve("process/browser"),
+    "vm": require.resolve("vm-browserify")  // Add this line
   };
   config.plugins = (config.plugins || []).concat([
     new webpack.ProvidePlugin({

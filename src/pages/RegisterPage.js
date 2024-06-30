@@ -66,8 +66,8 @@ const ActionButton = styled.button`
 `;
 
 const OAuthButton = styled.button`
-  background-color: ${(props) => (props.bgColor || '#DB4437')}; // ברירת מחדל לצבע של גוגל
-  color: ${(props) => (props.color || '#fff')};
+  background-color: ${(props) => props.$bgColor || '#DB4437'}; // ברירת מחדל לצבע של גוגל
+  color: ${(props) => props.$color || '#fff'};
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
@@ -82,7 +82,7 @@ const OAuthButton = styled.button`
   gap: 0.5rem;
 
   &:hover {
-    background-color: ${(props) => (props.hoverBgColor || '#C33D2E')}; // צבע בעת ריחוף
+    background-color: ${(props) => props.$hoverBgColor || '#C33D2E'}; // צבע בעת ריחוף
   }
 `;
 
@@ -182,9 +182,9 @@ const RegisterPage = () => {
           <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
             <OAuthButton
               onClick={() => handleOAuthSignIn('google')}
-              bgColor="#DB4437"
-              color="#fff"
-              hoverBgColor="#C33D2E"
+              $bgColor="#DB4437"
+              $color="#fff"
+              $hoverBgColor="#C33D2E"
             >
               <FaGoogle /> הרשמה עם גוגל
             </OAuthButton>

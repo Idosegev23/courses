@@ -9,7 +9,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import AddCoursePage from './pages/AddCoursePage';
 import EditCoursePage from './pages/EditCoursePage';
-import PaymentPage from './pages/PaymentPage';
 import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
 import CourseLearningPage from './pages/CourseLearningPage';
 import ContactAndPolicyPage from './pages/ContactAndPolicyPage';
@@ -34,7 +33,6 @@ const App = () => {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/add-course" element={<AddCoursePage />} />
           <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
-          <Route path="/payment/:courseId" element={<PaymentPage />} />
           <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
           <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
           <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />

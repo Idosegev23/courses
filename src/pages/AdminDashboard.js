@@ -145,107 +145,110 @@ const AdminDashboard = () => {
   };
 
   const fetchUserProgress = async (userId) => {
-    const { data: progressData, error: progressError } = await supabase
-      .from('user_progress')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (progressError) {
-      console.error('Error fetching user progress:', progressError);
-      return;
-    }
-
-    const { data: enrollmentsData, error: enrollmentsError } = await supabase
-      .from('enrollments')
-      .select(`
-        *,
-        courses (title, total_lessons)
-      `)
-      .eq('user_id', userId);
-
-    if (enrollmentsError) {
-      console.error('Error fetching enrollments:', enrollmentsError);
-      return;
-    }
-
-    const progressMap = {};
-    progressData.forEach(progress => {
-      progressMap[progress.user_id] = progress;
-    });
-
-    setUserProgress(prevState => ({
-      ...prevState,
-      [userId]: progressMap
-    }));
-    setEnrollments(enrollmentsData || []);
-  };
-
-  const checkAndSendAutomatedEmails = async () => {
-    for (const userId in userProgress) {
-      const progress = userProgress[userId];
-
-      // Check for 80% course completion
-      if (progress.completion_percentage >= 80) {
-        await sendCourseRecommendationEmail(userId);
+    try {
+      console.log('Fetching progress and enrollments for user ID:', userId);
+  
+      const { data: progressData, error: progressError } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', userId);
+  
+      if (progressError) {
+        console.error('Error fetching user progress:', progressError);
+        return;
       }
-
-      // Check for inactivity
-      const lastActivityDate = new Date(progress.last_activity);
-      const currentDate = new Date();
-      const daysSinceLastActivity = (currentDate - lastActivityDate) / (1000 * 60 * 60 * 24);
-
-      if (daysSinceLastActivity > 7) {  // If inactive for more than a week
-        await sendMotivationEmail(userId);
+  
+      console.log('User progress data:', progressData);
+  
+      const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        .from('enrollments')
+        .select('*, courses (title, total_lessons)')
+        .eq('user_id', userId);
+  
+      if (enrollmentsError) {
+        console.error('Error fetching enrollments:', enrollmentsError);
+        return;
       }
+  
+      console.log('User enrollments data:', enrollmentsData);
+  
+      const progressMap = {};
+      progressData.forEach(progress => {
+        progressMap[progress.course_id] = progress;
+      });
+  
+      console.log('Progress map:', progressMap);
+  
+      setUserProgress(prevState => ({
+        ...prevState,
+        [userId]: progressMap
+      }));
+      setEnrollments(enrollmentsData || []);
+    } catch (error) {
+      console.error('Error fetching user progress:', error);
     }
-  };
-
-  const sendCourseRecommendationEmail = async (userId) => {
-    // Code to send course recommendation email
-    console.log(`Sending course recommendation email to user ${userId}`);
-    // Add logic to send a real email here
-  };
-
-  const sendMotivationEmail = async (userId) => {
-    // Code to send motivation email
-    console.log(`Sending motivation email to user ${userId}`);
-    // Add logic to send a real email here
   };
 
   const handleViewUser = async (userId) => {
+    console.log('Fetching user progress for user ID:', userId);
+  
+    // Fetch user progress
     await fetchUserProgress(userId);
-
+  
+    // Find the user data
     const user = users.find((user) => user.id === userId);
-    if (user) {
-      const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
-
-      let enrollmentDetails = '';
-      userEnrollments.forEach(enrollment => {
-        const course = courses.find(course => course.id === enrollment.course_id);
-        if (course) {
-          enrollmentDetails += `
-            <p><strong>Course:</strong> ${course.title}</p>
-            <p><strong>Progress:</strong> ${enrollment.current_lesson} / ${course.total_lessons}</p>
-          `;
-        }
-      });
-
-      const result = await Swal.fire({
-        title: `User Details: ${user.username}`,
-        html: `
-          <p><strong>Email:</strong> ${user.email}</p>
-          <p><strong>Discount:</strong> ${user.discount}%</p>
-          <p><strong>Username:</strong> ${user.username}</p>
-          ${enrollmentDetails}
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Edit',
-        cancelButtonText: 'Close'
-      });
-
-      if (result.isConfirmed) {
-        handleEditUserDetails(userId);
+    if (!user) {
+      console.error('User not found for ID:', userId);
+      return;
+    }
+  
+    console.log('User data:', user);
+  
+    // Filter enrollments for the user
+    const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
+    if (userEnrollments.length === 0) {
+      console.warn('No enrollments found for user ID:', userId);
+    }
+  
+    console.log('User enrollments:', userEnrollments);
+  
+    // Prepare enrollment details
+    let enrollmentDetails = '';
+    userEnrollments.forEach(enrollment => {
+      const course = courses.find(course => course.id === enrollment.course_id);
+      const progress = userProgress[userId] && userProgress[userId][course.id];
+      if (course && progress) {
+        enrollmentDetails += `
+          <p><strong>קורס:</strong> ${course.title}</p>
+          <p><strong>שיעור נוכחי:</strong> ${enrollment.current_lesson}</p>
+          <p><strong>תשלום:</strong> ${enrollment.amount_paid} ש"ח</p>
+          <p><strong>התקדמות:</strong> ${progress.current_lesson} / ${course.total_lessons}</p>
+          <p><strong>סיים תרגילים:</strong> ${progress.completed_exercises?.join(', ') || 'לא סיים תרגילים'}</p>
+        `;
+      } else {
+        console.warn(`No progress found for course ID: ${course?.id}, title: ${course?.title}`);
       }
+    });
+  
+    console.log('Enrollment details:', enrollmentDetails);
+  
+    // Display the user details in a Swal popup
+    const result = await Swal.fire({
+      title: `פרטי משתמש: ${user.username}`,
+      html: `
+        <p><strong>אימייל:</strong> ${user.email}</p>
+        <p><strong>הנחה:</strong> ${user.discount}%</p>
+        <p><strong>שם משתמש:</strong> ${user.username}</p>
+        ${enrollmentDetails}
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'עריכה',
+      cancelButtonText: 'סגור'
+    });
+  
+    // Handle edit confirmation
+    if (result.isConfirmed) {
+      handleEditUserDetails(userId);
     }
   };
 
@@ -291,6 +294,26 @@ const AdminDashboard = () => {
 
   const handleEditCourse = (courseId) => {
     navigate(`/courses/${courseId}/edit`);
+  };
+
+  const handleViewCourse = (courseId) => {
+    const course = courses.find((course) => course.id === courseId);
+    if (course) {
+      Swal.fire({
+        title: `פרטי קורס: ${course.title}`,
+        html: `
+          <p><strong>תיאור:</strong> ${course.description}</p>
+          <p><strong>מחיר:</strong> ${course.price} ש"ח</p>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'עריכה',
+        cancelButtonText: 'סגור'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          handleEditCourse(courseId);
+        }
+      });
+    }
   };
 
   const handleDeleteCourse = async (courseId) => {
@@ -350,7 +373,7 @@ const AdminDashboard = () => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ username: newUsername })
+        .update({ username: newUsername, discount: editingUserDiscount })
         .eq('id', editingUserId);
 
       if (error) throw error;
@@ -358,13 +381,14 @@ const AdminDashboard = () => {
       Swal.fire('עודכן בהצלחה', 'פרטי המשתמש עודכנו בהצלחה', 'success');
       setUsers(prevUsers =>
         prevUsers.map(user =>
-          user.id === editingUserId ? { ...user, username: newUsername } : user
+          user.id === editingUserId ? { ...user, username: newUsername, discount: editingUserDiscount } : user
         )
       );
 
       setShowEditUserModal(false);
       setEditingUserId(null);
       setNewUsername('');
+      setEditingUserDiscount('');
     } catch (error) {
       console.error('Error updating user details:', error);
       Swal.fire('שגיאה', 'אירעה שגיאה בעדכון פרטי המשתמש', 'error');
@@ -393,6 +417,11 @@ const AdminDashboard = () => {
         Swal.fire('שגיאה', 'אירעה שגיאה במחיקת ההרשמה', 'error');
       }
     }
+  };
+
+  const checkAndSendAutomatedEmails = async () => {
+    // Implement the logic for checking and sending automated emails here.
+    console.log('Checking and sending automated emails...');
   };
 
   return (
@@ -507,6 +536,7 @@ const AdminDashboard = () => {
                       >
                         צפייה
                       </ActionButton>
+                     
                       <ActionButton
                         variant="outlined"
                         color="secondary"
@@ -590,26 +620,30 @@ const AdminDashboard = () => {
                 <th>קורס</th>
                 <th>אחוז השלמה</th>
                 <th>פעילות אחרונה</th>
+                <th>תרגולים</th>
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
-                {Object.entries(userProgress).map(([userId, progress]) => (
-                  <motion.tr
-                    key={userId}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <td>{users.find(user => user.id === userId)?.email}</td>
-                    <td>{courses.find(course => course.id === progress.course_id)?.title}</td>
-                    <td>
-                      <ProgressBar progress={progress.completion_percentage}>
-                        <div></div>
-                      </ProgressBar>
-                    </td>
-                    <td>{new Date(progress.last_activity).toLocaleDateString()}</td>
-                  </motion.tr>
+                {Object.entries(userProgress).map(([userId, progressMap]) => (
+                  Object.entries(progressMap).map(([courseId, progress]) => (
+                    <motion.tr
+                      key={`${userId}-${courseId}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <td>{users.find(user => user.id === userId)?.email}</td>
+                      <td>{courses.find(course => course.id === courseId)?.title}</td>
+                      <td>
+                        <ProgressBar progress={progress.completion_percentage}>
+                          <div></div>
+                        </ProgressBar>
+                      </td>
+                      <td>{new Date(progress.last_activity).toLocaleDateString()}</td>
+                      <td>{progress.completed_exercises?.join(', ') || 'לא סיים תרגילים'}</td>
+                    </motion.tr>
+                  ))
                 ))}
               </AnimatePresence>
             </tbody>

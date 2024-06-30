@@ -110,7 +110,7 @@ const ProgressBar = styled.div`
 `;
 
 const Progress = styled.div`
-  width: ${props => props.percent}%;
+  width: ${props => props.$percent}%;
   background-color: #4CAF50;
   height: 100%;
   border-radius: 5px;
@@ -322,16 +322,88 @@ const PersonalArea = () => {
     }
   };
 
-  const handleCourseEnter = (courseId, currentLesson, totalLessons) => {
-    if (currentLesson >= totalLessons) {
-      Swal.fire({
-        title: 'סיימת את הקורס!',
-        text: 'כל הכבוד! השלמת את כל השיעורים בקורס זה.',
-        icon: 'success',
-        confirmButtonText: 'תודה!'
-      });
+  const handleCourseEnter = async (courseId, currentLesson, totalLessons) => {
+    try {
+      const { data: progressData, error: progressError } = await supabase
+        .from('user_progress')
+        .select('completed_exercises, completion_percentage')
+        .eq('user_id', user.id)
+        .eq('course_id', courseId)
+        .single(); // Ensure we expect a single row
+
+      if (progressError) {
+        if (progressError.code === 'PGRST116') {
+          console.error('Error fetching progress data: No rows or multiple rows returned');
+        } else {
+          console.error('Error fetching progress data:', progressError);
+        }
+        return;
+      }
+
+      const completedExercises = progressData?.completed_exercises || [];
+      const allExercisesCompleted = completedExercises.length >= totalLessons;
+
+      if (currentLesson >= totalLessons) {
+        Swal.fire({
+          title: 'סיימת את הקורס!',
+          text: 'כל הכבוד! השלמת את כל השיעורים בקורס זה.',
+          icon: 'success',
+          confirmButtonText: 'תרגול מסכם',
+          showCancelButton: true,
+          cancelButtonText: 'עבר לקורס הבא'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Show summary exercises
+            showSummaryExercises(courseId);
+          } else {
+            // Navigate to the next course or the home page
+            navigate('/');
+          }
+        });
+      } else {
+        if (!allExercisesCompleted && currentLesson < totalLessons) {
+          Swal.fire({
+            title: 'לא סיימת את התרגילים!',
+            text: 'אתה בטוח שאתה רוצה להמשיך?',
+            icon: 'warning',
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: 'כן, המשך',
+            denyButtonText: 'לא, חזור על התרגילים',
+          }).then((result) => {
+            if (result.isConfirmed) {
+              navigate(`/course-learning/${courseId}?lesson=${currentLesson + 1}`);
+            } else if (result.isDenied) {
+              navigate(`/course-learning/${courseId}?lesson=${currentLesson}`);
+            }
+          });
+        } else {
+          navigate(`/course-learning/${courseId}?lesson=${currentLesson + 1}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking exercises completion:', error);
+    }
+  };
+
+  const showSummaryExercises = (courseId) => {
+    // Fetch and display all exercises from the course for the user to complete
+    // Implement the logic to fetch and show exercises in a modal or another UI component
+  };
+
+  const handleCourseButton = (courseId, currentLesson, totalLessons) => {
+    if (currentLesson < totalLessons) {
+      return (
+        <StyledButton onClick={() => handleCourseEnter(courseId, currentLesson, totalLessons)}>
+          שיעור הבא
+        </StyledButton>
+      );
     } else {
-      navigate(`/course-learning/${courseId}?lesson=${currentLesson + 1}`);
+      return (
+        <StyledButton onClick={() => handleCourseEnter(courseId, currentLesson, totalLessons)}>
+          סיום קורס
+        </StyledButton>
+      );
     }
   };
 
@@ -341,9 +413,10 @@ const PersonalArea = () => {
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
-        <Typography variant="h2" component="h1" gutterBottom color="primary" align="center">
-          שלום, {user.email}
-        </Typography>
+      <Typography variant="h2" component="h1" gutterBottom color="primary" align="center" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem', md: '3rem' } }}>
+  שלום, {user.email}
+</Typography>
+
 
         {discount > 0 && (
           <DiscountInfo>
@@ -391,13 +464,11 @@ const PersonalArea = () => {
                         <TableCell>{enrollment.current_lesson || 'אין נתונים'}</TableCell>
                         <TableCell>
                           <ProgressBar>
-                            <Progress percent={progressPercent}>{progressPercent}%</Progress>
+                            <Progress $percent={progressPercent}>{progressPercent}%</Progress>
                           </ProgressBar>
                         </TableCell>
                         <TableCell align="center">
-                          <StyledButton onClick={() => handleCourseEnter(course.id, enrollment.current_lesson, course.total_lessons)}>
-                            כניסה לקורס
-                          </StyledButton>
+                          {handleCourseButton(course.id, enrollment.current_lesson, course.total_lessons)}
                         </TableCell>
                       </TableRow>
                     );
