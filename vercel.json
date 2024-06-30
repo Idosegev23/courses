@@ -3,6 +3,10 @@
     {
       "source": "/api/green-invoice/:path*",
       "destination": "/api/green-invoice/:path*"
+    },
+    {
+      "source": "/api/sendMail",
+      "destination": "/api/sendMail.js"
     }
   ],
   "headers": [
@@ -28,11 +32,5 @@
     "api/sendMail.js": {
       "runtime": "nodejs16.x"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/sendMail",
-      "dest": "/api/sendMail.js"
-    }
-  ]
+  }
 }
