@@ -268,7 +268,6 @@ const createGreenInvoice = async (user, course, additionalData) => {
 
 
 const { sendErrorLog } = require('./mailer');
-
 const handlePurchase = async () => {
     try {
         const { data: { user } } = await supabase.auth.getUser();
