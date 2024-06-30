@@ -158,27 +158,48 @@ const PurchasePage = () => {
 
   const getJwtToken = () => {
     return new Promise((resolve, reject) => {
+      console.log('Starting getJwtToken function');
       const xhr = new XMLHttpRequest();
       xhr.open('POST', 'https://sandbox.d.greeninvoice.co.il/api/v1/account/token', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.setRequestHeader('Accept', 'application/json');
+      xhr.setRequestHeader('Origin', 'https://courses-seven-alpha.vercel.app');
+      xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+      
+      xhr.onloadstart = function() {
+        console.log('Request started');
+      };
+      
+      xhr.onprogress = function() {
+        console.log('Request in progress');
+      };
       
       xhr.onload = function() {
+        console.log('Request completed');
+        console.log('Status:', this.status);
+        console.log('Response:', xhr.responseText);
         if (this.status >= 200 && this.status < 300) {
-          resolve(JSON.parse(xhr.response).token);
+          const response = JSON.parse(xhr.response);
+          console.log('Parsed response:', response);
+          resolve(response.token);
         } else {
+          console.log('Error status:', this.status);
           reject(new Error(xhr.statusText));
         }
       };
       
       xhr.onerror = function() {
+        console.log('Network error occurred');
         reject(new Error('Network Error'));
       };
       
-      xhr.send(JSON.stringify({
+      const data = JSON.stringify({
         id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
         secret: 'f5gxE9n2H43sY4d-P-Ivhg'
-      }));
+      });
+      
+      console.log('Sending request with data:', data);
+      xhr.send(data);
     });
   };
   
