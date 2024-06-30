@@ -267,7 +267,23 @@ const createGreenInvoice = async (user, course, additionalData) => {
 
 
 
-const { sendErrorLog } = require('../mailer');
+const sendErrorLog = async (errorDetails) => {
+  try {
+      const response = await fetch('/api/sendErrorLog', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ errorDetails }),
+      });
+
+      if (!response.ok) {
+          console.error('Failed to send error log email');
+      }
+  } catch (error) {
+      console.error('Error sending error log email:', error);
+  }
+};
 const handlePurchase = async () => {
     try {
         const { data: { user } } = await supabase.auth.getUser();
