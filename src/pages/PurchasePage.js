@@ -211,7 +211,7 @@ const createGreenInvoice = async (user, course, additionalData) => {
       group: 100,
       pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
       client: {
-          name: additionalData.username,
+          name: `${additionalData.firstName} ${additionalData.lastName}`,
           emails: [additionalData.email],
           taxId: additionalData.taxId,
           address: additionalData.address || "Unknown address",
@@ -222,9 +222,9 @@ const createGreenInvoice = async (user, course, additionalData) => {
           mobile: additionalData.phone,
           add: true
       },
-      successUrl: "https://www.your-site-here.com",
-      failureUrl: "https://www.your-site-here.com",
-      notifyUrl: "https://www.your-site-here.com",
+      successUrl: "https://courses-seven-alpha.vercel.app/personal-area?status=success",
+      failureUrl: "https://courses-seven-alpha.vercel.app/purchase/10?status=failure",
+      notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
       custom: "12345"
   };
 
@@ -275,29 +275,31 @@ const handlePurchase = async () => {
           const { value: formValues } = await Swal.fire({
               title: 'הרשמה',
               html:
-                  '<input id="swal-input1" class="swal2-input" placeholder="שם משתמש">' +
-                  '<input id="swal-input2" class="swal2-input" type="email" placeholder="אימייל">' +
-                  '<input id="swal-input3" class="swal2-input" type="password" placeholder="סיסמה">' +
-                  '<input id="swal-input4" class="swal2-input" placeholder="כתובת">' +
-                  '<input id="swal-input5" class="swal2-input" placeholder="עיר">' +
-                  '<input id="swal-input6" class="swal2-input" placeholder="מיקוד">' +
-                  '<input id="swal-input7" class="swal2-input" placeholder="מספר טלפון">',
+                  '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
+                  '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
+                  '<input id="swal-input3" class="swal2-input" placeholder="אימייל">' +
+                  '<input id="swal-input4" class="swal2-input" type="password" placeholder="סיסמה">' +
+                  '<input id="swal-input5" class="swal2-input" placeholder="כתובת">' +
+                  '<input id="swal-input6" class="swal2-input" placeholder="עיר">' +
+                  '<input id="swal-input7" class="swal2-input" placeholder="מיקוד">' +
+                  '<input id="swal-input8" class="swal2-input" placeholder="מספר טלפון">',
               focusConfirm: false,
               preConfirm: () => {
                   return {
-                      username: document.getElementById('swal-input1').value,
-                      email: document.getElementById('swal-input2').value,
-                      password: document.getElementById('swal-input3').value,
-                      address: document.getElementById('swal-input4').value,
-                      city: document.getElementById('swal-input5').value,
-                      zip: document.getElementById('swal-input6').value,
-                      phone: document.getElementById('swal-input7').value,
+                      firstName: document.getElementById('swal-input1').value,
+                      lastName: document.getElementById('swal-input2').value,
+                      email: document.getElementById('swal-input3').value,
+                      password: document.getElementById('swal-input4').value,
+                      address: document.getElementById('swal-input5').value,
+                      city: document.getElementById('swal-input6').value,
+                      zip: document.getElementById('swal-input7').value,
+                      phone: document.getElementById('swal-input8').value,
                   };
               }
           });
 
           if (formValues) {
-              const { username, email, password, address, city, zip, phone } = formValues;
+              const { firstName, lastName, email, password, address, city, zip, phone } = formValues;
 
               console.log('Form values:', formValues);
 
@@ -307,7 +309,8 @@ const handlePurchase = async () => {
                   password,
                   options: {
                       data: {
-                          username,
+                          first_name: firstName,
+                          last_name: lastName,
                           phone_num: phone
                       },
                   },
@@ -318,7 +321,7 @@ const handlePurchase = async () => {
               const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
 
               // Create Green Invoice
-              const invoiceCreated = await createGreenInvoice(newUser, course, { username, email, address, city, zip, phone });
+              const invoiceCreated = await createGreenInvoice(newUser, course, { firstName, lastName, email, address, city, zip, phone });
               if (!invoiceCreated) throw new Error('Failed to create invoice');
 
               // Perform purchase
@@ -347,39 +350,86 @@ const handlePurchase = async () => {
 
           if (userError) throw userError;
 
-          let phone = userData.phone_num;
-          if (!phone) {
-              // Ask user for phone number if not present in the database
-              const { value: phoneValue } = await Swal.fire({
-                  title: 'עדכון מספר טלפון',
-                  input: 'text',
-                  inputLabel: 'מספר טלפון',
-                  inputPlaceholder: 'הזן את מספר הטלפון שלך'
+          let { first_name: firstName, last_name: lastName, phone_num: phone } = userData;
+          if (!phone || !firstName || !lastName) {
+              // Ask user for first name, last name, and phone number if not present in the database
+              const { value: formValues } = await Swal.fire({
+                  title: 'עדכון פרטים',
+                  html:
+                      '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
+                      '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
+                      '<input id="swal-input3" class="swal2-input" placeholder="מספר טלפון">',
+                  focusConfirm: false,
+                  preConfirm: () => {
+                      return {
+                          firstName: document.getElementById('swal-input1').value,
+                          lastName: document.getElementById('swal-input2').value,
+                          phone: document.getElementById('swal-input3').value,
+                      };
+                  }
               });
 
-              if (!phoneValue) {
-                  Swal.fire('שגיאה', 'לא הוזן מספר טלפון.', 'error');
+              if (!formValues.firstName || !formValues.lastName || !formValues.phone) {
+                  Swal.fire('שגיאה', 'כל הפרטים נדרשים.', 'error');
                   return;
               }
 
-              phone = phoneValue;
+              firstName = formValues.firstName;
+              lastName = formValues.lastName;
+              phone = formValues.phone;
 
-              // Update the user's phone number in the database
+              // Update the user's details in the database
               const { error: updateError } = await supabase
                   .from('users')
-                  .update({ phone_num: phone })
+                  .update({ first_name: firstName, last_name: lastName, phone_num: phone })
                   .eq('id', user.id);
 
               if (updateError) throw updateError;
           }
 
+          const { value: updateAddress } = await Swal.fire({
+              title: 'עדכון כתובת',
+              text: 'האם תרצה לעדכן את הכתובת לקבלה?',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'כן',
+              cancelButtonText: 'לא'
+          });
+
+          let address = userData.address;
+          let city = userData.city;
+          let zip = userData.zip;
+
+          if (updateAddress) {
+              const { value: addressValues } = await Swal.fire({
+                  title: 'הזן כתובת',
+                  html:
+                      '<input id="swal-input4" class="swal2-input" placeholder="כתובת">' +
+                      '<input id="swal-input5" class="swal2-input" placeholder="עיר">' +
+                      '<input id="swal-input6" class="swal2-input" placeholder="מיקוד">',
+                  focusConfirm: false,
+                  preConfirm: () => {
+                      return {
+                          address: document.getElementById('swal-input4').value,
+                          city: document.getElementById('swal-input5').value,
+                          zip: document.getElementById('swal-input6').value,
+                      };
+                  }
+              });
+
+              address = addressValues.address;
+              city = addressValues.city;
+              zip = addressValues.zip;
+          }
+
           const additionalData = {
-              username: userData.username,
+              firstName,
+              lastName,
               email: user.email,
-              address: userData.address || '',
-              city: userData.city || '',
-              zip: userData.zip || '',
-              phone: phone,
+              address: address || 'Unknown address',
+              city: city || 'Unknown city',
+              zip: zip || '0000000',
+              phone,
               taxId: '300700556'
           };
 
