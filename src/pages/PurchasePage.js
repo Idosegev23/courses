@@ -163,8 +163,7 @@ const PurchasePage = () => {
         secret: 'f5gxE9n2H43sY4d-P-Ivhg'
       }, {
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         }
       });
       console.log('JWT Token:', response.data.token);
@@ -186,6 +185,14 @@ const PurchasePage = () => {
     }
   };
 
+  const calculateDiscount = (originalPrice, newPrice) => {
+    if (originalPrice && newPrice && originalPrice > newPrice) {
+      const discount = ((originalPrice - newPrice) / originalPrice) * 100;
+      return Math.round(discount);
+    }
+    return 0;
+  };
+
   if (loading) {
     return <Message>טוען...</Message>;
   }
@@ -193,6 +200,8 @@ const PurchasePage = () => {
   if (!course) {
     return <Message>לא נמצא קורס עם המזהה הזה.</Message>;
   }
+
+  const discountPercentage = calculateDiscount(course.original_price, course.price);
 
   return (
     <>
@@ -205,7 +214,7 @@ const PurchasePage = () => {
             <>
               <OriginalPrice>{course.original_price} ש"ח</OriginalPrice>
               <DiscountedPrice>{course.price} ש"ח</DiscountedPrice>
-              <DiscountPercentage>({calculateDiscount(course.original_price, course.price)}% הנחה)</DiscountPercentage>
+              <DiscountPercentage>({discountPercentage}% הנחה)</DiscountPercentage>
             </>
           )}
           {!course.original_price || course.original_price <= course.price ? (
