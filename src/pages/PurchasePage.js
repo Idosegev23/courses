@@ -235,7 +235,7 @@ const PurchasePage = () => {
       id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
       secret: 'f5gxE9n2H43sY4d-P-Ivhg'
     };
-  
+
     try {
       const response = await fetch('/api/proxy', {
         method: 'POST',
@@ -245,22 +245,22 @@ const PurchasePage = () => {
         },
         body: JSON.stringify({ endpoint: 'account/token', data })
       });
-  
+
       console.log('Response status:', response.status);
       const responseData = await response.json();
       console.log('Response data:', responseData);
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       return responseData.token;
     } catch (error) {
       console.error('Error in getJwtToken:', error);
       throw error;
     }
   };
-  
+
   const createGreenInvoice = async (user, course, additionalData) => {
     const token = await getJwtToken();
     if (!token) {
@@ -271,7 +271,7 @@ const PurchasePage = () => {
       });
       return false;
     }
-  
+
     const invoiceData = {
       description: course.title,
       type: 400,
@@ -301,9 +301,9 @@ const PurchasePage = () => {
       notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
       custom: "12345"
     };
-  
+
     console.log('Invoice Data:', invoiceData);
-  
+
     try {
       const response = await fetch('/api/proxy', {
         method: 'POST',
@@ -313,7 +313,7 @@ const PurchasePage = () => {
         },
         body: JSON.stringify({ endpoint: 'payments/form', data: invoiceData })
       });
-  
+
       const responseData = await response.json();
       if (response.status === 200 && responseData.errorCode === 0) {
         console.log('Payment form created successfully:', responseData);
@@ -338,7 +338,7 @@ const PurchasePage = () => {
       return false;
     }
   };
-  
+
   const handlePurchase = async () => {
     try {
       if (!userDetails) {
@@ -368,12 +368,12 @@ const PurchasePage = () => {
             };
           }
         });
-  
+
         if (formValues) {
           const { firstName, lastName, email, password, address, city, zip, phone } = formValues;
-  
+
           console.log('Form values:', formValues);
-  
+
           // Perform sign-up
           const { error: signUpError } = await supabase.auth.signUp({
             email,
@@ -386,14 +386,14 @@ const PurchasePage = () => {
               },
             },
           });
-  
+
           if (signUpError) {
             throw signUpError;
           }
-  
+
           const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
           setUserDetails({ ...newUser, first_name: firstName, last_name: lastName, phone_num: phone });
-  
+
           // Create Green Invoice
           const { value: additionalValues } = await Swal.fire({
             title: 'פרטים אחרונים לרכישת הקורס',
@@ -406,12 +406,12 @@ const PurchasePage = () => {
               };
             }
           });
-  
+
           if (!additionalValues || !additionalValues.taxId) {
             Swal.fire('שגיאה', 'מספר ת.ז. נדרש.', 'error');
             return;
           }
-  
+
           const additionalData = {
             firstName,
             lastName,
@@ -422,12 +422,12 @@ const PurchasePage = () => {
             phone,
             taxId: additionalValues.taxId
           };
-  
+
           const invoiceCreated = await createGreenInvoice(newUser, course, additionalData);
           if (!invoiceCreated) {
             throw new Error('Failed to create invoice');
           }
-  
+
           // Perform purchase
           const { error: purchaseError } = await supabase
             .from('enrollments')
@@ -438,11 +438,11 @@ const PurchasePage = () => {
               amount_paid: finalPrice,
               course_title: course.title,
             });
-  
+
           if (purchaseError) {
             throw purchaseError;
           }
-  
+
           Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
           navigate('/personal-area');
         }
@@ -466,27 +466,27 @@ const PurchasePage = () => {
               };
             }
           });
-  
+
           if (!formValues.firstName || !formValues.lastName || !formValues.phone) {
             Swal.fire('שגיאה', 'כל הפרטים נדרשים.', 'error');
             return;
           }
-  
+
           firstName = formValues.firstName;
           lastName = formValues.lastName;
           phone = formValues.phone;
-  
+
           // Update the user's details in the database
           const { error: updateError } = await supabase
             .from('users')
             .update({ first_name: firstName, last_name: lastName, phone_num: phone })
             .eq('id', userDetails.id);
-  
+
           if (updateError) {
             throw updateError;
           }
         }
-  
+
         const { value: updateAddress } = await Swal.fire({
           title: 'עדכון כתובת',
           text: 'האם תרצה לעדכן את הכתובת לקבלה?',
@@ -495,11 +495,11 @@ const PurchasePage = () => {
           confirmButtonText: 'כן',
           cancelButtonText: 'לא'
         });
-  
+
         let address = userDetails.address;
         let city = userDetails.city;
         let zip = userDetails.zip;
-  
+
         if (updateAddress) {
           const { value: addressValues } = await Swal.fire({
             title: 'הזן כתובת',
@@ -516,12 +516,12 @@ const PurchasePage = () => {
               };
             }
           });
-  
+
           address = addressValues.address;
           city = addressValues.city;
           zip = addressValues.zip;
         }
-  
+
         const { value: additionalValues } = await Swal.fire({
           title: 'פרטים אחרונים לרכישת הקורס',
           html:
@@ -533,12 +533,12 @@ const PurchasePage = () => {
             };
           }
         });
-  
+
         if (!additionalValues || !additionalValues.taxId) {
           Swal.fire('שגיאה', 'מספר ת.ז. נדרש.', 'error');
           return;
         }
-  
+
         const additionalData = {
           firstName,
           lastName,
@@ -549,12 +549,12 @@ const PurchasePage = () => {
           phone,
           taxId: additionalValues.taxId
         };
-  
+
         const invoiceCreated = await createGreenInvoice(userDetails, course, additionalData);
         if (!invoiceCreated) {
           throw new Error('Failed to create invoice');
         }
-  
+
         // Perform purchase
         const { error } = await supabase
           .from('enrollments')
@@ -565,11 +565,11 @@ const PurchasePage = () => {
             amount_paid: finalPrice,
             course_title: course.title,
           });
-  
+
         if (error) {
           throw error;
         }
-  
+
         Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
         navigate('/personal-area');
       }
@@ -578,15 +578,15 @@ const PurchasePage = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
     }
   };
-  
+
   if (loading) {
     return <Message>טוען...</Message>;
   }
-  
+
   if (!course) {
     return <Message>לא נמצא קורס עם המזהה הזה.</Message>;
   }
-  
+
   return (
     <>
       <GlobalStyle />
@@ -613,7 +613,6 @@ const PurchasePage = () => {
       </PageContainer>
     </>
   );
-  };
-  
-  export default PurchasePage;
-  
+};
+
+export default PurchasePage;
