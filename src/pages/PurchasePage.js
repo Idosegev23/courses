@@ -305,7 +305,7 @@ const PurchasePage = () => {
     console.log('Invoice Data:', invoiceData);
   
     try {
-      const response = await fetch('https://sandbox.d.greeninvoice.co.il/api/v1/payments/form', {
+      const response = await fetch('/api/proxy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
