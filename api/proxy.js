@@ -1,12 +1,16 @@
-import axios from 'axios';
+// api/proxy.js
 
-export default async function handler(req, res) {
+const axios = require('axios');
+
+const API_BASE_URL = 'https://sandbox.d.greeninvoice.co.il/api/v1';
+
+module.exports = async (req, res) => {
   if (req.method === 'POST') {
     const { id, secret } = req.body;
 
     if (id && secret) {
       try {
-        const response = await axios.post('https://sandbox.d.greeninvoice.co.il/api/v1/account/token', {
+        const response = await axios.post(`${API_BASE_URL}/account/token`, {
           id,
           secret
         });
@@ -22,4 +26,4 @@ export default async function handler(req, res) {
   } else {
     res.status(405).json({ error: "Method not allowed" });
   }
-}
+};
