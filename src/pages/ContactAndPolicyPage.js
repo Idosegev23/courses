@@ -89,7 +89,59 @@ const ContactAndPolicyPage = () => {
               תקנון ביטולים
             </Typography>
             <Typography variant="body1" paragraph>
-              לא ניתן לבטל את הרכישה או לבקש החזר כספי. כל ההזמנות הן סופיות.
+              ניתן לבטל את רכישת הקורס בתוך 14 יום ממועד הרכישה, בתנאי שהקורס לא נפתח או נצפה. הביטול יעשה בהודעה בכתב לכתובת האימייל שלנו. לאחר קבלת הודעת הביטול, יוחזר סכום הרכישה בתוך 14 ימי עסקים לאמצעי התשלום ממנו בוצעה הרכישה.
+            </Typography>
+          </SectionContainer>
+
+          <SectionContainer
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <Typography variant="h4" gutterBottom color="secondary">
+              מדיניות אספקת קורסים
+            </Typography>
+            <Typography variant="body1" paragraph>
+              הקורסים יהיו זמינים לצפייה מיד לאחר השלמת תהליך הרכישה ואישור התשלום. הגישה לקורסים תינתן דרך חשבון המשתמש באתר.
+            </Typography>
+          </SectionContainer>
+
+          <SectionContainer
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <Typography variant="h4" gutterBottom color="secondary">
+              הגבלת גיל
+            </Typography>
+            <Typography variant="body1" paragraph>
+              תנאי לרכישה באתר כי הרוכש הינו בן 18 שנים ומעלה.
+            </Typography>
+          </SectionContainer>
+
+          <SectionContainer
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 1.0 }}
+          >
+            <Typography variant="h4" gutterBottom color="secondary">
+              אחריות המוצר
+            </Typography>
+            <Typography variant="body1" paragraph>
+              החברה ו/או מי מטעמה לא יהיו אחראים לנזק ישיר ו/או עקיף שיגרם כתוצאה משימוש בקורסים הנרכשים באתר. כל מידע שנמסר באתר אינו מהווה ייעוץ מקצועי. האחריות על השימוש במידע שיימצא באתר היא על המשתמש בלבד.
+            </Typography>
+          </SectionContainer>
+
+          <SectionContainer
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 1.2 }}
+          >
+            <Typography variant="h4" gutterBottom color="secondary">
+              פרטיות
+            </Typography>
+            <Typography variant="body1" paragraph>
+              החנות נוקטת באמצעי זהירות מקובלים על מנת לשמור, ככל האפשר, על סודיות המידע. החנות מתחייבת לא לעשות שימוש בפרטי הלקוחות הרשומים באתר אלא לצרכי תפעול האתר בלבד, ועל מנת לאפשר את ביצוע הרכישה.
             </Typography>
           </SectionContainer>
         </motion.div>

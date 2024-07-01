@@ -502,11 +502,11 @@ const handlePurchase = async () => {
                 firstName,
                 lastName,
                 email: user.email,
-                address: address || 'Unknown address',
-                city: city || 'Unknown city',
-                zip: zip || '0000000',
+                address: address || 'לוינסקי 39',
+                city: city || 'תל אביב',
+                zip: zip || '7898899',
                 phone,
-                taxId: '000000000'
+                taxId: '300800778'
             };
 
             const invoiceCreated = await createGreenInvoice(user, course, additionalData);
