@@ -299,7 +299,7 @@ const createGreenInvoice = async (user, course, additionalData) => {
         successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
         failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
         notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
-        custom: "12345"
+        custom: "300700556"
     };
 
     console.log('Invoice Data:', invoiceData);
@@ -508,7 +508,7 @@ const handlePurchase = async () => {
                 city: city || 'Unknown city',
                 zip: zip || '0000000',
                 phone,
-                taxId: '300700556'
+                taxId: '000000000'
             };
 
             const invoiceCreated = await createGreenInvoice(user, course, additionalData);
