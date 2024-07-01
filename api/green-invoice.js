@@ -25,13 +25,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { endpoint, data, tokenRequest } = body;
+    const { endpoint, data } = body;
 
     console.log('Endpoint:', endpoint);
     console.log('Data:', JSON.stringify(data, null, 2));
-    console.log('Token:', tokenRequest);
 
-    if (endpoint === '/account/token') {
+    let response;
+
+    if (endpoint === 'account/token') {
       const { id, secret } = data;
       if (!id || !secret) {
         console.log('Missing API key or secret for token request');
@@ -39,30 +40,29 @@ module.exports = async (req, res) => {
       }
 
       console.log('Requesting token from Green Invoice Sandbox API');
-      const response = await axios.post(`${API_BASE_URL}/account/token`, { id, secret });
+      response = await axios.post(`${API_BASE_URL}/account/token`, { id, secret });
       console.log('Token request successful');
-      return res.status(200).json(response.data);
-    } 
-    
-    if (endpoint === '/payments/form') {
+    } else if (endpoint === 'payments/form') {
+      const { tokenRequest } = body;
       if (!data || !tokenRequest) {
         console.log('Missing required parameters for payment form request');
         return res.status(400).json({ message: 'Missing required parameters: data or token' });
       }
 
       console.log('Requesting payment form from Green Invoice Sandbox API');
-      const response = await axios.post(`${API_BASE_URL}/payments/form`, data, {
+      response = await axios.post(`${API_BASE_URL}/payments/form`, data, {
         headers: {
           Authorization: `Bearer ${tokenRequest}`,
           'Content-Type': 'application/json',
         }
       });
       console.log('Payment form request successful');
-      return res.status(200).json(response.data);
+    } else {
+      console.log('Unknown endpoint requested');
+      return res.status(400).json({ message: 'Unknown endpoint requested' });
     }
 
-    console.log('Unknown endpoint requested');
-    return res.status(400).json({ message: 'Unknown endpoint requested' });
+    return res.status(200).json(response.data);
 
   } catch (error) {
     console.error('Error in serverless function:', error);
@@ -74,12 +74,12 @@ module.exports = async (req, res) => {
         data: error.response.data
       });
     } 
-    
+
     if (error.request) {
       console.error('No response received from Green Invoice API');
       return res.status(500).json({ message: 'No response received from Green Invoice API' });
     } 
-    
+
     console.error('General error in request processing:', error.message);
     return res.status(500).json({ message: error.message });
   }
