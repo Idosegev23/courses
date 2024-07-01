@@ -313,7 +313,7 @@ const PurchasePage = () => {
   const handlePurchase = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
+  
       // Collect all necessary information in a single popup
       const { value: formValues } = await Swal.fire({
         title: 'פרטים לקבלה',
@@ -338,12 +338,13 @@ const PurchasePage = () => {
           };
         }
       });
-
+  
       if (formValues) {
         const { firstName, lastName, phone, address, city, zip, idNum } = formValues;
-
+  
         let userEmail = user ? user.email : null;
-
+        let userId = user ? user.id : null;
+  
         if (!user) {
           // If user is not logged in, ask for email
           const { value: email } = await Swal.fire({
@@ -351,14 +352,19 @@ const PurchasePage = () => {
             input: 'email',
             inputPlaceholder: 'אימייל'
           });
-
+  
           if (email) {
             userEmail = email;
+            // Generate a temporary ID for non-logged in users
+            userId = 'TEMP-' + Date.now();
           } else {
             throw new Error('Email is required');
           }
         }
-
+  
+        // Format phone number
+        const formattedPhone = `+972-${phone.replace(/^0/, '')}`;
+  
         // Prepare invoice data
         const invoiceData = {
           description: 'רכישת קורס',
@@ -373,15 +379,17 @@ const PurchasePage = () => {
           maxPayments: 1,
           pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
           client: {
+            id: userId, // Using Supabase user ID or temporary ID for non-logged in users
             name: `${firstName} ${lastName}`,
             emails: [userEmail],
-            taxId: idNum || "300900500",
-            address: address || "לוינסקי 39",
-            city: city || "תל אביב",
-            zip: zip || "7822800",
+            taxId: idNum,
+            address: address || "1 Luria st",
+            city: city || "Tel Aviv",
+            zip: zip || "1234567",
             country: "IL",
-            phone: phone,
-            mobile: phone,
+            phone: formattedPhone,
+            fax: formattedPhone, // Using the same number for fax, adjust if needed
+            mobile: formattedPhone,
             add: true
           },
           successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
@@ -389,12 +397,12 @@ const PurchasePage = () => {
           notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
           custom: "300700556"
         };
-
+  
         // Create Green Invoice
         const invoiceCreated = await createGreenInvoice(invoiceData);
-
+  
         if (!invoiceCreated) throw new Error('Failed to create invoice');
-
+  
         if (user) {
           // Update user information in Supabase
           const { error: updateError } = await supabase
@@ -409,9 +417,9 @@ const PurchasePage = () => {
               id_num: idNum
             })
             .eq('id', user.id);
-
+  
           if (updateError) throw updateError;
-
+  
           // Perform purchase
           const { error: purchaseError } = await supabase
             .from('enrollments')
@@ -422,14 +430,14 @@ const PurchasePage = () => {
               amount_paid: finalPrice,
               course_title: course.title,
             });
-
+  
           if (purchaseError) throw purchaseError;
         } else {
           // If not logged in, we don't create an enrollment yet
           // The enrollment will be created after successful payment and account creation
           console.log('User not logged in. Enrollment will be created after successful payment.');
         }
-
+  
         Swal.fire('הרכישה בתהליך', 'אתה מועבר לדף התשלום.', 'info');
       }
     } catch (error) {
@@ -437,7 +445,7 @@ const PurchasePage = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
     }
   };
-
+  
   if (loading) {
     return <Message>טוען...</Message>;
   }
