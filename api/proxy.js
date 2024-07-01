@@ -7,11 +7,15 @@ module.exports = async (req, res) => {
         console.log('Proxy request data:', { endpoint, data, token });
 
         try {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { Authorization: `Bearer ${token}` })
+            };
+            console.log('Request Headers:', headers);
+            console.log('Request Body:', data);
+
             const response = await axios.post(`${API_BASE_URL}/${endpoint}`, data, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token && { Authorization: `Bearer ${token}` })
-                }
+                headers
             });
 
             console.log('Response from Green Invoice:', response.data);
