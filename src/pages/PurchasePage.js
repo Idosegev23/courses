@@ -282,6 +282,7 @@ const PurchasePage = () => {
       currency: "ILS",
       vatType: 0,
       amount: finalPrice,
+      group: 100,
       maxPayments: 1,
       pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
       client: {
