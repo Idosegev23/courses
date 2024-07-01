@@ -234,7 +234,7 @@ const PurchasePage = () => {
     };
   
     try {
-      const response = await fetch('https://courses-seven-alpha.vercel.app/api/proxy', {
+      const response = await fetch('/api/proxy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -257,6 +257,7 @@ const PurchasePage = () => {
       throw error;
     }
   };
+  
   
   const createGreenInvoice = async (user, course, additionalData) => {
     const token = await getJwtToken();
