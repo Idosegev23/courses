@@ -227,69 +227,82 @@ const PurchasePage = () => {
   }, [courseId]);
 
   const getJwtToken = async () => {
+    console.log('Starting getJwtToken function');
+    const data = {
+      id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
+      secret: 'f5gxE9n2H43sY4d-P-Ivhg'
+    };
+  
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/green-invoice/token`, {
+      const response = await fetch('https://courses-seven-alpha.vercel.app/api/proxy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
-          secret: 'f5gxE9n2H43sY4d-P-Ivhg'
-        })
+        body: JSON.stringify(data)
       });
-
+  
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+  
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      const data = await response.json();
-      return data.token;
+  
+      return responseData.token;
     } catch (error) {
       console.error('Error in getJwtToken:', error);
-      await sendErrorLog({ error, message: 'Error getting JWT token' });
       throw error;
     }
   };
-
+  
   const createGreenInvoice = async (user, course, additionalData) => {
+    const token = await getJwtToken();
+    if (!token) {
+      Swal.fire({
+        title: 'שגיאה',
+        text: 'אירעה שגיאה בהשגת אסימון אימות. אנא נסה שוב מאוחר יותר.',
+        icon: 'error'
+      });
+      return false;
+    }
+  
+    const invoiceData = {
+      description: course.title,
+      type: 400,
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+      lang: "he",
+      currency: "ILS",
+      vatType: 0,
+      amount: finalPrice,
+      maxPayments: 1,
+      group: 100,
+      pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
+      client: {
+        name: `${additionalData.firstName} ${additionalData.lastName}`,
+        emails: [additionalData.email],
+        taxId: additionalData.taxId,
+        address: additionalData.address || "Unknown address",
+        city: additionalData.city || "Unknown city",
+        zip: additionalData.zip || "0000000",
+        country: "IL",
+        phone: additionalData.phone,
+        mobile: additionalData.phone,
+        add: true
+      },
+      successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
+      failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
+      notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
+      custom: "12345"
+    };
+  
+    console.log('Invoice Data:', invoiceData);
+  
     try {
-      const token = await getJwtToken();
-      if (!token) {
-        throw new Error('Failed to get authentication token');
-      }
-
-      const invoiceData = {
-        description: course.title,
-        type: 400,
-        date: new Date().toISOString().split('T')[0],
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
-        lang: "he",
-        currency: "ILS",
-        vatType: 0,
-        amount: finalPrice,
-        maxPayments: 1,
-        group: 100,
-        pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
-        client: {
-          name: `${additionalData.firstName} ${additionalData.lastName}`,
-          emails: [additionalData.email],
-          taxId: additionalData.taxId,
-          address: additionalData.address || "Unknown address",
-          city: additionalData.city || "Unknown city",
-          zip: additionalData.zip || "0000000",
-          country: "IL",
-          phone: additionalData.phone,
-          mobile: additionalData.phone,
-          add: true
-        },
-        successUrl: `${process.env.REACT_APP_API_URL}/payment-success`,
-        failureUrl: `${process.env.REACT_APP_API_URL}/purchase/${course.id}?status=failure`,
-        notifyUrl: `${process.env.REACT_APP_API_URL}/notify`,
-        custom: "12345"
-      };
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/green-invoice/payment-form`, {
+      const response = await fetch('https://courses-seven-alpha.vercel.app/api/proxy-form', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -297,44 +310,49 @@ const PurchasePage = () => {
         },
         body: JSON.stringify(invoiceData)
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+  
       const responseData = await response.json();
-      if (responseData.errorCode === 0) {
+      if (response.status === 200 && responseData.errorCode === 0) {
+        console.log('Payment form created successfully:', responseData);
         window.location.href = responseData.url;
         return true;
       } else {
-        throw new Error(responseData.errorMessage || 'Unknown error occurred');
+        console.error('Failed to create payment form:', responseData);
+        Swal.fire({
+          title: 'שגיאה',
+          text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
+          icon: 'error'
+        });
+        return false;
       }
     } catch (error) {
-      console.error('Error creating Green Invoice:', error);
-      await sendErrorLog({ error, user, course, additionalData });
-      Swal.fire('שגיאה', 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.', 'error');
+      console.error('Error creating payment form:', error);
+      Swal.fire({
+        title: 'שגיאה',
+        text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
+        icon: 'error'
+      });
       return false;
     }
   };
-
+  
   const sendErrorLog = async (errorDetails) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/sendErrorLog`, {
+      const response = await fetch('https://courses-seven-alpha.vercel.app/api/sendErrorLog', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ errorDetails }),
       });
-
+  
       if (!response.ok) {
-        console.error('Failed to send error log');
+        console.error('Failed to send error log email');
       }
     } catch (error) {
-      console.error('Error sending error log:', error);
+      console.error('Error sending error log email:', error);
     }
   };
-
   const handlePurchase = async () => {
     try {
       if (!userDetails) {
