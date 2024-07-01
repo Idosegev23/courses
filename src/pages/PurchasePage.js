@@ -287,10 +287,10 @@ const PurchasePage = () => {
       client: {
         name: `${additionalData.firstName} ${additionalData.lastName}`,
         emails: [additionalData.email],
-        taxId: additionalData.taxId,
-        address: additionalData.address || "Unknown address",
-        city: additionalData.city || "Unknown city",
-        zip: additionalData.zip || "0000000",
+        taxId: additionalData.taxId || "300900500"
+        address: additionalData.address || "לוינסקי 39",
+        city: additionalData.city || "תל אביב",
+        zip: additionalData.zip || "7822800",
         country: "IL",
         phone: additionalData.phone,
         mobile: additionalData.phone,
