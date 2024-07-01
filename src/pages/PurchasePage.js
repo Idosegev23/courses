@@ -232,34 +232,35 @@ const PurchasePage = () => {
   const getJwtToken = async () => {
     console.log('Starting getJwtToken function');
     const data = {
-        id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
-        secret: 'f5gxE9n2H43sY4d-P-Ivhg'
+      id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
+      secret: 'f5gxE9n2H43sY4d-P-Ivhg'
     };
-
+  
     try {
-        const response = await fetch('/api/proxy', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ endpoint: 'account/token', data })
-        });
-
-        console.log('Response status:', response.status);
-        const responseData = await response.json();
-        console.log('Response data:', responseData);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return responseData.token;
+      const response = await fetch('/api/green-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ endpoint: 'account/token', data })
+      });
+  
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      return responseData.token;
     } catch (error) {
-        console.error('Error in getJwtToken:', error);
-        throw error;
+      console.error('Error in getJwtToken:', error);
+      throw error;
     }
-};
+  };
+  
 
 const createGreenInvoice = async (user, course, additionalData) => {
     const token = await getJwtToken();

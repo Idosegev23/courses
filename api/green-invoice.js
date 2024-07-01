@@ -1,5 +1,4 @@
 const axios = require('axios');
-
 const API_BASE_URL = 'https://sandbox.d.greeninvoice.co.il/api/v1';
 
 module.exports = async (req, res) => {
