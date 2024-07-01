@@ -14,10 +14,7 @@ module.exports = async (req, res) => {
             console.log('Request Headers:', headers);
             console.log('Request Body:', data);
 
-            const response = await axios.post(`${API_BASE_URL}/${endpoint}`, data, {
-                headers
-            });
-
+            const response = await axios.post(`${API_BASE_URL}/${endpoint}`, data, { headers });
             console.log('Response from Green Invoice:', response.data);
             res.status(response.status).json(response.data);
         } catch (error) {

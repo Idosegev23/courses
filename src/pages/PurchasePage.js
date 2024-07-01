@@ -344,7 +344,6 @@ const createGreenInvoice = async (user, course, additionalData) => {
     }
 };
 
-
 const handlePurchase = async () => {
     try {
         const { data: { user } } = await supabase.auth.getUser();
