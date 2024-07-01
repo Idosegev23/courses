@@ -287,7 +287,7 @@ const PurchasePage = () => {
         client: {
             name: `${additionalData.firstName} ${additionalData.lastName}`,
             emails: [additionalData.email],
-            taxId: additionalData.taxId,
+            taxId: additionalData.taxId || '000000000',
             address: additionalData.address || "Unknown address",
             city: additionalData.city || "Unknown city",
             zip: additionalData.zip || "0000000",
@@ -305,7 +305,7 @@ const PurchasePage = () => {
     console.log('Invoice Data:', invoiceData);
 
     try {
-        const response = await fetch('http://localhost:3001/api/proxy-form', {
+        const response = await fetch('/api/proxy-form', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -337,7 +337,8 @@ const PurchasePage = () => {
         });
         return false;
     }
-  };
+};
+
 
   const sendErrorLog = async (errorDetails) => {
     try {
