@@ -305,7 +305,7 @@ const PurchasePage = () => {
     console.log('Invoice Data:', invoiceData);
   
     try {
-      const response = await fetch('/api/proxy', {
+      const response = await fetch('/api/proxy-form', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
