@@ -271,10 +271,10 @@ const PurchasePage = () => {
       });
       return false;
     }
-  
+
     const invoiceData = {
-      description: "דוגמא לקבלה",
-      type: 400,
+      description: "Just an order",
+      type: 320,
       date: new Date().toISOString().split('T')[0],
       dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
       lang: "he",
@@ -301,9 +301,9 @@ const PurchasePage = () => {
       notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
       custom: "12345"
     };
-  
-    console.log('Invoice Data:', invoiceData);
-  
+
+    console.log('Invoice Data:', invoiceData);  // Log the invoice data
+
     try {
       const response = await fetch('/api/proxy', {
         method: 'POST',
@@ -311,10 +311,15 @@ const PurchasePage = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(invoiceData)
+        body: JSON.stringify({ endpoint: 'payments/form', data: invoiceData })
       });
-  
+
+      console.log('Invoice request sent with data:', invoiceData);  // Log the request data
+
       const responseData = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response data:', responseData);  // Log the response data
+
       if (response.status === 200 && responseData.errorCode === 0) {
         console.log('Payment form created successfully:', responseData);
         window.location.href = responseData.url;
@@ -338,7 +343,6 @@ const PurchasePage = () => {
       return false;
     }
   };
-  
 
   const handlePurchase = async () => {
     try {

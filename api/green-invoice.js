@@ -30,6 +30,7 @@ module.exports = async (req, res) => {
 
     console.log('Endpoint:', endpoint);
     console.log('Data:', JSON.stringify(data, null, 2));
+    console.log('Token:', tokenRequest);
 
     if (endpoint === '/account/token') {
       const { id, secret } = data;
