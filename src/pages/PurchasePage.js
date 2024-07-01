@@ -271,18 +271,17 @@ const PurchasePage = () => {
       });
       return false;
     }
-
+  
     const invoiceData = {
-      description: course.title,
+      description: "דוגמא לקבלה",
       type: 400,
       date: new Date().toISOString().split('T')[0],
       dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
       lang: "he",
       currency: "ILS",
       vatType: 0,
-      amount: finalPrice,
+      amount: course.price,
       maxPayments: 1,
-      group: 100,
       pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
       client: {
         name: `${additionalData.firstName} ${additionalData.lastName}`,
@@ -293,6 +292,7 @@ const PurchasePage = () => {
         zip: additionalData.zip || "0000000",
         country: "IL",
         phone: additionalData.phone,
+        fax: additionalData.phone,
         mobile: additionalData.phone,
         add: true
       },
@@ -301,19 +301,19 @@ const PurchasePage = () => {
       notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
       custom: "12345"
     };
-
+  
     console.log('Invoice Data:', invoiceData);
-
+  
     try {
-      const response = await fetch('/api/proxy', {
+      const response = await fetch('https://sandbox.d.greeninvoice.co.il/api/v1/payments/form', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ endpoint: 'payments/form', data: invoiceData })
+        body: JSON.stringify(invoiceData)
       });
-
+  
       const responseData = await response.json();
       if (response.status === 200 && responseData.errorCode === 0) {
         console.log('Payment form created successfully:', responseData);
@@ -338,6 +338,7 @@ const PurchasePage = () => {
       return false;
     }
   };
+  
 
   const handlePurchase = async () => {
     try {
