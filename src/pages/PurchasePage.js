@@ -237,7 +237,7 @@ const PurchasePage = () => {
     };
   
     try {
-      const response = await fetch('/api/proxy', {
+      const response = await fetch('https://sandbox.d.greeninvoice.co.il/api/v1/account/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -305,7 +305,7 @@ const PurchasePage = () => {
     console.log('Invoice Data:', invoiceData);
   
     try {
-      const response = await fetch('/api/proxy-form', {
+      const response = await fetch('https://sandbox.d.greeninvoice.co.il/api/v1/payments/form', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -394,6 +394,7 @@ const PurchasePage = () => {
           const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
           setUserDetails({ ...newUser, first_name: firstName, last_name: lastName, phone_num: phone });
 
+          // Create Green Invoice
           const { value: additionalValues } = await Swal.fire({
             title: 'פרטים אחרונים לרכישת הקורס',
             html:
@@ -411,8 +412,18 @@ const PurchasePage = () => {
             return;
           }
 
-          // Create Green Invoice
-          const invoiceCreated = await createGreenInvoice(newUser, course, { firstName, lastName, email, address, city, zip, phone, taxId: additionalValues.taxId });
+          const additionalData = {
+            firstName,
+            lastName,
+            email,
+            address,
+            city,
+            zip,
+            phone,
+            taxId: additionalValues.taxId
+          };
+
+          const invoiceCreated = await createGreenInvoice(newUser, course, additionalData);
           if (!invoiceCreated) {
             throw new Error('Failed to create invoice');
           }
@@ -560,6 +571,7 @@ const PurchasePage = () => {
         }
 
         Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
+        navigate('/personal-area');
       }
     } catch (error) {
       console.error('Error during purchase:', error);
