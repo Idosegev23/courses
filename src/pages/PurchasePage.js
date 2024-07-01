@@ -287,7 +287,7 @@ const PurchasePage = () => {
       client: {
         name: `${additionalData.firstName} ${additionalData.lastName}`,
         emails: [additionalData.email],
-        taxId: additionalData.taxId || '000000000',
+        taxId: '300700556',
         address: additionalData.address || "Unknown address",
         city: additionalData.city || "Unknown city",
         zip: additionalData.zip || "0000000",
