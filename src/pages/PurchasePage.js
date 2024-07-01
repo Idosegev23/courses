@@ -379,7 +379,6 @@ const PurchasePage = () => {
           maxPayments: 1,
           pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
           client: {
-            id: userId, // Using Supabase user ID or temporary ID for non-logged in users
             name: `${firstName} ${lastName}`,
             emails: [userEmail],
             taxId: idNum,
