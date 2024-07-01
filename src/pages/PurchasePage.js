@@ -339,35 +339,17 @@ const PurchasePage = () => {
     }
   };
 
-  const sendErrorLog = async (errorDetails) => {
-    try {
-        const response = await fetch('/api/sendErrorLog', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ errorDetails }),
-        });
-
-        if (!response.ok) {
-            console.error('Failed to send error log email');
-        }
-    } catch (error) {
-        console.error('Error sending error log email:', error);
-    }
-  };
-
   const handlePurchase = async () => {
     try {
       if (!userDetails) {
         // User is not logged in, show sign-up and payment form
         const { value: formValues } = await Swal.fire({
-          title: 'פרטים אחרונים לרכישת הקורס',
+          title: 'הרשמה',
           html:
             '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
             '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
             '<input id="swal-input3" class="swal2-input" placeholder="אימייל">' +
-            '<input id="swal-input4" class="swal2-input" placeholder="תעודת זהות / מספר עוסק מורשה">' +
+            '<input id="swal-input4" class="swal2-input" type="password" placeholder="סיסמה">' +
             '<input id="swal-input5" class="swal2-input" placeholder="כתובת">' +
             '<input id="swal-input6" class="swal2-input" placeholder="עיר">' +
             '<input id="swal-input7" class="swal2-input" placeholder="מיקוד">' +
@@ -378,7 +360,7 @@ const PurchasePage = () => {
               firstName: document.getElementById('swal-input1').value,
               lastName: document.getElementById('swal-input2').value,
               email: document.getElementById('swal-input3').value,
-              taxId: document.getElementById('swal-input4').value,
+              password: document.getElementById('swal-input4').value,
               address: document.getElementById('swal-input5').value,
               city: document.getElementById('swal-input6').value,
               zip: document.getElementById('swal-input7').value,
@@ -388,32 +370,66 @@ const PurchasePage = () => {
         });
 
         if (formValues) {
-          const { firstName, lastName, email, taxId, address, city, zip, phone } = formValues;
+          const { firstName, lastName, email, password, address, city, zip, phone } = formValues;
 
           console.log('Form values:', formValues);
 
+          // Perform sign-up
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                first_name: firstName,
+                last_name: lastName,
+                phone_num: phone
+              },
+            },
+          });
+
+          if (signUpError) {
+            throw signUpError;
+          }
+
+          const { data: { user: newUser } } = await supabase.auth.signInWithPassword({ email, password });
+          setUserDetails({ ...newUser, first_name: firstName, last_name: lastName, phone_num: phone });
+
+          const { value: additionalValues } = await Swal.fire({
+            title: 'פרטים אחרונים לרכישת הקורס',
+            html:
+              '<input id="swal-input9" class="swal2-input" placeholder="מספר ת.ז.">',
+            focusConfirm: false,
+            preConfirm: () => {
+              return {
+                taxId: document.getElementById('swal-input9').value,
+              };
+            }
+          });
+
+          if (!additionalValues || !additionalValues.taxId) {
+            Swal.fire('שגיאה', 'מספר ת.ז. נדרש.', 'error');
+            return;
+          }
+
           // Create Green Invoice
-          const invoiceCreated = await createGreenInvoice(userDetails, course, { firstName, lastName, email, taxId, address, city, zip, phone });
+          const invoiceCreated = await createGreenInvoice(newUser, course, { firstName, lastName, email, address, city, zip, phone, taxId: additionalValues.taxId });
           if (!invoiceCreated) {
-            const error = new Error('Failed to create invoice');
-            await sendErrorLog({ error, user: userDetails, course });
-            throw error;
+            throw new Error('Failed to create invoice');
           }
 
           // Perform purchase
-          const { error } = await supabase
+          const { error: purchaseError } = await supabase
             .from('enrollments')
             .insert({
-              user_id: userDetails.id,
+              user_id: newUser.id,
               course_id: courseId,
               current_lesson: 1,
               amount_paid: finalPrice,
               course_title: course.title,
             });
 
-          if (error) {
-            await sendErrorLog({ error, user: userDetails, course });
-            throw error;
+          if (purchaseError) {
+            throw purchaseError;
           }
 
           Swal.fire('הרכישה הושלמה', 'הקורס נוסף בהצלחה לרשימת הקורסים שלך.', 'success');
@@ -456,7 +472,6 @@ const PurchasePage = () => {
             .eq('id', userDetails.id);
 
           if (updateError) {
-            await sendErrorLog({ error: updateError, user: userDetails });
             throw updateError;
           }
         }
@@ -496,6 +511,23 @@ const PurchasePage = () => {
           zip = addressValues.zip;
         }
 
+        const { value: additionalValues } = await Swal.fire({
+          title: 'פרטים אחרונים לרכישת הקורס',
+          html:
+            '<input id="swal-input9" class="swal2-input" placeholder="מספר ת.ז.">',
+          focusConfirm: false,
+          preConfirm: () => {
+            return {
+              taxId: document.getElementById('swal-input9').value,
+            };
+          }
+        });
+
+        if (!additionalValues || !additionalValues.taxId) {
+          Swal.fire('שגיאה', 'מספר ת.ז. נדרש.', 'error');
+          return;
+        }
+
         const additionalData = {
           firstName,
           lastName,
@@ -504,14 +536,12 @@ const PurchasePage = () => {
           city: city || 'Unknown city',
           zip: zip || '0000000',
           phone,
-          taxId: '300700556'
+          taxId: additionalValues.taxId
         };
 
         const invoiceCreated = await createGreenInvoice(userDetails, course, additionalData);
         if (!invoiceCreated) {
-          const error = new Error('Failed to create invoice');
-          await sendErrorLog({ error, user: userDetails, course });
-          throw error;
+          throw new Error('Failed to create invoice');
         }
 
         // Perform purchase
@@ -526,7 +556,6 @@ const PurchasePage = () => {
           });
 
         if (error) {
-          await sendErrorLog({ error, user: userDetails, course });
           throw error;
         }
 
@@ -534,7 +563,6 @@ const PurchasePage = () => {
       }
     } catch (error) {
       console.error('Error during purchase:', error);
-      await sendErrorLog({ error, user: userDetails, course });
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
     }
   };
