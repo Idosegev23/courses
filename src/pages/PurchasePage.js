@@ -264,81 +264,81 @@ const PurchasePage = () => {
   const createGreenInvoice = async (user, course, additionalData) => {
     const token = await getJwtToken();
     if (!token) {
-        Swal.fire({
-            title: 'שגיאה',
-            text: 'אירעה שגיאה בהשגת אסימון אימות. אנא נסה שוב מאוחר יותר.',
-            icon: 'error'
-        });
-        return false;
+      Swal.fire({
+        title: 'שגיאה',
+        text: 'אירעה שגיאה בהשגת אסימון אימות. אנא נסה שוב מאוחר יותר.',
+        icon: 'error'
+      });
+      return false;
     }
-
+  
     const invoiceData = {
-        description: course.title,
-        type: 400,
-        date: new Date().toISOString().split('T')[0],
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
-        lang: "he",
-        currency: "ILS",
-        vatType: 0,
-        amount: finalPrice,
-        maxPayments: 1,
-        group: 100,
-        pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
-        client: {
-            name: `${additionalData.firstName} ${additionalData.lastName}`,
-            emails: [additionalData.email],
-            taxId: additionalData.taxId || '000000000',
-            address: additionalData.address || "Unknown address",
-            city: additionalData.city || "Unknown city",
-            zip: additionalData.zip || "0000000",
-            country: "IL",
-            phone: additionalData.phone,
-            mobile: additionalData.phone,
-            add: true
-        },
-        successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
-        failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
-        notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
-        custom: "12345"
+      description: course.title,
+      type: 400,
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+      lang: "he",
+      currency: "ILS",
+      vatType: 0,
+      amount: finalPrice,
+      maxPayments: 1,
+      group: 100,
+      pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
+      client: {
+        name: `${additionalData.firstName} ${additionalData.lastName}`,
+        emails: [additionalData.email],
+        taxId: additionalData.taxId || '000000000',
+        address: additionalData.address || "Unknown address",
+        city: additionalData.city || "Unknown city",
+        zip: additionalData.zip || "0000000",
+        country: "IL",
+        phone: additionalData.phone,
+        mobile: additionalData.phone,
+        add: true
+      },
+      successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
+      failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
+      notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
+      custom: "12345"
     };
-
+  
     console.log('Invoice Data:', invoiceData);
-
+  
     try {
-        const response = await fetch('/api/proxy-form', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(invoiceData)
-        });
-
-        const responseData = await response.json();
-        if (response.status === 200 && responseData.errorCode === 0) {
-            console.log('Payment form created successfully:', responseData);
-            window.location.href = responseData.url;
-            return true;
-        } else {
-            console.error('Failed to create payment form:', responseData);
-            Swal.fire({
-                title: 'שגיאה',
-                text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
-                icon: 'error'
-            });
-            return false;
-        }
-    } catch (error) {
-        console.error('Error creating payment form:', error);
+      const response = await fetch('/api/proxy-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(invoiceData)
+      });
+  
+      const responseData = await response.json();
+      if (response.status === 200 && responseData.errorCode === 0) {
+        console.log('Payment form created successfully:', responseData);
+        window.location.href = responseData.url;
+        return true;
+      } else {
+        console.error('Failed to create payment form:', responseData);
         Swal.fire({
-            title: 'שגיאה',
-            text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
-            icon: 'error'
+          title: 'שגיאה',
+          text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
+          icon: 'error'
         });
         return false;
+      }
+    } catch (error) {
+      console.error('Error creating payment form:', error);
+      Swal.fire({
+        title: 'שגיאה',
+        text: 'אירעה שגיאה ביצירת טופס התשלום. אנא נסה שוב מאוחר יותר.',
+        icon: 'error'
+      });
+      return false;
     }
-};
-
+  };
+  
 
   const sendErrorLog = async (errorDetails) => {
     try {
