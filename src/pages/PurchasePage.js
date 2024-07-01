@@ -229,7 +229,7 @@ const PurchasePage = () => {
     fetchCourseAndUserDetails();
   }, [courseId]);
 
-    cconst getJwtToken = async () => {
+    const getJwtToken = async () => {
       console.log('Starting getJwtToken function');
       const data = {
         id: 'd8281ab1-2ebc-44a9-a53f-e19a46b879dc',
