@@ -273,8 +273,8 @@ const PurchasePage = () => {
     }
 
     const invoiceData = {
-      description: "Just an order",
-      type: 320,
+      description: "רכישת קורס",
+      type: 400,
       date: new Date().toISOString().split('T')[0],
       dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
       lang: "he",
