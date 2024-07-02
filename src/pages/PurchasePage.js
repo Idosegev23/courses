@@ -316,22 +316,21 @@ const PurchasePage = () => {
       let formValues;
 
       if (!user) {
-        // פופאפ משולב להרשמה ורכישה עבור משתמשים לא מחוברים
         const result = await Swal.fire({
           title: 'הרשמה ורכישה',
           html:
-            '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
-            '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
-            '<input id="swal-input3" class="swal2-input" placeholder="אימייל">' +
-            '<input id="swal-input4" class="swal2-input" placeholder="סיסמה" type="password">' +
-            '<input id="swal-input5" class="swal2-input" placeholder="מספר טלפון">' +
-            '<input id="swal-input6" class="swal2-input" placeholder="כתובת">' +
-            '<input id="swal-input7" class="swal2-input" placeholder="עיר">' +
+            '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי" required>' +
+            '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה" required>' +
+            '<input id="swal-input3" class="swal2-input" placeholder="אימייל" required>' +
+            '<input id="swal-input4" class="swal2-input" placeholder="סיסמה" type="password" required>' +
+            '<input id="swal-input5" class="swal2-input" placeholder="מספר טלפון" required>' +
+            '<input id="swal-input6" class="swal2-input" placeholder="כתובת" required>' +
+            '<input id="swal-input7" class="swal2-input" placeholder="עיר" required>' +
             '<input id="swal-input8" class="swal2-input" placeholder="מיקוד">' +
-            '<input id="swal-input9" class="swal2-input" placeholder="תעודת זהות">',
+            '<input id="swal-input9" class="swal2-input" placeholder="תעודת זהות" required>',
           focusConfirm: false,
           preConfirm: () => {
-            return {
+            const values = {
               firstName: document.getElementById('swal-input1').value,
               lastName: document.getElementById('swal-input2').value,
               email: document.getElementById('swal-input3').value,
@@ -339,19 +338,27 @@ const PurchasePage = () => {
               phone: document.getElementById('swal-input5').value,
               address: document.getElementById('swal-input6').value,
               city: document.getElementById('swal-input7').value,
-              zip: document.getElementById('swal-input8').value,
+              zip: document.getElementById('swal-input8').value || '7822800',
               idNum: document.getElementById('swal-input9').value,
             };
+            
+            for (const [key, value] of Object.entries(values)) {
+              if (!value && key !== 'zip') {
+                Swal.showValidationMessage(`אנא מלא את כל שדות החובה`);
+                return false;
+              }
+            }
+            
+            return values;
           }
         });
 
         if (result.isConfirmed) {
           formValues = result.value;
         } else {
-          return; // המשתמש ביטל את התהליך
+          return;
         }
 
-        // הרשמת המשתמש
         const { data: newUser, error: signUpError } = await supabase.auth.signUp({
           email: formValues.email,
           password: formValues.password,
@@ -359,7 +366,6 @@ const PurchasePage = () => {
 
         if (signUpError) throw signUpError;
 
-        // יצירת רשומת משתמש ב-Supabase
         const { data: userData, error: userError } = await supabase
           .from('users')
           .insert({
@@ -379,7 +385,6 @@ const PurchasePage = () => {
 
         user = newUser.user;
       } else {
-        // עבור משתמשים מחוברים, השתמש בפרטים הקיימים
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -395,12 +400,41 @@ const PurchasePage = () => {
           phone: userData.phone_num,
           address: userData.street_address,
           city: userData.city,
-          zip: userData.zip,
+          zip: userData.zip || '7822800',
           idNum: userData.id_num
         };
+
+        const missingFields = Object.entries(formValues).filter(([key, value]) => !value && key !== 'zip');
+        if (missingFields.length > 0) {
+          const result = await Swal.fire({
+            title: 'השלמת פרטים',
+            html: missingFields.map(([key, _]) => 
+              `<input id="swal-input-${key}" class="swal2-input" placeholder="${key}" required>`
+            ).join(''),
+            focusConfirm: false,
+            preConfirm: () => {
+              const updatedValues = {};
+              missingFields.forEach(([key, _]) => {
+                updatedValues[key] = document.getElementById(`swal-input-${key}`).value;
+              });
+              return updatedValues;
+            }
+          });
+
+          if (result.isConfirmed) {
+            Object.assign(formValues, result.value);
+            await supabase
+              .from('users')
+              .update(result.value)
+              .eq('id', user.id);
+          } else {
+            return;
+          }
+        }
       }
 
-      // יצירת חשבונית וביצוע התשלום
+      formValues.phone = formValues.phone.startsWith('0') ? formValues.phone : `0${formValues.phone}`;
+
       const invoiceData = {
         description: 'רכישת קורס',
         type: 400,
@@ -436,7 +470,6 @@ const PurchasePage = () => {
 
       if (!invoiceCreated) throw new Error('Failed to create invoice');
 
-      // יצירת רשומת הרשמה
       const { error: enrollmentError } = await supabase
         .from('enrollments')
         .insert({
@@ -457,35 +490,38 @@ const PurchasePage = () => {
   };
 
   if (loading) {
-    return <div>טוען...</div>;
+    return <Message>טוען...</Message>;
   }
 
   if (!course) {
-    return <div>לא נמצא קורס עם המזהה הזה.</div>;
+    return <Message>לא נמצא קורס עם המזהה הזה.</Message>;
   }
 
   return (
-    <div>
-      <h1>{course.title}</h1>
-      <p>{course.description}</p>
-      <div>
-        {discount > 0 && (
-          <>
-            <span>{course.price} ש"ח</span>
-            <span>{finalPrice.toFixed(2)} ש"ח</span>
-            <span>({discount}% הנחה)</span>
-          </>
+    <>
+      <GlobalStyle />
+      <PageContainer>
+        <PageTitle>{course.title}</PageTitle>
+        <CourseDescription>{course.description}</CourseDescription>
+        <PriceContainer>
+          {discount > 0 && (
+            <>
+              <OriginalPrice>{course.price} ש"ח</OriginalPrice>
+              <DiscountedPrice>{finalPrice.toFixed(2)} ש"ח</DiscountedPrice>
+              <DiscountPercentage>({discount}% הנחה)</DiscountPercentage>
+            </>
+          )}
+          {discount === 0 && (
+            <DiscountedPrice>{course.price} ש"ח</DiscountedPrice>
+          )}
+        </PriceContainer>
+        {course.is_available ? (
+          <StyledButton onClick={handlePurchase} $isPurchase>רכוש קורס</StyledButton>
+        ) : (
+          <Message>הקורס עדיין לא זמין לרכישה.</Message>
         )}
-        {discount === 0 && (
-          <span>{course.price} ש"ח</span>
-        )}
-      </div>
-      {course.is_available ? (
-        <button onClick={handlePurchase}>רכוש קורס</button>
-      ) : (
-        <div>הקורס עדיין לא זמין לרכישה.</div>
-      )}
-    </div>
+      </PageContainer>
+    </>
   );
 };
 
