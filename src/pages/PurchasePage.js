@@ -202,8 +202,8 @@ const PurchasePage = () => {
 
           if (courseData.original_price && courseData.original_price > courseData.price) {
             discount = Math.round(((courseData.original_price - courseData.price) / courseData.original_price) * 100);
-          } else if (userData.discount_percentage) {
-            discount = userData.discount_percentage;
+          } else if (userData.discount) {
+            discount = userData.discount;
             finalPrice = courseData.price * (1 - discount / 100);
           }
 
@@ -313,138 +313,159 @@ const PurchasePage = () => {
   const handlePurchase = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-  
-      // Collect all necessary information in a single popup
-      const { value: formValues } = await Swal.fire({
-        title: 'פרטים לקבלה',
-        html:
-          '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
-          '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
-          '<input id="swal-input3" class="swal2-input" placeholder="מספר טלפון">' +
-          '<input id="swal-input4" class="swal2-input" placeholder="כתובת">' +
-          '<input id="swal-input5" class="swal2-input" placeholder="עיר">' +
-          '<input id="swal-input6" class="swal2-input" placeholder="מיקוד">' +
-          '<input id="swal-input7" class="swal2-input" placeholder="תעודת זהות">',
-        focusConfirm: false,
-        preConfirm: () => {
-          return {
-            firstName: document.getElementById('swal-input1').value,
-            lastName: document.getElementById('swal-input2').value,
-            phone: document.getElementById('swal-input3').value,
-            address: document.getElementById('swal-input4').value,
-            city: document.getElementById('swal-input5').value,
-            zip: document.getElementById('swal-input6').value,
-            idNum: document.getElementById('swal-input7').value,
-          };
-        }
-      });
-  
-      if (formValues) {
-        const { firstName, lastName, phone, address, city, zip, idNum } = formValues;
-  
-        let userEmail = user ? user.email : null;
-        let userId = user ? user.id : null;
-  
-        if (!user) {
-          // If user is not logged in, ask for email
-          const { value: email } = await Swal.fire({
-            title: 'הכנס כתובת אימייל',
-            input: 'email',
-            inputPlaceholder: 'אימייל'
-          });
-  
-          if (email) {
-            userEmail = email;
-            // Generate a temporary ID for non-logged in users
-            userId = 'TEMP-' + Date.now();
-          } else {
-            throw new Error('Email is required');
-          }
-        }
-  
-        // Format phone number
-        const formattedPhone = `+972-${phone.replace(/^0/, '')}`;
-  
-        // Prepare invoice data
-        const invoiceData = {
-          description: 'רכישת קורס',
-          type: 400,
-          date: new Date().toISOString().split('T')[0],
-          dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
-          lang: "he",
-          currency: "ILS",
-          vatType: 0,
-          amount: finalPrice,
-          group: 100,
-          maxPayments: 1,
-          pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
-          client: {
-            name: `${firstName} ${lastName}`,
-            emails: [userEmail],
-            taxId: idNum,
-            address: address || "1 Luria st",
-            city: city || "Tel Aviv",
-            zip: zip || "1234567",
-            country: "IL",
-            phone: formattedPhone,
-            fax: formattedPhone, // Using the same number for fax, adjust if needed
-            mobile: formattedPhone,
-            add: true
-          },
-          successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
-          failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
-          notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
-          custom: "300700556"
+
+      let formValues;
+      
+      if (user && userDetails) {
+        // If user is logged in and we have their details, pre-fill the form
+        formValues = {
+          firstName: userDetails.first_name || '',
+          lastName: userDetails.last_name || '',
+          phone: userDetails.phone_num || '',
+          address: userDetails.street_address || '',
+          city: userDetails.city || '',
+          zip: userDetails.zip || '',
+          idNum: userDetails.id_num || '',
         };
-  
-        // Create Green Invoice
-        const invoiceCreated = await createGreenInvoice(invoiceData);
-  
-        if (!invoiceCreated) throw new Error('Failed to create invoice');
-  
-        if (user) {
-          // Update user information in Supabase
-          const { error: updateError } = await supabase
-            .from('users')
-            .update({
-              first_name: firstName,
-              last_name: lastName,
-              phone_num: phone,
-              street_address: address,
-              city: city,
-              zip: zip,
-              id_num: idNum
-            })
-            .eq('id', user.id);
-  
-          if (updateError) throw updateError;
-  
-          // Perform purchase
-          const { error: purchaseError } = await supabase
-            .from('enrollments')
-            .insert({
-              user_id: user.id,
-              course_id: courseId,
-              current_lesson: 1,
-              amount_paid: finalPrice,
-              course_title: course.title,
-            });
-  
-          if (purchaseError) throw purchaseError;
-        } else {
-          // If not logged in, we don't create an enrollment yet
-          // The enrollment will be created after successful payment and account creation
-          console.log('User not logged in. Enrollment will be created after successful payment.');
-        }
-  
-        Swal.fire('הרכישה בתהליך', 'אתה מועבר לדף התשלום.', 'info');
       }
+
+      // If we don't have all the details, show the form
+      if (!formValues || Object.values(formValues).some(val => !val)) {
+        const result = await Swal.fire({
+          title: 'פרטים לקבלה',
+          html:
+            `<input id="swal-input1" class="swal2-input" placeholder="שם פרטי" value="${formValues?.firstName || ''}">` +
+            `<input id="swal-input2" class="swal2-input" placeholder="שם משפחה" value="${formValues?.lastName || ''}">` +
+            `<input id="swal-input3" class="swal2-input" placeholder="מספר טלפון" value="${formValues?.phone || ''}">` +
+            `<input id="swal-input4" class="swal2-input" placeholder="כתובת" value="${formValues?.address || ''}">` +
+            `<input id="swal-input5" class="swal2-input" placeholder="עיר" value="${formValues?.city || ''}">` +
+            `<input id="swal-input6" class="swal2-input" placeholder="מיקוד" value="${formValues?.zip || ''}">` +
+            `<input id="swal-input7" class="swal2-input" placeholder="תעודת זהות" value="${formValues?.idNum || ''}">`,
+          focusConfirm: false,
+          preConfirm: () => {
+            return {
+              firstName: document.getElementById('swal-input1').value,
+              lastName: document.getElementById('swal-input2').value,
+              phone: document.getElementById('swal-input3').value,
+              address: document.getElementById('swal-input4').value,
+              city: document.getElementById('swal-input5').value,
+              zip: document.getElementById('swal-input6').value,
+              idNum: document.getElementById('swal-input7').value,
+            };
+          }
+        });
+
+        if (result.isConfirmed) {
+          formValues = result.value;
+        } else {
+          return; // User cancelled the form
+        }
+      }
+
+      const { firstName, lastName, phone, address, city, zip, idNum } = formValues;
+
+      let userEmail = user ? user.email : null;
+      let userId = user ? user.id : null;
+
+      if (!user) {
+        // If user is not logged in, ask for email
+        const { value: email } = await Swal.fire({
+          title: 'הכנס כתובת אימייל',
+          input: 'email',
+          inputPlaceholder: 'אימייל'
+        });
+
+        if (email) {
+          userEmail = email;
+          // Generate a temporary ID for non-logged in users
+          userId = 'TEMP-' + Date.now();
+        } else {
+          throw new Error('Email is required');
+        }
+      }
+
+      // Format phone number
+      const formattedPhone = `+972-${phone.replace(/^0/, '')}`;
+
+      // Prepare invoice data
+      const invoiceData = {
+        description: 'רכישת קורס',
+        type: 400,
+        date: new Date().toISOString().split('T')[0],
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+        lang: "he",
+        currency: "ILS",
+        vatType: 0,
+        amount: finalPrice,
+        group: 100,
+        maxPayments: 1,
+        pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
+        client: {
+          name: `${firstName} ${lastName}`,
+          emails: [userEmail],
+          taxId: idNum,
+          address: address || "1 Luria st",
+          city: city || "Tel Aviv",
+          zip: zip || "1234567",
+          country: "IL",
+          phone: formattedPhone,
+          fax: formattedPhone, // Using the same number for fax, adjust if needed
+          mobile: formattedPhone,
+          add: true
+        },
+        successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
+        failureUrl: `https://courses-seven-alpha.vercel.app/purchase/${course.id}?status=failure`,
+        notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
+        custom: "300700556"
+      };
+
+      // Create Green Invoice
+      const invoiceCreated = await createGreenInvoice(invoiceData);
+
+      if (!invoiceCreated) throw new Error('Failed to create invoice');
+
+      if (user) {
+        // Update user information in Supabase
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            first_name: firstName,
+            last_name: lastName,
+            phone_num: phone,
+            street_address: address,
+            city: city,
+            zip: zip,
+            id_num: idNum
+          })
+          .eq('id', user.id);
+
+        if (updateError) throw updateError;
+
+        // Perform purchase
+        const { error: purchaseError } = await supabase
+          .from('enrollments')
+          .insert({
+            user_id: user.id,
+            course_id: courseId,
+            current_lesson: 1,
+            amount_paid: finalPrice,
+            course_title: course.title,
+          });
+
+        if (purchaseError) throw purchaseError;
+      } else {
+        // If not logged in, we don't create an enrollment yet
+        // The enrollment will be created after successful payment and account creation
+        console.log('User not logged in. Enrollment will be created after successful payment.');
+      }
+
+      Swal.fire('הרכישה בתהליך', 'אתה מועבר לדף התשלום.', 'info');
     } catch (error) {
       console.error('Error during purchase:', error);
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
     }
   };
-  
+
   if (loading) {
     return <Message>טוען...</Message>;
   }
@@ -480,5 +501,3 @@ const PurchasePage = () => {
     </>
   );
 };
-
-export default PurchasePage;
