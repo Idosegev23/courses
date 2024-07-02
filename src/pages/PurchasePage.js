@@ -280,12 +280,12 @@ const PurchasePage = () => {
         },
         body: JSON.stringify({ endpoint: 'payments/form', data: invoiceData, tokenRequest: token })
       });
-
+  
       const responseData = await response.json();
       console.log('Invoice request sent with data:', invoiceData);
       console.log('Response status:', response.status);
       console.log('Response data:', responseData);
-
+  
       if (response.status === 200 && responseData.errorCode === 0) {
         console.log('Payment form created successfully:', responseData);
         window.location.href = responseData.url;
@@ -310,46 +310,11 @@ const PurchasePage = () => {
     }
   };
 
-  const checkAndUpdateUserDetails = async (formValues) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { firstName, lastName, phone, address, city, zip, idNum } = formValues;
-
-    if (user) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (userError) throw userError;
-
-      const updatedUserData = {
-        first_name: firstName || userData.first_name,
-        last_name: lastName || userData.last_name,
-        phone_num: phone || userData.phone_num,
-        street_address: address || userData.street_address,
-        city: city || userData.city,
-        zip: zip || userData.zip,
-        id_num: idNum || userData.id_num
-      };
-
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(updatedUserData)
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      return { ...userData, ...updatedUserData };
-    } else {
-      throw new Error('User not authenticated');
-    }
-  };
-
   const handlePurchase = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
+  
+      // Collect all necessary information in a single popup
       const { value: formValues } = await Swal.fire({
         title: 'פרטים לקבלה',
         html:
@@ -373,32 +338,34 @@ const PurchasePage = () => {
           };
         }
       });
-
+  
       if (formValues) {
-        const updatedUserDetails = await checkAndUpdateUserDetails(formValues);
-
-        const { firstName, lastName, phone, address, city, zip, idNum } = updatedUserDetails;
-
+        const { firstName, lastName, phone, address, city, zip, idNum } = formValues;
+  
         let userEmail = user ? user.email : null;
         let userId = user ? user.id : null;
-
+  
         if (!user) {
+          // If user is not logged in, ask for email
           const { value: email } = await Swal.fire({
             title: 'הכנס כתובת אימייל',
             input: 'email',
             inputPlaceholder: 'אימייל'
           });
-
+  
           if (email) {
             userEmail = email;
+            // Generate a temporary ID for non-logged in users
             userId = 'TEMP-' + Date.now();
           } else {
             throw new Error('Email is required');
           }
         }
-
+  
+        // Format phone number
         const formattedPhone = `+972-${phone.replace(/^0/, '')}`;
-
+  
+        // Prepare invoice data
         const invoiceData = {
           description: 'רכישת קורס',
           type: 400,
@@ -420,7 +387,7 @@ const PurchasePage = () => {
             zip: zip || "1234567",
             country: "IL",
             phone: formattedPhone,
-            fax: formattedPhone,
+            fax: formattedPhone, // Using the same number for fax, adjust if needed
             mobile: formattedPhone,
             add: true
           },
@@ -429,12 +396,30 @@ const PurchasePage = () => {
           notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
           custom: "300700556"
         };
-
+  
+        // Create Green Invoice
         const invoiceCreated = await createGreenInvoice(invoiceData);
-
+  
         if (!invoiceCreated) throw new Error('Failed to create invoice');
-
+  
         if (user) {
+          // Update user information in Supabase
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({
+              first_name: firstName,
+              last_name: lastName,
+              phone_num: phone,
+              street_address: address,
+              city: city,
+              zip: zip,
+              id_num: idNum
+            })
+            .eq('id', user.id);
+  
+          if (updateError) throw updateError;
+  
+          // Perform purchase
           const { error: purchaseError } = await supabase
             .from('enrollments')
             .insert({
@@ -444,12 +429,14 @@ const PurchasePage = () => {
               amount_paid: finalPrice,
               course_title: course.title,
             });
-
+  
           if (purchaseError) throw purchaseError;
         } else {
+          // If not logged in, we don't create an enrollment yet
+          // The enrollment will be created after successful payment and account creation
           console.log('User not logged in. Enrollment will be created after successful payment.');
         }
-
+  
         Swal.fire('הרכישה בתהליך', 'אתה מועבר לדף התשלום.', 'info');
       }
     } catch (error) {
@@ -457,7 +444,7 @@ const PurchasePage = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.', 'error');
     }
   };
-
+  
   if (loading) {
     return <Message>טוען...</Message>;
   }
