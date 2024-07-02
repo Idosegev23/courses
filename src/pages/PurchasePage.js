@@ -313,42 +313,34 @@ const PurchasePage = () => {
   const handlePurchase = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
       let formValues;
-      
-      if (user && userDetails) {
-        formValues = {
-          firstName: userDetails.first_name || '',
-          lastName: userDetails.last_name || '',
-          phone: userDetails.phone_num || '',
-          address: userDetails.street_address || '',
-          city: userDetails.city || '',
-          zip: userDetails.zip || '',
-          idNum: userDetails.id_num || '',
-        };
-      }
 
-      if (!formValues || Object.values(formValues).some(val => !val)) {
+      if (!user) {
+        // פופאפ משולב להרשמה ורכישה עבור משתמשים לא מחוברים
         const result = await Swal.fire({
-          title: 'פרטים לקבלה',
+          title: 'הרשמה ורכישה',
           html:
-            `<input id="swal-input1" class="swal2-input" placeholder="שם פרטי" value="${formValues?.firstName || ''}">` +
-            `<input id="swal-input2" class="swal2-input" placeholder="שם משפחה" value="${formValues?.lastName || ''}">` +
-            `<input id="swal-input3" class="swal2-input" placeholder="מספר טלפון" value="${formValues?.phone || ''}">` +
-            `<input id="swal-input4" class="swal2-input" placeholder="כתובת" value="${formValues?.address || ''}">` +
-            `<input id="swal-input5" class="swal2-input" placeholder="עיר" value="${formValues?.city || ''}">` +
-            `<input id="swal-input6" class="swal2-input" placeholder="מיקוד" value="${formValues?.zip || ''}">` +
-            `<input id="swal-input7" class="swal2-input" placeholder="תעודת זהות" value="${formValues?.idNum || ''}">`,
+            '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
+            '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">' +
+            '<input id="swal-input3" class="swal2-input" placeholder="אימייל">' +
+            '<input id="swal-input4" class="swal2-input" placeholder="סיסמה" type="password">' +
+            '<input id="swal-input5" class="swal2-input" placeholder="מספר טלפון">' +
+            '<input id="swal-input6" class="swal2-input" placeholder="כתובת">' +
+            '<input id="swal-input7" class="swal2-input" placeholder="עיר">' +
+            '<input id="swal-input8" class="swal2-input" placeholder="מיקוד">' +
+            '<input id="swal-input9" class="swal2-input" placeholder="תעודת זהות">',
           focusConfirm: false,
           preConfirm: () => {
             return {
               firstName: document.getElementById('swal-input1').value,
               lastName: document.getElementById('swal-input2').value,
-              phone: document.getElementById('swal-input3').value,
-              address: document.getElementById('swal-input4').value,
-              city: document.getElementById('swal-input5').value,
-              zip: document.getElementById('swal-input6').value,
-              idNum: document.getElementById('swal-input7').value,
+              email: document.getElementById('swal-input3').value,
+              password: document.getElementById('swal-input4').value,
+              phone: document.getElementById('swal-input5').value,
+              address: document.getElementById('swal-input6').value,
+              city: document.getElementById('swal-input7').value,
+              zip: document.getElementById('swal-input8').value,
+              idNum: document.getElementById('swal-input9').value,
             };
           }
         });
@@ -356,34 +348,59 @@ const PurchasePage = () => {
         if (result.isConfirmed) {
           formValues = result.value;
         } else {
-          return;
+          return; // המשתמש ביטל את התהליך
         }
-      }
 
-      const { firstName, lastName, phone, address, city, zip, idNum } = formValues;
-
-      let userEmail = user ? user.email : null;
-      let userId = user ? user.id : null;
-
-      if (!user) {
-        const { value: email } = await Swal.fire({
-          title: 'הכנס כתובת אימייל',
-          input: 'email',
-          inputPlaceholder: 'אימייל'
+        // הרשמת המשתמש
+        const { data: newUser, error: signUpError } = await supabase.auth.signUp({
+          email: formValues.email,
+          password: formValues.password,
         });
 
-        if (email) {
-          userEmail = email;
-          userId = 'TEMP-' + Date.now();
-        } else {
-          throw new Error('Email is required');
-        }
+        if (signUpError) throw signUpError;
+
+        // יצירת רשומת משתמש ב-Supabase
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: newUser.user.id,
+            email: formValues.email,
+            first_name: formValues.firstName,
+            last_name: formValues.lastName,
+            phone_num: formValues.phone.startsWith('0') ? formValues.phone : `0${formValues.phone}`,
+            street_address: formValues.address,
+            city: formValues.city,
+            zip: formValues.zip,
+            id_num: formValues.idNum
+          })
+          .single();
+
+        if (userError) throw userError;
+
+        user = newUser.user;
+      } else {
+        // עבור משתמשים מחוברים, השתמש בפרטים הקיימים
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (userError) throw userError;
+
+        formValues = {
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          email: userData.email,
+          phone: userData.phone_num,
+          address: userData.street_address,
+          city: userData.city,
+          zip: userData.zip,
+          idNum: userData.id_num
+        };
       }
 
-      // Format phone number
-      const formattedPhone = userData.phone_num ? (userData.phone_num.startsWith('0') ? userData.phone_num : `0${userData.phone_num}`) : '';
-      setUserDetails({ ...user, ...userData, phone_num: formattedPhone });
-      // Prepare invoice data
+      // יצירת חשבונית וביצוע התשלום
       const invoiceData = {
         description: 'רכישת קורס',
         type: 400,
@@ -397,16 +414,16 @@ const PurchasePage = () => {
         maxPayments: 1,
         pluginId: "74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
         client: {
-          name: `${firstName} ${lastName}`,
-          emails: [userEmail],
-          taxId: idNum,
-          address: address || "1 Luria st",
-          city: city || "Tel Aviv",
-          zip: zip || "1234567",
+          name: `${formValues.firstName} ${formValues.lastName}`,
+          emails: [formValues.email],
+          taxId: formValues.idNum,
+          address: formValues.address,
+          city: formValues.city,
+          zip: formValues.zip,
           country: "IL",
-          phone: formattedPhone,
-          fax: formattedPhone,
-          mobile: formattedPhone,
+          phone: formValues.phone,
+          fax: formValues.phone,
+          mobile: formValues.phone,
           add: true
         },
         successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
@@ -415,43 +432,22 @@ const PurchasePage = () => {
         custom: "300700556"
       };
 
-      // Create Green Invoice
       const invoiceCreated = await createGreenInvoice(invoiceData);
 
       if (!invoiceCreated) throw new Error('Failed to create invoice');
 
-      if (user) {
-        // Update user information in Supabase
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({
-            first_name: firstName,
-            last_name: lastName,
-            phone_num: formattedPhone,
-            street_address: address,
-            city: city,
-            zip: zip,
-            id_num: idNum
-          })
-          .eq('id', user.id);
+      // יצירת רשומת הרשמה
+      const { error: enrollmentError } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id: user.id,
+          course_id: courseId,
+          current_lesson: 1,
+          amount_paid: finalPrice,
+          course_title: course.title,
+        });
 
-        if (updateError) throw updateError;
-
-        // Perform purchase
-        const { error: purchaseError } = await supabase
-          .from('enrollments')
-          .insert({
-            user_id: user.id,
-            course_id: courseId,
-            current_lesson: 1,
-            amount_paid: finalPrice,
-            course_title: course.title,
-          });
-
-        if (purchaseError) throw purchaseError;
-      } else {
-        console.log('User not logged in. Enrollment will be created after successful payment.');
-      }
+      if (enrollmentError) throw enrollmentError;
 
       Swal.fire('הרכישה בתהליך', 'אתה מועבר לדף התשלום.', 'info');
     } catch (error) {
@@ -461,38 +457,35 @@ const PurchasePage = () => {
   };
 
   if (loading) {
-    return <Message>טוען...</Message>;
+    return <div>טוען...</div>;
   }
 
   if (!course) {
-    return <Message>לא נמצא קורס עם המזהה הזה.</Message>;
+    return <div>לא נמצא קורס עם המזהה הזה.</div>;
   }
 
   return (
-    <>
-      <GlobalStyle />
-      <PageContainer>
-        <PageTitle>{course.title}</PageTitle>
-        <CourseDescription>{course.description}</CourseDescription>
-        <PriceContainer>
-          {discount > 0 && (
-            <>
-              <OriginalPrice>{course.price} ש"ח</OriginalPrice>
-              <DiscountedPrice>{finalPrice.toFixed(2)} ש"ח</DiscountedPrice>
-              <DiscountPercentage>({discount}% הנחה)</DiscountPercentage>
-            </>
-          )}
-          {discount === 0 && (
-            <DiscountedPrice>{course.price} ש"ח</DiscountedPrice>
-          )}
-        </PriceContainer>
-        {course.is_available ? (
-          <StyledButton onClick={handlePurchase} $isPurchase>רכוש קורס</StyledButton>
-        ) : (
-          <Message>הקורס עדיין לא זמין לרכישה.</Message>
+    <div>
+      <h1>{course.title}</h1>
+      <p>{course.description}</p>
+      <div>
+        {discount > 0 && (
+          <>
+            <span>{course.price} ש"ח</span>
+            <span>{finalPrice.toFixed(2)} ש"ח</span>
+            <span>({discount}% הנחה)</span>
+          </>
         )}
-      </PageContainer>
-    </>
+        {discount === 0 && (
+          <span>{course.price} ש"ח</span>
+        )}
+      </div>
+      {course.is_available ? (
+        <button onClick={handlePurchase}>רכוש קורס</button>
+      ) : (
+        <div>הקורס עדיין לא זמין לרכישה.</div>
+      )}
+    </div>
   );
 };
 
