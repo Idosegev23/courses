@@ -381,8 +381,8 @@ const PurchasePage = () => {
       }
 
       // Format phone number
-      const formattedPhone = phone.startsWith('0') ? phone : `0${phone}`;
-
+      const formattedPhone = userData.phone_num ? (userData.phone_num.startsWith('0') ? userData.phone_num : `0${userData.phone_num}`) : '';
+      setUserDetails({ ...user, ...userData, phone_num: formattedPhone });
       // Prepare invoice data
       const invoiceData = {
         description: 'רכישת קורס',
