@@ -161,7 +161,6 @@ const Message = styled.p`
     font-size: 1.25rem;
   }
 `;
-
 const PurchasePage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -200,8 +199,9 @@ const PurchasePage = () => {
           let finalPrice = courseData.price;
           let discount = 0;
 
-          if (courseData.original_price && courseData.original_price > courseData.price) {
-            discount = Math.round(((courseData.original_price - courseData.price) / courseData.original_price) * 100);
+          if (courseData.discountPrice) {
+            finalPrice = courseData.discountPrice;
+            discount = Math.round(((courseData.price - courseData.discountPrice) / courseData.price) * 100);
           } else if (userData.discount) {
             discount = userData.discount;
             finalPrice = courseData.price * (1 - discount / 100);
@@ -317,7 +317,6 @@ const PurchasePage = () => {
       let formValues;
       
       if (user && userDetails) {
-        // If user is logged in and we have their details, pre-fill the form
         formValues = {
           firstName: userDetails.first_name || '',
           lastName: userDetails.last_name || '',
@@ -329,7 +328,6 @@ const PurchasePage = () => {
         };
       }
 
-      // If we don't have all the details, show the form
       if (!formValues || Object.values(formValues).some(val => !val)) {
         const result = await Swal.fire({
           title: 'פרטים לקבלה',
@@ -358,7 +356,7 @@ const PurchasePage = () => {
         if (result.isConfirmed) {
           formValues = result.value;
         } else {
-          return; // User cancelled the form
+          return;
         }
       }
 
@@ -368,7 +366,6 @@ const PurchasePage = () => {
       let userId = user ? user.id : null;
 
       if (!user) {
-        // If user is not logged in, ask for email
         const { value: email } = await Swal.fire({
           title: 'הכנס כתובת אימייל',
           input: 'email',
@@ -377,7 +374,6 @@ const PurchasePage = () => {
 
         if (email) {
           userEmail = email;
-          // Generate a temporary ID for non-logged in users
           userId = 'TEMP-' + Date.now();
         } else {
           throw new Error('Email is required');
@@ -385,7 +381,7 @@ const PurchasePage = () => {
       }
 
       // Format phone number
-      const formattedPhone = `+972-${phone.replace(/^0/, '')}`;
+      const formattedPhone = phone.startsWith('0') ? phone : `0${phone}`;
 
       // Prepare invoice data
       const invoiceData = {
@@ -409,7 +405,7 @@ const PurchasePage = () => {
           zip: zip || "1234567",
           country: "IL",
           phone: formattedPhone,
-          fax: formattedPhone, // Using the same number for fax, adjust if needed
+          fax: formattedPhone,
           mobile: formattedPhone,
           add: true
         },
@@ -431,7 +427,7 @@ const PurchasePage = () => {
           .update({
             first_name: firstName,
             last_name: lastName,
-            phone_num: phone,
+            phone_num: formattedPhone,
             street_address: address,
             city: city,
             zip: zip,
@@ -454,8 +450,6 @@ const PurchasePage = () => {
 
         if (purchaseError) throw purchaseError;
       } else {
-        // If not logged in, we don't create an enrollment yet
-        // The enrollment will be created after successful payment and account creation
         console.log('User not logged in. Enrollment will be created after successful payment.');
       }
 
@@ -501,4 +495,5 @@ const PurchasePage = () => {
     </>
   );
 };
+
 export default PurchasePage;
