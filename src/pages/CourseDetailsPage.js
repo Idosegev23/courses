@@ -443,6 +443,7 @@ const CourseDetailsPage = () => {
         currency: "ILS",
         vatType: 0,
         amount: finalPrice,
+        group: 100,
         client: {
           name: `${userData.first_name} ${userData.last_name}`,
           emails: [userData.email],
