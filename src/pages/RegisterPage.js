@@ -143,7 +143,8 @@ const RegisterPage = () => {
           email,
           first_name: firstName,
           last_name: lastName,
-          phone,
+          phone_num: phone,
+          created_at: new Date(),
         });
 
       if (dbError) {
@@ -196,7 +197,7 @@ const RegisterPage = () => {
             .update({
               first_name: firstName,
               last_name: lastName,
-              phone,
+              phone_num: phone,
             })
             .eq('id', data.user.id);
 
@@ -223,66 +224,68 @@ const RegisterPage = () => {
       <PageContainer>
         <FormContainer>
           <Title>הרשמה</Title>
-          {step === 1 && (
-            <>
-              <Input
-                type="text"
-                placeholder="שם פרטי"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-              <Input
-                type="text"
-                placeholder="שם משפחה"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
-              <ActionButton onClick={handleNext}>הבא</ActionButton>
-            </>
-          )}
-          {step === 2 && (
-            <>
-              <Input
-                type="email"
-                placeholder="אימייל"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                type="password"
-                placeholder="סיסמה"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Input
-                type="password"
-                placeholder="וידוא סיסמה"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              <ActionButton onClick={handleBack}>חזור</ActionButton>
-              <ActionButton onClick={handleNext}>הבא</ActionButton>
-            </>
-          )}
-          {step === 3 && (
-            <>
-              <Input
-                type="text"
-                placeholder="נייד"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-              <ActionButton onClick={handleBack}>חזור</ActionButton>
-              <ActionButton onClick={handleRegister}>הרשמה</ActionButton>
-            </>
-          )}
-          {message && <Message>{message}</Message>}
+          <form>
+            {step === 1 && (
+              <>
+                <Input
+                  type="text"
+                  placeholder="שם פרטי"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+                <Input
+                  type="text"
+                  placeholder="שם משפחה"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+                <ActionButton type="button" onClick={handleNext}>הבא</ActionButton>
+              </>
+            )}
+            {step === 2 && (
+              <>
+                <Input
+                  type="email"
+                  placeholder="אימייל"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="סיסמה"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="וידוא סיסמה"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <ActionButton type="button" onClick={handleBack}>חזור</ActionButton>
+                <ActionButton type="button" onClick={handleNext}>הבא</ActionButton>
+              </>
+            )}
+            {step === 3 && (
+              <>
+                <Input
+                  type="text"
+                  placeholder="נייד"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+                <ActionButton type="button" onClick={handleBack}>חזור</ActionButton>
+                <ActionButton type="button" onClick={handleRegister}>הרשמה</ActionButton>
+              </>
+            )}
+            {message && <Message>{message}</Message>}
+          </form>
           {step === 1 && (
             <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
               <OAuthButton onClick={() => handleOAuthSignIn('google')}>
@@ -297,3 +300,5 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
+
+                 
