@@ -396,6 +396,8 @@ const CourseDetailsPage = () => {
 
   const handlePurchase = async () => {
     try {
+      console.log('Starting purchase process...');
+      
       const tokenResponse = await axios.post('/api/green-invoice', {
         endpoint: 'account/token',
         data: {
@@ -403,19 +405,20 @@ const CourseDetailsPage = () => {
           secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
         }
       });
-
+  
       const token = tokenResponse.data.token;
-
+      console.log('Token received:', token);
+  
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
-
+  
       if (userError) throw userError;
-
+  
       const finalPrice = course.discountPrice || course.price;
-
+  
       const invoiceData = {
         description: `רכישת קורס ${course.title}`,
         type: 400,
@@ -440,19 +443,19 @@ const CourseDetailsPage = () => {
         notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
         custom: "300700556"
       };
-
+  
       console.log('Invoice Data:', invoiceData);
-
+  
       const paymentFormResponse = await axios.post('/api/green-invoice', {
         endpoint: 'payments/form',
         data: invoiceData,
         tokenRequest: token
       });
-
+  
       console.log('Payment Form Response:', paymentFormResponse);
-
+  
       const paymentFormUrl = paymentFormResponse.data.url;
-
+  
       const { error: enrollmentError } = await supabase
         .from('enrollments')
         .insert({
@@ -463,9 +466,9 @@ const CourseDetailsPage = () => {
           course_title: course.title,
           total_lessons: course.total_lessons
         });
-
+  
       if (enrollmentError) throw enrollmentError;
-
+  
       window.location.href = paymentFormUrl;
     } catch (error) {
       console.error('Error during purchase:', error);
@@ -475,6 +478,7 @@ const CourseDetailsPage = () => {
       alert('An error occurred during the purchase. Please try again.');
     }
   };
+  
 
   if (!course) return <div>טוען...</div>;
 
