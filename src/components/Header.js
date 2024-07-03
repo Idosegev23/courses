@@ -26,29 +26,28 @@ const ButtonContainer = styled.div`
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4rem;
-  margin-top: auto;
+  gap: 2rem;
+  margin-top: 1rem;
 `;
 
 const StyledButton = styled(Link)`
   background: none;
-  padding: 15px;
-  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
   display: inline-block;
-  font-family: 'Glamour Absolute', sans-serif;
-  color: #F25C78;
+  font-family: 'Heebo', sans-serif;
+  color: #62238C;
   text-decoration: none;
-  font-weight: 100;
-  font-size: 1.25rem;
-  letter-spacing: 1px;
-  border: 2px solid #F25C78;
+  font-weight: bold;
+  font-size: 1rem;
+  border: 2px solid #62238C;
   transition: all 0.3s ease-in-out;
   position: relative;
-  cursor: pointer;  // הוספת שינוי הסמן
+  cursor: pointer;
 
   &:hover {
-    color: #BF4B81;
-    border: 2px solid #BF4B81;
+    color: #6DBFF2;
+    border: 2px solid #6DBFF2;
   }
 
   &::before,
@@ -58,7 +57,7 @@ const StyledButton = styled(Link)`
     height: 16px;
     border-style: solid;
     border-width: 2px 0 0 2px;
-    border-color: #F25C78;
+    border-color: #62238C;
     position: absolute;
     top: -6px;
     left: -6px;
@@ -77,30 +76,29 @@ const StyledButton = styled(Link)`
   &:hover::after {
     width: calc(100% + 12px);
     height: calc(100% + 12px);
-    border-color: #BF4B81;
+    border-color: #6DBFF2;
     transform: rotateY(180deg);
   }
 `;
 
 const StyledSignOutButton = styled.button`
   background: none;
-  padding: 15px;
-  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
   display: inline-block;
-  font-family: 'Glamour Absolute', sans-serif;
-  color: #F25C78;
+  font-family: 'Heebo', sans-serif;
+  color: #62238C;
   text-decoration: none;
-  font-weight: 100;
-  font-size: 1.25rem;
-  letter-spacing: 1px;
-  border: 2px solid #F25C78;
+  font-weight: bold;
+  font-size: 1rem;
+  border: 2px solid #62238C;
   transition: all 0.3s ease-in-out;
   position: relative;
-  cursor: pointer;  // שינוי הסמן בעת מעבר מעל הכפתור
+  cursor: pointer;
 
   &:hover {
-    color: #BF4B81;
-    border: 2px solid #BF4B81;
+    color: #6DBFF2;
+    border: 2px solid #6DBFF2;
   }
 
   &::before,
@@ -110,7 +108,7 @@ const StyledSignOutButton = styled.button`
     height: 16px;
     border-style: solid;
     border-width: 2px 0 0 2px;
-    border-color: #F25C78;
+    border-color: #62238C;
     position: absolute;
     top: -6px;
     left: -6px;
@@ -129,7 +127,7 @@ const StyledSignOutButton = styled.button`
   &:hover::after {
     width: calc(100% + 12px);
     height: calc(100% + 12px);
-    border-color: #BF4B81;
+    border-color: #6DBFF2;
     transform: rotateY(180deg);
   }
 `;

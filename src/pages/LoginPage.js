@@ -66,8 +66,8 @@ const ActionButton = styled.button`
 `;
 
 const OAuthButton = styled.button`
-  background-color: ${(props) => (props.$bgColor || '#fff')};
-  color: ${(props) => (props.$color || '#000')};
+  background-color: #DB4437;
+  color: #fff;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
@@ -82,7 +82,7 @@ const OAuthButton = styled.button`
   gap: 0.5rem;
 
   &:hover {
-    background-color: ${(props) => (props.$hoverBgColor || '#e0e0e0')};
+    background-color: #C33D2E;
   }
 `;
 

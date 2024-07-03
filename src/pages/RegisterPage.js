@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { FaGoogle } from 'react-icons/fa'; // הסרנו את פייסבוק
+import { FaGoogle } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -36,7 +37,7 @@ const FormContainer = styled.div`
 const Title = styled.h2`
   font-size: 2rem;
   font-weight: bold;
-  color: #F25C78;
+  color: #62238C;
   margin-bottom: 1.5rem;
 `;
 
@@ -49,7 +50,7 @@ const Input = styled.input`
 `;
 
 const ActionButton = styled.button`
-  background-color: #F25C78;
+  background-color: #62238C;
   color: #fff;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -66,8 +67,8 @@ const ActionButton = styled.button`
 `;
 
 const OAuthButton = styled.button`
-  background-color: ${(props) => props.$bgColor || '#DB4437'}; // ברירת מחדל לצבע של גוגל
-  color: ${(props) => props.$color || '#fff'};
+  background-color: #DB4437;
+  color: #fff;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
@@ -82,7 +83,7 @@ const OAuthButton = styled.button`
   gap: 0.5rem;
 
   &:hover {
-    background-color: ${(props) => props.$hoverBgColor || '#C33D2E'}; // צבע בעת ריחוף
+    background-color: #C33D2E;
   }
 `;
 
@@ -94,13 +95,20 @@ const Message = styled.p`
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      setMessage('הסיסמאות לא תואמות.');
+      return;
+    }
+
     try {
-      // יצירת משתמש חדש ב-Supabase Auth
       const { data: newUser, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -112,14 +120,14 @@ const RegisterPage = () => {
         return;
       }
 
-      // הוספת המשתמש לטבלת ה-users עם הנחה קבועה של 0%
       const { error: dbError } = await supabase
         .from('users')
         .insert({
           id: newUser.user.id,
           email,
-          username,
-          discount: 0, // הנחה קבועה של 0%
+          first_name: firstName,
+          last_name: lastName,
+          phone,
         });
 
       if (dbError) {
@@ -128,11 +136,10 @@ const RegisterPage = () => {
         return;
       }
 
-      // הודעת הצלחה והפניה לדף הבית או לאזור האישי
       setMessage('נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר הנכנס שלך.');
       setTimeout(() => {
         navigate('/login');
-      }, 3000); // מעבר אחרי 3 שניות לדף התחברות
+      }, 3000);
     } catch (error) {
       console.error('Unexpected error:', error);
       setMessage('אירעה שגיאה בלתי צפויה.');
@@ -141,11 +148,52 @@ const RegisterPage = () => {
 
   const handleOAuthSignIn = async (provider) => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider });
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider });
 
       if (error) {
         console.error(`Error signing in with ${provider}:`, error);
         setMessage(`שגיאה בהרשמה עם ${provider}: ${error.message}`);
+        return;
+      }
+
+      if (data?.user) {
+        Swal.fire({
+          title: 'השלמת פרטים',
+          html: `
+            <input type="text" id="firstName" class="swal2-input" placeholder="שם פרטי">
+            <input type="text" id="lastName" class="swal2-input" placeholder="שם משפחה">
+            <input type="text" id="phone" class="swal2-input" placeholder="נייד">
+          `,
+          confirmButtonText: 'שמור',
+          focusConfirm: false,
+          preConfirm: () => {
+            const firstName = Swal.getPopup().querySelector('#firstName').value;
+            const lastName = Swal.getPopup().querySelector('#lastName').value;
+            const phone = Swal.getPopup().querySelector('#phone').value;
+            return { firstName, lastName, phone };
+          },
+        }).then(async (result) => {
+          const { firstName, lastName, phone } = result.value;
+
+          const { error: updateUserError } = await supabase
+            .from('users')
+            .update({
+              first_name: firstName,
+              last_name: lastName,
+              phone,
+            })
+            .eq('id', data.user.id);
+
+          if (updateUserError) {
+            console.error('Error updating user details:', updateUserError);
+            setMessage(`שגיאה בעדכון פרטי המשתמש: ${updateUserError.message}`);
+          } else {
+            setMessage('הרשמה הושלמה בהצלחה.');
+            setTimeout(() => {
+              navigate('/personal-area');
+            }, 3000);
+          }
+        });
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -158,34 +206,53 @@ const RegisterPage = () => {
       <GlobalStyle />
       <PageContainer>
         <FormContainer>
-          <Title>טופס הרשמה</Title>
+          <Title>הרשמה</Title>
           <Input
             type="text"
-            placeholder="שם משתמש"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="שם פרטי"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+          <Input
+            type="text"
+            placeholder="שם משפחה"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
           />
           <Input
             type="email"
             placeholder="אימייל"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <Input
             type="password"
             placeholder="סיסמה"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="וידוא סיסמה"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+          <Input
+            type="text"
+            placeholder="נייד"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
           />
           <ActionButton onClick={handleRegister}>הרשמה</ActionButton>
           {message && <Message>{message}</Message>}
           <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
-            <OAuthButton
-              onClick={() => handleOAuthSignIn('google')}
-              $bgColor="#DB4437"
-              $color="#fff"
-              $hoverBgColor="#C33D2E"
-            >
+            <OAuthButton onClick={() => handleOAuthSignIn('google')}>
               <FaGoogle /> הרשמה עם גוגל
             </OAuthButton>
           </div>
