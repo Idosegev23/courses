@@ -136,6 +136,8 @@ const RegisterPage = () => {
         return;
       }
 
+      console.log("New User Data:", newUser);
+
       const { error: dbError } = await supabase
         .from('users')
         .insert({
@@ -144,7 +146,7 @@ const RegisterPage = () => {
           first_name: firstName,
           last_name: lastName,
           phone_num: phone,
-          created_at: new Date(),
+          created_at: new Date().toISOString(),
         });
 
       if (dbError) {
@@ -300,5 +302,3 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-
-                 
