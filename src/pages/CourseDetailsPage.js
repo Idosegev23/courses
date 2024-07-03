@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import styled, { createGlobalStyle, keyframes } from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import { Typography, Container, Checkbox, FormControlLabel, Dialog, DialogContent } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
@@ -52,6 +52,20 @@ const PageContainer = styled(Container)`
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url(${newLogo}) no-repeat center;
+    background-size: cover;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 0;
+  }
 `;
 
 const PageTitle = styled(Typography)`
@@ -122,55 +136,7 @@ const PurchaseButton = styled.button`
   }
 `;
 
-const StepIndicator = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  position: relative;
-`;
-
-const progressAnimation = keyframes`
-  0% { width: 0; }
-  100% { width: 100%; }
-`;
-
-const ProgressBar = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  height: 2px;
-  background-color: #62238C;
-  transition: width 0.5s ease-in-out;
-  width: ${props => ((props.currentStep - 1) / 2) * 100}%;
-`;
-
-const Step = styled.div`
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: ${props => props.active ? '#62238C' : '#ccc'};
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  position: relative;
-  z-index: 2;
-  transition: background-color 0.3s ease-in-out;
-`;
-
-const StepConnector = styled.div`
-  flex: 1;
-  height: 2px;
-  background-color: #ccc;
-  align-self: center;
-  margin: 0 5px;
-  position: relative;
-  z-index: 1;
-`;
-
-const PopupForm = styled(Dialog)`
+const StyledDialog = styled(Dialog)`
   .MuiDialog-paper {
     padding: 20px;
     width: 400px;
@@ -233,6 +199,24 @@ const ErrorMessage = styled.p`
   margin-bottom: 10px;
 `;
 
+const ProgressBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const ProgressStep = styled.div`
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: ${props => props.active ? '#62238C' : '#ccc'};
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+`;
+
 const CourseDetailsPage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -252,7 +236,8 @@ const CourseDetailsPage = () => {
     companyId: '',
   });
   const [formErrors, setFormErrors] = useState({});
-  const { user, signIn } = useAuth();
+  const { user } = useAuth();
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -269,7 +254,39 @@ const CourseDetailsPage = () => {
     };
 
     fetchCourse();
-  }, [courseId]);
+
+    if (user) {
+      fetchUserDetails(user.id);
+    }
+  }, [courseId, user]);
+
+  const fetchUserDetails = async (userId) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user details:', error);
+    } else {
+      setFormValues(prevValues => ({
+        ...prevValues,
+        firstName: data.first_name || '',
+        lastName: data.last_name || '',
+        phone: data.phone_num || '',
+        email: data.email || '',
+        idNum: data.id_num || '',
+        streetAddress: data.street_address || '',
+        city: data.city || '',
+        isCompany: data.is_company || false,
+        companyId: data.is_company ? data.id_num : '',
+      }));
+    }
+
+    const { data: authData } = await supabase.auth.getUser();
+    setIsGoogleUser(authData?.user?.app_metadata?.provider === 'google');
+  };
 
   const validateForm = (step) => {
     const errors = {};
@@ -280,9 +297,11 @@ const CourseDetailsPage = () => {
         if (!/^\d{10}$/.test(formValues.phone)) errors.phone = "מספר טלפון לא תקין";
         break;
       case 2:
-        if (!/\S+@\S+\.\S+/.test(formValues.email)) errors.email = "כתובת אימייל לא תקינה";
-        if (formValues.password.length < 8) errors.password = "הסיסמה חייבת להכיל לפחות 8 תווים";
-        if (formValues.password !== formValues.confirmPassword) errors.confirmPassword = "הסיסמאות אינן תואמות";
+        if (!user && !isGoogleUser) {
+          if (!/\S+@\S+\.\S+/.test(formValues.email)) errors.email = "כתובת אימייל לא תקינה";
+          if (formValues.password.length < 8) errors.password = "הסיסמה חייבת להכיל לפחות 8 תווים";
+          if (formValues.password !== formValues.confirmPassword) errors.confirmPassword = "הסיסמאות אינן תואמות";
+        }
         break;
       case 3:
         if (!formValues.isCompany && !/^\d{9}$/.test(formValues.idNum)) errors.idNum = "מספר זהות לא תקין";
@@ -307,19 +326,26 @@ const CourseDetailsPage = () => {
 
   const handleNextStep = () => {
     if (validateForm(currentStep)) {
-      setCurrentStep(currentStep + 1);
+      if (user && currentStep === 1) {
+        setCurrentStep(3);
+      } else {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
 
   const handlePreviousStep = () => {
-    setCurrentStep(currentStep - 1);
+    if (user && currentStep === 3) {
+      setCurrentStep(1);
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm(3)) {
       try {
-        // Register new user if not logged in
         if (!user) {
           const { data: newUserData, error: registrationError } = await supabase.auth.signUp({
             email: formValues.email,
@@ -328,7 +354,6 @@ const CourseDetailsPage = () => {
 
           if (registrationError) throw registrationError;
 
-          // Add user details to 'users' table
           const { error: userError } = await supabase
             .from('users')
             .insert({ 
@@ -344,12 +369,23 @@ const CourseDetailsPage = () => {
             });
 
           if (userError) throw userError;
+        } else {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ 
+              first_name: formValues.firstName,
+              last_name: formValues.lastName,
+              phone_num: formValues.phone,
+              id_num: formValues.isCompany ? formValues.companyId : formValues.idNum,
+              street_address: formValues.streetAddress,
+              city: formValues.city,
+              is_company: formValues.isCompany
+            })
+            .eq('id', user.id);
 
-          // Sign in the new user
-          await signIn(formValues.email, formValues.password);
+          if (updateError) throw updateError;
         }
 
-        // Proceed with purchase
         await handlePurchase();
       } catch (error) {
         console.error('Error during registration or purchase:', error);
@@ -360,7 +396,6 @@ const CourseDetailsPage = () => {
 
   const handlePurchase = async () => {
     try {
-      // Get JWT token for Green Invoice
       const tokenResponse = await axios.post('/api/green-invoice', {
         endpoint: 'account/token',
         data: {
@@ -371,7 +406,6 @@ const CourseDetailsPage = () => {
 
       const token = tokenResponse.data.token;
 
-      // Fetch user details
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -380,10 +414,8 @@ const CourseDetailsPage = () => {
 
       if (userError) throw userError;
 
-      // Calculate final price
       const finalPrice = course.discountPrice || course.price;
 
-      // Create invoice data
       const invoiceData = {
         description: `רכישת קורס ${course.title}`,
         type: 400,
@@ -409,16 +441,18 @@ const CourseDetailsPage = () => {
         custom: "300700556"
       };
 
-      // Create payment form
+      console.log('Invoice Data:', invoiceData);
+
       const paymentFormResponse = await axios.post('/api/green-invoice', {
         endpoint: 'payments/form',
         data: invoiceData,
         tokenRequest: token
       });
 
+      console.log('Payment Form Response:', paymentFormResponse);
+
       const paymentFormUrl = paymentFormResponse.data.url;
 
-      // Save enrollment details to Supabase
       const { error: enrollmentError } = await supabase
         .from('enrollments')
         .insert({
@@ -432,11 +466,12 @@ const CourseDetailsPage = () => {
 
       if (enrollmentError) throw enrollmentError;
 
-      // Redirect to payment form
       window.location.href = paymentFormUrl;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error during purchase:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
       alert('An error occurred during the purchase. Please try again.');
     }
   };
@@ -462,21 +497,18 @@ const CourseDetailsPage = () => {
           <PurchaseButton onClick={() => setShowRegistrationForm(true)}>רכוש עכשיו</PurchaseButton>
         </PageContent>
 
-        <PopupForm open={showRegistrationForm} onClose={() => setShowRegistrationForm(false)}>
+        <StyledDialog open={showRegistrationForm} onClose={() => setShowRegistrationForm(false)}>
           <DialogContent>
             <MultiStepForm onSubmit={handleSubmit}>
-              <StepIndicator>
-                <ProgressBar currentStep={currentStep} />
-                <Step active={currentStep >= 1}>1</Step>
-                <StepConnector />
-                <Step active={currentStep >= 2}>2</Step>
-                <StepConnector />
-                <Step active={currentStep >= 3}>3</Step>
-              </StepIndicator>
+              <ProgressBar>
+                <ProgressStep active={currentStep >= 1}>1</ProgressStep>
+                <ProgressStep active={currentStep >= 2}>2</ProgressStep>
+                <ProgressStep active={currentStep >= 3}>3</ProgressStep>
+              </ProgressBar>
 
               {currentStep === 1 && (
                 <FormFieldset>
-                  <h2 className="fs-title">בוא נכיר אותך</h2>
+                  <h2>בוא נכיר אותך</h2>
                   <FormInput
                     type="text"
                     name="firstName"
@@ -508,9 +540,9 @@ const CourseDetailsPage = () => {
                 </FormFieldset>
               )}
 
-              {currentStep === 2 && (
+              {currentStep === 2 && !user && !isGoogleUser && (
                 <FormFieldset>
-                  <h2 className="fs-title">הרשמה</h2>
+                  <h2>הרשמה</h2>
                   <FormInput
                     type="email"
                     name="email"
@@ -545,7 +577,7 @@ const CourseDetailsPage = () => {
 
               {currentStep === 3 && (
                 <FormFieldset>
-                  <h2 className="fs-title">פרטים לקבלה</h2>
+                  <h2>פרטים לקבלה</h2>
                   {!formValues.isCompany && (
                     <>
                       <FormInput
@@ -607,7 +639,7 @@ const CourseDetailsPage = () => {
               )}
             </MultiStepForm>
           </DialogContent>
-        </PopupForm>
+        </StyledDialog>
       </PageContainer>
     </ThemeProvider>
   );
