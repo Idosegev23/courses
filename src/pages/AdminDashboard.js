@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Container, Grid, Button, TextField, Modal, Box } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { utils, writeFile } from 'xlsx';
+
 const theme = createTheme({
   palette: {
     primary: {
@@ -618,6 +619,66 @@ const AdminDashboard = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה בהוספת המשתמש החדש', 'error');
     }
   };
+  const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+const sendEmail = async (to, subject, html) => {
+  const msg = {
+    to,
+    from: 'your-email@example.com', // שים כאן את האימייל שלך
+    subject,
+    html,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+};
+
+module.exports = sendEmail;
+
+const checkCourseProgress = async () => {
+  try {
+    const { data: enrollments, error: enrollmentsError } = await supabase.from('enrollments').select('*, users(email), courses(total_lessons)');
+    
+    if (enrollmentsError) {
+      console.error('Error fetching enrollments:', enrollmentsError);
+      return;
+    }
+
+    enrollments.forEach(enrollment => {
+      const progress = (enrollment.current_lesson / enrollment.courses.total_lessons) * 100;
+
+      if (progress >= 80) {
+        sendEmail(
+          enrollment.users.email,
+          'קורסי המשך מומלצים',
+          `<p>היי ${enrollment.users.email},</p>
+           <p>שמחנו לראות שהתקדמת בצורה יפה בקורס שלך! נשמח להציע לך קורסים נוספים להמשך הלמידה.</p>
+           <p>לחץ <a href="your-website-link">כאן</a> כדי לגלות עוד.</p>`
+        );
+      }
+
+      if (enrollment.current_lesson === 1) {
+        sendEmail(
+          enrollment.users.email,
+          'מתחילים בקורס',
+          `<p>היי ${enrollment.users.email},</p>
+           <p>שמנו לב שאתה עדיין לא התחלת את הקורס. נשמח לראות אותך מתקדם!</p>`
+        );
+      }
+    });
+  } catch (error) {
+    console.error('Error in checkCourseProgress:', error);
+  }
+};
+
+// קריאה לפונקציה כל זמן מסוים או בהפעלה ידנית
+setInterval(checkCourseProgress, 24 * 60 * 60 * 1000); // לדוגמה, כל יום
+
 
   return (
     <ThemeProvider theme={theme}>
