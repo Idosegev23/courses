@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import PersonalArea from './pages/PersonalArea';
-import PurchasePage from './pages/PurchasePage';
+//import PurchasePage from './pages/PurchasePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -26,7 +26,6 @@ const App = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/personal-area" element={<PersonalArea />} />
-          <Route path="/purchase/:courseId" element={<PurchasePage />} />
           <Route path="/course/:courseId" element={<CourseDetailsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

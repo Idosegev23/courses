@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaBook, FaPlus, FaMoneyBillWave, FaChartLine } from 'react-icons/fa';
+import { FaUser, FaBook, FaPlus, FaMoneyBillWave, FaSort, FaFileExcel } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Container, Grid, Button, TextField, Modal, Box } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-
+import { utils, writeFile } from 'xlsx';
 const theme = createTheme({
   palette: {
     primary: {
@@ -71,6 +71,7 @@ const StyledTable = styled.table`
     background-color: ${theme.palette.primary.main};
     color: white;
     font-weight: bold;
+    cursor: pointer;
   }
 
   tr:last-child td {
@@ -124,6 +125,8 @@ const AdminDashboard = () => {
   const [newUserDiscount, setNewUserDiscount] = useState('');
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingUserDiscount, setEditingUserDiscount] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [filters, setFilters] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -192,10 +195,8 @@ const AdminDashboard = () => {
   const handleViewUser = async (userId) => {
     console.log('Fetching user progress for user ID:', userId);
   
-    // Fetch user progress
     await fetchUserProgress(userId);
   
-    // Find the user data
     const user = users.find((user) => user.id === userId);
     if (!user) {
       console.error('User not found for ID:', userId);
@@ -204,7 +205,6 @@ const AdminDashboard = () => {
   
     console.log('User data:', user);
   
-    // Filter enrollments for the user
     const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
     if (userEnrollments.length === 0) {
       console.warn('No enrollments found for user ID:', userId);
@@ -212,7 +212,6 @@ const AdminDashboard = () => {
   
     console.log('User enrollments:', userEnrollments);
   
-    // Prepare enrollment details
     let enrollmentDetails = '';
     userEnrollments.forEach(enrollment => {
       const course = courses.find(course => course.id === enrollment.course_id);
@@ -232,7 +231,6 @@ const AdminDashboard = () => {
   
     console.log('Enrollment details:', enrollmentDetails);
   
-    // Display the user details in a Swal popup
     const result = await Swal.fire({
       title: `פרטי משתמש: ${user.username}`,
       html: `
@@ -246,7 +244,6 @@ const AdminDashboard = () => {
       cancelButtonText: 'סגור'
     });
   
-    // Handle edit confirmation
     if (result.isConfirmed) {
       handleEditUserDetails(userId);
     }
@@ -296,14 +293,37 @@ const AdminDashboard = () => {
     navigate(`/courses/${courseId}/edit`);
   };
 
-  const handleViewCourse = (courseId) => {
+  const handleViewCourse = async (courseId) => {
     const course = courses.find((course) => course.id === courseId);
     if (course) {
+      const { data: enrollmentsData, error } = await supabase
+        .from('enrollments')
+        .select('*, users(email)')
+        .eq('course_id', courseId);
+
+      if (error) {
+        console.error('Error fetching enrollments:', error);
+        return;
+      }
+
+      const completedUsers = enrollmentsData.filter(e => e.current_lesson >= course.total_lessons);
+      const notStartedUsers = enrollmentsData.filter(e => e.current_lesson === 1);
+      const activeUsers = enrollmentsData.filter(e => e.current_lesson > 1 && e.current_lesson < course.total_lessons);
+
+      const enrollmentsList = (users) => users.map(u => `<li>${u.users.email} (שיעור נוכחי: ${u.current_lesson})</li>`).join('');
+
       Swal.fire({
         title: `פרטי קורס: ${course.title}`,
         html: `
           <p><strong>תיאור:</strong> ${course.description}</p>
           <p><strong>מחיר:</strong> ${course.price} ש"ח</p>
+          <h3>משתתפים רשומים:</h3>
+          <h4>סיימו את הקורס (${completedUsers.length}):</h4>
+          <ul>${enrollmentsList(completedUsers)}</ul>
+          <h4>לא התחילו (${notStartedUsers.length}):</h4>
+          <ul>${enrollmentsList(notStartedUsers)}</ul>
+          <h4>משתתפים פעילים (${activeUsers.length}):</h4>
+          <ul>${enrollmentsList(activeUsers)}</ul>
         `,
         showCancelButton: true,
         confirmButtonText: 'עריכה',
@@ -337,35 +357,6 @@ const AdminDashboard = () => {
         console.error('Error deleting course:', error);
         Swal.fire('שגיאה', 'אירעה שגיאה במחיקת הקורס', 'error');
       }
-    }
-  };
-
-  const handleSaveNewUser = async () => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-        options: {
-          data: {
-            username: newUsername,
-            discount: newUserDiscount,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      Swal.fire('נוצר בהצלחה', 'המשתמש נוצר בהצלחה', 'success');
-      setShowAddUserModal(false);
-      setNewUserEmail('');
-      setNewUserPassword('');
-      setNewUsername('');
-      setNewUserDiscount('');
-
-      fetchData();
-    } catch (error) {
-      console.error('Error creating user:', error);
-      Swal.fire('שגיאה', 'אירעה שגיאה ביצירת המשתמש', 'error');
     }
   };
 
@@ -419,9 +410,213 @@ const AdminDashboard = () => {
     }
   };
 
-  const checkAndSendAutomatedEmails = async () => {
-    // Implement the logic for checking and sending automated emails here.
-    console.log('Checking and sending automated emails...');
+  const sortData = (data, key) => {
+    if (!key) return data;
+
+    const sortedData = [...data].sort((a, b) => {
+      if (a[key] < b[key]) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (a[key] > b[key]) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    });
+
+    return sortedData;
+  };
+
+  const filterData = (data, filters) => {
+    return data.filter(item => {
+      for (let key in filters) {
+        if (filters[key] && !String(item[key]).toLowerCase().includes(filters[key].toLowerCase())) {
+          return false;
+        }
+      }
+      return true;
+    });
+  };
+
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleFilter = (key, value) => {
+    setFilters(prevFilters => ({ ...prevFilters, [key]: value }));
+  };
+
+  const exportToExcel = (data, fileName) => {
+    const ws = utils.json_to_sheet(data);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Sheet1");
+    writeFile(wb, `${fileName}.xlsx`);
+  };
+
+  const renderTable = (data, columns, tableName) => {
+    const sortedAndFilteredData = sortData(filterData(data, filters), sortConfig.key);
+
+    return (
+      <>
+        <Grid container spacing={2} style={{ marginBottom: '1rem' }}>
+          {columns.map(column => (
+            <Grid item key={column.key}>
+              <TextField
+                label={`סנן לפי ${column.label}`}
+                variant="outlined"
+                size="small"
+                onChange={(e) => handleFilter(column.key, e.target.value)}
+              />
+            </Grid>
+          ))}
+          <Grid item>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<FaFileExcel />}
+              onClick={() => exportToExcel(sortedAndFilteredData, tableName)}
+            >
+              ייצא לאקסל
+            </Button>
+          </Grid>
+        </Grid>
+        <StyledTable>
+          <thead>
+            <tr>
+              {columns.map(column => (
+                <th key={column.key} onClick={() => handleSort(column.key)}>
+                  {column.label} <FaSort />
+                </th>
+              ))}
+              {tableName === 'enrollments' && <th>התקדמות</th>}
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody>
+            <AnimatePresence>
+              {sortedAndFilteredData.map((item) => (
+                <motion.tr
+                  key={item.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {columns.map(column => (
+                    <td key={column.key}>{item[column.key]}</td>
+                  ))}
+                  {tableName === 'enrollments' && (
+                    <td>
+                      <ProgressBar progress={(item.current_lesson / item.total_lessons) * 100}>
+                        <div></div>
+                      </ProgressBar>
+                      {item.current_lesson} / {item.total_lessons}
+                    </td>
+                  )}
+                  <td>
+                    {tableName === 'users' && (
+                      <>
+                        <ActionButton
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          onClick={() => handleViewUser(item.id)}
+                        >
+                          צפייה
+                        </ActionButton>
+                        <ActionButton
+                          variant="outlined"
+                          color="secondary"
+                          size="small"
+                          onClick={() => handleAddDiscount(item.id)}
+                        >
+                          עריכת הנחה
+                        </ActionButton>
+                        <ActionButton
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleDeleteUser(item.id)}
+                        >
+                          מחיקה
+                        </ActionButton>
+                      </>
+                    )}
+                    {tableName === 'courses' && (
+                      <>
+                        <ActionButton
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          onClick={() => handleViewCourse(item.id)}
+                        >
+                          צפייה
+                        </ActionButton>
+                        <ActionButton
+                          variant="outlined"
+                          color="secondary"
+                          size="small"
+                          onClick={() => handleEditCourse(item.id)}
+                        >
+                          עריכה
+                        </ActionButton>
+                        <ActionButton
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleDeleteCourse(item.id)}
+                        >
+                          מחיקה
+                        </ActionButton>
+                      </>
+                    )}
+                    {tableName === 'enrollments' && (
+                      <ActionButton
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => handleDeleteEnrollment(item.id)}
+                      >
+                        מחיקה
+                      </ActionButton>
+                    )}
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
+          </tbody>
+        </StyledTable>
+      </>
+    );
+  };
+
+  const handleSaveNewUser = async () => {
+    try {
+      // Register new user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+      });
+
+      if (authError) throw authError;
+
+      // Add user details to 'users' table
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: newUserEmail,
+          username: newUsername,
+          discount: newUserDiscount,
+        });
+
+      if (userError) throw userError;
+
+      Swal.fire('נוסף בהצלחה', 'המשתמש החדש נוסף בהצלחה', 'success');
+      setShowAddUserModal(false);
+      fetchData(); // Refresh the users list
+    } catch (error) {
+      console.error('Error adding new user:', error);
+      Swal.fire('שגיאה', 'אירעה שגיאה בהוספת המשתמש החדש', 'error');
+    }
   };
 
   return (
@@ -446,58 +641,11 @@ const AdminDashboard = () => {
               </Button>
             </Grid>
           </Grid>
-          <StyledTable>
-            <thead>
-              <tr>
-                <th>אימייל</th>
-                <th>שם משתמש</th>
-                <th>הנחה</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {users.map((user) => (
-                  <motion.tr
-                    key={user.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <td>{user.email}</td>
-                    <td>{user.username}</td>
-                    <td>{user.discount}%</td>
-                    <td>
-                      <ActionButton
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => handleViewUser(user.id)}
-                      >
-                        צפייה
-                      </ActionButton>
-                      <ActionButton
-                        variant="outlined"
-                        color="secondary"
-                        size="small"
-                        onClick={() => handleAddDiscount(user.id)}
-                      >
-                        עריכת הנחה
-                      </ActionButton>
-                      <ActionButton
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        מחיקה
-                      </ActionButton>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </StyledTable>
+          {renderTable(users, [
+            { key: 'email', label: 'אימייל' },
+            { key: 'username', label: 'שם משתמש' },
+            { key: 'discount', label: 'הנחה' }
+          ], 'users')}
         </motion.div>
 
         <motion.div
@@ -506,59 +654,11 @@ const AdminDashboard = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <SectionTitle variant="h4"><FaBook /> ניהול קורסים</SectionTitle>
-          <StyledTable>
-            <thead>
-              <tr>
-                <th>כותרת</th>
-                <th>תיאור</th>
-                <th>מחיר</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {courses.map((course) => (
-                  <motion.tr
-                    key={course.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <td>{course.title}</td>
-                    <td>{course.description}</td>
-                    <td>{course.price} ש"ח</td>
-                    <td>
-                      <ActionButton
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => handleViewCourse(course.id)}
-                      >
-                        צפייה
-                      </ActionButton>
-                     
-                      <ActionButton
-                        variant="outlined"
-                        color="secondary"
-                        size="small"
-                        onClick={() => handleEditCourse(course.id)}
-                      >
-                        עריכה
-                      </ActionButton>
-                      <ActionButton
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => handleDeleteCourse(course.id)}
-                      >
-                        מחיקה
-                      </ActionButton>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </StyledTable>
+          {renderTable(courses, [
+            { key: 'title', label: 'כותרת' },
+            { key: 'description', label: 'תיאור' },
+            { key: 'price', label: 'מחיר' }
+          ], 'courses')}
         </motion.div>
 
         <motion.div
@@ -567,87 +667,12 @@ const AdminDashboard = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <SectionTitle variant="h4"><FaMoneyBillWave /> ניהול הרשמות</SectionTitle>
-          <StyledTable>
-            <thead>
-              <tr>
-                <th>משתמש</th>
-                <th>קורס</th>
-                <th>שיעור נוכחי</th>
-                <th>תשלום</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {enrollments.map((enrollment) => (
-                  <motion.tr
-                    key={enrollment.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <td>{users.find((user) => user.id === enrollment.user_id)?.email}</td>
-                    <td>{courses.find((course) => course.id === enrollment.course_id)?.title}</td>
-                    <td>{enrollment.current_lesson}</td>
-                    <td>{enrollment.amount_paid} ש"ח</td>
-                    <td>
-                      <ActionButton
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => handleDeleteEnrollment(enrollment.id)}
-                      >
-                        מחיקה
-                      </ActionButton>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </StyledTable>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <SectionTitle variant="h4"><FaChartLine /> התקדמות משתמשים</SectionTitle>
-          <StyledTable>
-            <thead>
-              <tr>
-                <th>משתמש</th>
-                <th>קורס</th>
-                <th>אחוז השלמה</th>
-                <th>פעילות אחרונה</th>
-                <th>תרגולים</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {Object.entries(userProgress).map(([userId, progressMap]) => (
-                  Object.entries(progressMap).map(([courseId, progress]) => (
-                    <motion.tr
-                      key={`${userId}-${courseId}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <td>{users.find(user => user.id === userId)?.email}</td>
-                      <td>{courses.find(course => course.id === courseId)?.title}</td>
-                      <td>
-                        <ProgressBar progress={progress.completion_percentage}>
-                          <div></div>
-                        </ProgressBar>
-                      </td>
-                      <td>{new Date(progress.last_activity).toLocaleDateString()}</td>
-                      <td>{progress.completed_exercises?.join(', ') || 'לא סיים תרגילים'}</td>
-                    </motion.tr>
-                  ))
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </StyledTable>
+          {renderTable(enrollments, [
+            { key: 'user_id', label: 'משתמש' },
+            { key: 'course_id', label: 'קורס' },
+            { key: 'current_lesson', label: 'שיעור נוכחי' },
+            { key: 'amount_paid', label: 'תשלום' }
+          ], 'enrollments')}
         </motion.div>
 
         <Grid container justifyContent="center" style={{ marginTop: '2rem' }}>
@@ -659,17 +684,6 @@ const AdminDashboard = () => {
             onClick={() => navigate('/add-course')}
           >
             הוסף קורס חדש
-          </Button>
-        </Grid>
-
-        <Grid container justifyContent="center" style={{ marginTop: '1rem' }}>
-          <Button
-            variant="contained"
-            color="secondary"
-            size="large"
-            onClick={checkAndSendAutomatedEmails}
-          >
-            בדוק והפעל אוטומציות
           </Button>
         </Grid>
       </DashboardContainer>

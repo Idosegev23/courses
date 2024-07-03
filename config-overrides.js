@@ -1,25 +1,32 @@
 const webpack = require('webpack');
 
-module.exports = function override(config) {
+module.exports = function override(config, env) {
   config.resolve.fallback = {
-    "os": require.resolve("os-browserify/browser"),
-    "path": require.resolve("path-browserify"),
-    "crypto": require.resolve("crypto-browserify"),
+    ...config.resolve.fallback,
+    "fs": false,
     "stream": require.resolve("stream-browserify"),
+    "path": require.resolve("path-browserify"),
     "zlib": require.resolve("browserify-zlib"),
     "util": require.resolve("util/"),
-    "assert": require.resolve("assert/"),
-    "buffer": require.resolve("buffer/"),
-    "https": require.resolve("https-browserify"),
-    "http": require.resolve("stream-http"),
+    "crypto": require.resolve("crypto-browserify"),
     "process": require.resolve("process/browser"),
-    "vm": require.resolve("vm-browserify")  // Add this line
+    "buffer": require.resolve("buffer/"),
+    "os": require.resolve("os-browserify/browser")  // Add this line
   };
-  config.plugins = (config.plugins || []).concat([
+
+  config.plugins.push(
     new webpack.ProvidePlugin({
       process: 'process/browser',
-      Buffer: ['buffer', 'Buffer'],
-    }),
-  ]);
+      Buffer: ['buffer', 'Buffer']
+    })
+  );
+
+  config.module.rules.push({
+    test: /\.m?js/,
+    resolve: {
+      fullySpecified: false
+    }
+  });
+
   return config;
 };

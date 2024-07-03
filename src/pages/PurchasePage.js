@@ -1,166 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import styled, { createGlobalStyle } from 'styled-components';
 import Swal from 'sweetalert2';
-import newLogo from '../components/NewLogo_BLANK-outer.png';
+import {
+  GlobalStyle,
+  PageContainer,
+  PageTitle,
+  CourseDescription,
+  PriceContainer,
+  OriginalPrice,
+  DiscountedPrice,
+  DiscountPercentage,
+  StyledButton,
+  Message
+} from './StyledComponents';  // וודא שהנתיב נכון
 
-const GlobalStyle = createGlobalStyle`
-  body {
-    font-family: 'Heebo', sans-serif;
-    background-color: #ffffff;
-    direction: rtl;
-    margin: 0;
-    padding: 0;
-  }
-`;
-
-const PageContainer = styled.div`
-  padding: 1rem;
-  background: #ffffff;
-  text-align: center;
-  max-width: 800px;
-  margin: 0 auto;
-  border-radius: 1rem;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-
-  @media (min-width: 768px) {
-    padding: 2rem;
-    border-radius: 2rem;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url(${newLogo}) no-repeat center;
-    background-size: cover;
-    opacity: 0.05;
-    pointer-events: none;
-    z-index: 0;
-  }
-`;
-
-const PageTitle = styled.h1`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #62238C;
-  margin-bottom: 1rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-
-  @media (min-width: 768px) {
-    font-size: 2rem;
-    margin-bottom: 2rem;
-  }
-`;
-
-const CourseDescription = styled.p`
-  font-size: 1rem;
-  color: #333;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 1;
-
-  @media (min-width: 768px) {
-    font-size: 1.25rem;
-    margin-bottom: 2rem;
-  }
-`;
-
-const PriceContainer = styled.div`
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 1;
-
-  @media (min-width: 768px) {
-    margin-bottom: 2rem;
-  }
-`;
-
-const OriginalPrice = styled.span`
-  font-size: 1rem;
-  color: #BF4B81;
-  text-decoration: line-through;
-  margin-right: 0.5rem;
-
-  @media (min-width: 768px) {
-    font-size: 1.25rem;
-    margin-right: 1rem;
-  }
-`;
-
-const DiscountedPrice = styled.h2`
-  font-size: 1.25rem;
-  color: #62238C;
-  display: inline;
-
-  @media (min-width: 768px) {
-    font-size: 1.5rem;
-  }
-`;
-
-const DiscountPercentage = styled.span`
-  font-size: 1rem;
-  color: #333;
-  margin-left: 0.5rem;
-
-  @media (min-width: 768px) {
-    font-size: 1.25rem;
-    margin-left: 1rem;
-  }
-`;
-
-const StyledButton = styled.button`
-  display: inline-block;
-  margin: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  text-decoration: none;
-  color: #fff;
-  background-color: ${props => props.$isPurchase ? '#62238C' : '#BF4B81'};
-  transition: background-color 0.3s, transform 0.3s;
-  border: none;
-  font-size: 0.875rem;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-
-  &:hover {
-    background-color: ${props => props.$isPurchase ? '#BF4B81' : '#62238C'};
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    background-color: #ddd;
-    cursor: not-allowed;
-  }
-
-  @media (min-width: 768px) {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    border-radius: 1rem;
-  }
-`;
-
-const Message = styled.p`
-  font-size: 1rem;
-  color: #333;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-
-  @media (min-width: 768px) {
-    font-size: 1.25rem;
-  }
-`;
 const PurchasePage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -318,16 +172,20 @@ const PurchasePage = () => {
       if (!user) {
         const result = await Swal.fire({
           title: 'הרשמה ורכישה',
-          html:
-            '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי" required>' +
-            '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה" required>' +
-            '<input id="swal-input3" class="swal2-input" placeholder="אימייל" required>' +
-            '<input id="swal-input4" class="swal2-input" placeholder="סיסמה" type="password" required>' +
-            '<input id="swal-input5" class="swal2-input" placeholder="מספר טלפון" required>' +
-            '<input id="swal-input6" class="swal2-input" placeholder="כתובת" required>' +
-            '<input id="swal-input7" class="swal2-input" placeholder="עיר" required>' +
-            '<input id="swal-input8" class="swal2-input" placeholder="מיקוד">' +
-            '<input id="swal-input9" class="swal2-input" placeholder="תעודת זהות" required>',
+          html: `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <input id="swal-input1" class="swal2-input" placeholder="שם פרטי *" required>
+              <input id="swal-input2" class="swal2-input" placeholder="שם משפחה *" required>
+              <input id="swal-input3" class="swal2-input" placeholder="אימייל *" required>
+              <input id="swal-input4" class="swal2-input" placeholder="סיסמה *" type="password" required>
+              <input id="swal-input5" class="swal2-input" placeholder="מספר טלפון *" required>
+              <input id="swal-input6" class="swal2-input" placeholder="כתובת (רחוב + מספר) *" required>
+              <input id="swal-input7" class="swal2-input" placeholder="עיר *" required>
+              <input id="swal-input8" class="swal2-input" placeholder="מיקוד">
+              <input id="swal-input9" class="swal2-input" placeholder="תעודת זהות *" required>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.8em;">* שדות חובה</p>
+          `,
           focusConfirm: false,
           preConfirm: () => {
             const values = {
@@ -433,7 +291,11 @@ const PurchasePage = () => {
         }
       }
 
-      formValues.phone = formValues.phone.startsWith('0') ? formValues.phone : `0${formValues.phone}`;
+      if (formValues.phone && typeof formValues.phone === 'string') {
+        formValues.phone = formValues.phone.startsWith('0') ? formValues.phone : `0${formValues.phone}`;
+      } else {
+        throw new Error('מספר טלפון לא תקין');
+      }
 
       const invoiceData = {
         description: 'רכישת קורס',
