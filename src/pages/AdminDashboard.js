@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Container, Grid, Button, TextField, Modal, Box } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { utils, writeFile } from 'xlsx';
-import sendEmail from './sendEmail'; // נייבא את הפונקציה לשליחת מיילים
+import sendEmail from './sendMail'; // נייבא את הפונקציה לשליחת מיילים
 
 
 const theme = createTheme({
