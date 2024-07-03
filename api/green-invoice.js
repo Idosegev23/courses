@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
 
       console.log('Requesting token from Green Invoice Sandbox API');
       response = await axios.post(`${API_BASE_URL}/account/token`, { id, secret });
-      console.log('Token request successful');
+      console.log('Token request successful:', response.data);
     } else if (endpoint === 'payments/form') {
       const { tokenRequest } = body;
       if (!data || !tokenRequest) {
@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
           'Content-Type': 'application/json',
         }
       });
-      console.log('Payment form request successful');
+      console.log('Payment form request successful:', response.data);
     } else {
       console.log('Unknown endpoint requested');
       return res.status(400).json({ message: 'Unknown endpoint requested' });

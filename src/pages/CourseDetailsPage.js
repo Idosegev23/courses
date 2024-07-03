@@ -398,20 +398,30 @@ const CourseDetailsPage = () => {
     try {
       console.log('Starting purchase process...');
       
-      const tokenResponse = await axios.post('/api/green-invoice', {
-        endpoint: 'account/token',
-        data: {
-          id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_SANDBOX,
-          secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_SANDBOX
-        }
+      const tokenResponse = await fetch('/api/green-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          endpoint: 'account/token',
+          data: {
+            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_SANDBOX,
+            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_SANDBOX
+          }
+        })
       });
   
-      if (tokenResponse.status !== 200) {
-        console.error('Failed to obtain token:', tokenResponse.data);
-        throw new Error('Failed to obtain token');
+      const tokenResponseData = await tokenResponse.json();
+      console.log('Token response status:', tokenResponse.status);
+      console.log('Token response data:', tokenResponseData);
+  
+      if (!tokenResponse.ok) {
+        throw new Error(`HTTP error! status: ${tokenResponse.status}`);
       }
   
-      const token = tokenResponse.data.token;
+      const token = tokenResponseData.token;
       console.log('Token received:', token);
   
       const { data: userData, error: userError } = await supabase
@@ -451,20 +461,28 @@ const CourseDetailsPage = () => {
   
       console.log('Invoice Data:', invoiceData);
   
-      const paymentFormResponse = await axios.post('/api/green-invoice', {
-        endpoint: 'payments/form',
-        data: invoiceData,
-        tokenRequest: token
+      const paymentFormResponse = await fetch('/api/green-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          endpoint: 'payments/form',
+          data: invoiceData
+        })
       });
   
-      if (paymentFormResponse.status !== 200) {
-        console.error('Failed to create payment form:', paymentFormResponse.data);
-        throw new Error('Failed to create payment form');
+      const paymentFormResponseData = await paymentFormResponse.json();
+      console.log('Payment form response status:', paymentFormResponse.status);
+      console.log('Payment form response data:', paymentFormResponseData);
+  
+      if (!paymentFormResponse.ok) {
+        throw new Error(`HTTP error! status: ${paymentFormResponse.status}`);
       }
   
-      console.log('Payment Form Response:', paymentFormResponse);
-  
-      const paymentFormUrl = paymentFormResponse.data.url;
+      const paymentFormUrl = paymentFormResponseData.url;
   
       const { error: enrollmentError } = await supabase
         .from('enrollments')
@@ -488,7 +506,7 @@ const CourseDetailsPage = () => {
       alert('An error occurred during the purchase. Please try again.');
     }
   };
-  
+    
 
   if (!course) return <div>טוען...</div>;
 
