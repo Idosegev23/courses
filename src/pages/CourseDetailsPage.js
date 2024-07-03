@@ -470,7 +470,8 @@ const CourseDetailsPage = () => {
         },
         body: JSON.stringify({
           endpoint: 'payments/form',
-          data: invoiceData
+          data: invoiceData,
+          tokenRequest: token
         })
       });
   
@@ -506,7 +507,7 @@ const CourseDetailsPage = () => {
       alert('An error occurred during the purchase. Please try again.');
     }
   };
-    
+  
 
   if (!course) return <div>טוען...</div>;
 

@@ -25,10 +25,11 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { endpoint, data } = body;
+    const { endpoint, data, tokenRequest } = body;
 
     console.log('Endpoint:', endpoint);
     console.log('Data:', JSON.stringify(data, null, 2));
+    console.log('Token:', tokenRequest);
 
     let response;
 
@@ -43,7 +44,6 @@ module.exports = async (req, res) => {
       response = await axios.post(`${API_BASE_URL}/account/token`, { id, secret });
       console.log('Token request successful:', response.data);
     } else if (endpoint === 'payments/form') {
-      const { tokenRequest } = body;
       if (!data || !tokenRequest) {
         console.log('Missing required parameters for payment form request');
         return res.status(400).json({ message: 'Missing required parameters: data or token' });
