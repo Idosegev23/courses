@@ -65,17 +65,17 @@ const StyledButton = styled(Button)`
   border-radius: 1rem;
   text-decoration: none;
   color: #fff !important;
-  background: linear-gradient(45deg, #62238C 30%, #BF4B81 90%);
+  background: linear-gradient(45deg, #6DBFF2 30%, #62238C 90%);
   transition: all 0.3s;
   border: none;
-  box-shadow: 0 3px 5px 2px rgba(191, 75, 129, .3);
+  box-shadow: 0 3px 5px 2px rgba(0, 0, 0, .3);
   display: flex;
   align-items: center;
   justify-content: center;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
+    box-shadow: 0 6px 10px 4px rgba(0, 0, 0, .3);
   }
 
   @media (max-width: 768px) {
@@ -413,19 +413,11 @@ const PersonalArea = () => {
   };
 
   const handleCourseButton = (courseId, currentLesson, totalLessons) => {
-    if (currentLesson < totalLessons) {
-      return (
-        <StyledButton onClick={() => handleCourseEnter(courseId, currentLesson, totalLessons)}>
-          שיעור הבא
-        </StyledButton>
-      );
-    } else {
-      return (
-        <StyledButton onClick={() => handleCourseEnter(courseId, currentLesson, totalLessons)}>
-          סיום קורס
-        </StyledButton>
-      );
-    }
+    return (
+      <StyledButton component={Link} to={`/course/${courseId}`}>
+        צפייה בפרטי הקורס
+      </StyledButton>
+    );
   };
 
   if (loading) return <div>Loading...</div>;
@@ -520,8 +512,8 @@ const PersonalArea = () => {
                     <Typography variant="h5" gutterBottom style={{ height: '3em', overflow: 'hidden' }}>{course.title}</Typography>
                     <Typography variant="body2" style={{ height: '4.5em', overflow: 'hidden' }}>{course.description}</Typography>
                   </div>
-                  <StyledButton component={Link} to={`/purchase/${course.id}`}>
-                    רכוש קורס
+                  <StyledButton component={Link} to={`/course/${course.id}`}>
+                    צפייה בפרטי הקורס
                   </StyledButton>
                 </CardContainer>
               </CourseCard>

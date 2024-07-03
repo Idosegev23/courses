@@ -42,9 +42,10 @@ const CardContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
-  height: 75%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 `;
 
 const CardContent = styled.div`
@@ -70,15 +71,15 @@ const StyledButton = styled(Link)`
   color: #fff;
   background: ${(props) =>
     props.isprimary
-      ? 'linear-gradient(45deg, #62238C 30%, #BF4B81 90%)'
-      : 'linear-gradient(45deg, #BF4B81 30%, #F25C78 90%)'};
+      ? 'linear-gradient(45deg, #6DBFF2 30%, #62238C 90%)'
+      : 'linear-gradient(45deg, #F2D1B3 30%, #0D0D0D 90%)'};
   transition: all 0.3s;
   border: none;
-  box-shadow: 0 3px 5px 2px rgba(191, 75, 129, .3);
+  box-shadow: 0 3px 5px 2px rgba(0, 0, 0, .3);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 10px 4px rgba(191, 75, 129, .3);
+    box-shadow: 0 6px 10px 4px rgba(0, 0, 0, .3);
   }
 `;
 
@@ -167,14 +168,9 @@ const LandingPage = () => {
                             כניסה לקורס
                           </StyledButton>
                         ) : (
-                          <>
-                            <StyledButton to={`/course/${course.id}`}>
-                              פרטים נוספים
-                            </StyledButton>
-                            <StyledButton to={`/purchase/${course.id}`} isprimary="true">
-                              רכוש עכשיו
-                            </StyledButton>
-                          </>
+                          <StyledButton to={`/course/${course.id}`} isprimary="true">
+                            פרטים נוספים
+                          </StyledButton>
                         )}
                       </ButtonContainer>
                     </CardContent>
