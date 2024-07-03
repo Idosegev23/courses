@@ -401,10 +401,15 @@ const CourseDetailsPage = () => {
       const tokenResponse = await axios.post('/api/green-invoice', {
         endpoint: 'account/token',
         data: {
-          id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
-          secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
+          id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_SANDBOX,
+          secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_SANDBOX
         }
       });
+  
+      if (tokenResponse.status !== 200) {
+        console.error('Failed to obtain token:', tokenResponse.data);
+        throw new Error('Failed to obtain token');
+      }
   
       const token = tokenResponse.data.token;
       console.log('Token received:', token);
@@ -451,6 +456,11 @@ const CourseDetailsPage = () => {
         data: invoiceData,
         tokenRequest: token
       });
+  
+      if (paymentFormResponse.status !== 200) {
+        console.error('Failed to create payment form:', paymentFormResponse.data);
+        throw new Error('Failed to create payment form');
+      }
   
       console.log('Payment Form Response:', paymentFormResponse);
   
