@@ -62,7 +62,7 @@ const ActionButton = styled.button`
   width: 100%;
 
   &:hover {
-    background-color: #BF4B81;
+    background-color: #6DBFF2;
   }
 `;
 
@@ -100,14 +100,30 @@ const RegisterPage = () => {
   const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [step, setStep] = useState(1);
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
+  const handleNext = () => {
+    if (step === 1 && (!firstName || !lastName)) {
+      setMessage('אנא מלא את כל השדות הנדרשים.');
+      return;
+    }
+    if (step === 2 && (!email || !password || !confirmPassword)) {
+      setMessage('אנא מלא את כל השדות הנדרשים.');
+      return;
+    }
+    if (step === 2 && password !== confirmPassword) {
       setMessage('הסיסמאות לא תואמות.');
       return;
     }
+    setStep(step + 1);
+  };
 
+  const handleBack = () => {
+    setStep(step - 1);
+  };
+
+  const handleRegister = async () => {
     try {
       const { data: newUser, error: authError } = await supabase.auth.signUp({
         email,
@@ -207,55 +223,73 @@ const RegisterPage = () => {
       <PageContainer>
         <FormContainer>
           <Title>הרשמה</Title>
-          <Input
-            type="text"
-            placeholder="שם פרטי"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-          />
-          <Input
-            type="text"
-            placeholder="שם משפחה"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-          />
-          <Input
-            type="email"
-            placeholder="אימייל"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="סיסמה"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="וידוא סיסמה"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          <Input
-            type="text"
-            placeholder="נייד"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-          <ActionButton onClick={handleRegister}>הרשמה</ActionButton>
+          {step === 1 && (
+            <>
+              <Input
+                type="text"
+                placeholder="שם פרטי"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+              <Input
+                type="text"
+                placeholder="שם משפחה"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+              <ActionButton onClick={handleNext}>הבא</ActionButton>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <Input
+                type="email"
+                placeholder="אימייל"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="סיסמה"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="וידוא סיסמה"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <ActionButton onClick={handleBack}>חזור</ActionButton>
+              <ActionButton onClick={handleNext}>הבא</ActionButton>
+            </>
+          )}
+          {step === 3 && (
+            <>
+              <Input
+                type="text"
+                placeholder="נייד"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+              <ActionButton onClick={handleBack}>חזור</ActionButton>
+              <ActionButton onClick={handleRegister}>הרשמה</ActionButton>
+            </>
+          )}
           {message && <Message>{message}</Message>}
-          <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
-            <OAuthButton onClick={() => handleOAuthSignIn('google')}>
-              <FaGoogle /> הרשמה עם גוגל
-            </OAuthButton>
-          </div>
+          {step === 1 && (
+            <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+              <OAuthButton onClick={() => handleOAuthSignIn('google')}>
+                <FaGoogle /> הרשמה עם גוגל
+              </OAuthButton>
+            </div>
+          )}
         </FormContainer>
       </PageContainer>
     </>

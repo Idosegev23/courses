@@ -61,7 +61,7 @@ const ActionButton = styled.button`
   width: 100%;
 
   &:hover {
-    background-color: #BF4B81;
+    background-color: #6DBFF2;
   }
 `;
 
