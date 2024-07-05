@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { FaGoogle } from 'react-icons/fa';
+import { useAuth } from '../hooks/useAuth';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -102,33 +103,30 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError('ההתחברות נכשלה, אנא בדוק את המייל והסיסמה ונסה שוב.');
-    } else {
-      navigate('/personal-area');
-    }
-  };
-
-  const handlePasswordReset = async () => {
-    if (!email) {
-      setMessage('אנא הזן את כתובת האימייל שלך.');
-      return;
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      setMessage('שגיאה בשליחת קישור לאיפוס סיסמא: ' + error.message);
-    } else {
-      setMessage('קישור לאיפוס סיסמא נשלח לאימייל שלך.');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+  
+      if (error) {
+        console.error('Login error:', error);
+        setError('ההתחברות נכשלה, אנא בדוק את המייל והסיסמה ונסה שוב.');
+      } else if (data?.user) {
+        console.log('User logged in successfully:', data.user);
+        setUser(data.user);
+        navigate('/personal-area');
+      } else {
+        setError('אירעה שגיאה בלתי צפויה בתהליך ההתחברות.');
+      }
+    } catch (error) {
+      console.error('Unexpected error during login:', error);
+      setError('אירעה שגיאה בלתי צפויה.');
     }
   };
 
@@ -139,13 +137,34 @@ const LoginPage = () => {
       if (error) {
         console.error(`Error signing in with ${provider}:`, error);
         setError(`שגיאה בהתחברות עם ${provider}: ${error.message}`);
+      } else {
+        const { data } = await supabase.auth.getUser();
+        setUser(data.user);
+        navigate('/personal-area');
       }
     } catch (error) {
       console.error('Unexpected error:', error);
       setError('אירעה שגיאה בלתי צפויה.');
     }
   };
-
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('אנא הזן את כתובת האימייל שלך.');
+      return;
+    }
+  
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        setError('שגיאה בשליחת קישור לאיפוס סיסמא: ' + error.message);
+      } else {
+        setMessage('קישור לאיפוס סיסמא נשלח לאימייל שלך.');
+      }
+    } catch (error) {
+      console.error('Unexpected error during password reset:', error);
+      setError('אירעה שגיאה בלתי צפויה בתהליך איפוס הסיסמא.');
+    }
+  };
   return (
     <>
       <GlobalStyle />
@@ -173,12 +192,7 @@ const LoginPage = () => {
             <ActionButton type="submit">התחבר</ActionButton>
           </form>
           <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
-            <OAuthButton
-              onClick={() => handleOAuthSignIn('google')}
-              $bgColor="#DB4437"
-              $color="#fff"
-              $hoverBgColor="#C33D2E"
-            >
+            <OAuthButton onClick={() => handleOAuthSignIn('google')}>
               <FaGoogle /> התחברות עם גוגל
             </OAuthButton>
           </div>

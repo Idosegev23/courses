@@ -414,8 +414,8 @@ const PersonalArea = () => {
 
   const handleCourseButton = (courseId, currentLesson, totalLessons) => {
     return (
-      <StyledButton component={Link} to={`/course/${courseId}`}>
-        צפייה בפרטי הקורס
+      <StyledButton component={Link} to={`/course-learning/${courseId}?lesson=${currentLesson}`}>
+        כניסה לקורס
       </StyledButton>
     );
   };

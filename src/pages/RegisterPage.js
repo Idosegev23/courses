@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { FaGoogle } from 'react-icons/fa';
-import Swal from 'sweetalert2';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../supabaseClient';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -66,20 +66,11 @@ const ActionButton = styled.button`
   }
 `;
 
-const OAuthButton = styled.button`
+const OAuthButton = styled(ActionButton)`
   background-color: #DB4437;
-  color: #fff;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-  font-size: 1rem;
-  margin-top: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
   gap: 0.5rem;
 
   &:hover {
@@ -89,7 +80,7 @@ const OAuthButton = styled.button`
 
 const Message = styled.p`
   margin-top: 1rem;
-  color: #333;
+  color: ${props => props.$error ? 'red' : 'green'};
 `;
 
 const RegisterPage = () => {
@@ -102,6 +93,8 @@ const RegisterPage = () => {
   const [message, setMessage] = useState('');
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const { signUp, signInWithOAuth } = useAuth();
+
 
   const handleNext = () => {
     if (step === 1 && (!firstName || !lastName)) {
@@ -125,98 +118,59 @@ const RegisterPage = () => {
 
   const handleRegister = async () => {
     try {
-      const { data: newUser, error: authError } = await supabase.auth.signUp({
+      console.log('Starting registration process');
+      console.log('Registration data:', { email, password, firstName, lastName, phone });
+      
+      const { data: newUserData, error: registrationError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (authError) {
-        console.error('Error creating user in Supabase Auth:', authError);
-        setMessage(`שגיאה בהרשמה: ${authError.message}`);
-        return;
+      if (registrationError) throw registrationError;
+
+      console.log('User registered successfully:', newUserData);
+
+      if (newUserData.user) {
+        const { error: userError } = await supabase
+          .from('users')
+          .insert({ 
+            id: newUserData.user.id,
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            phone_num: phone,
+          });
+
+        if (userError) throw userError;
+
+        console.log('User data inserted successfully');
+
+        setMessage('ההרשמה הושלמה בהצלחה! נא לאמת את כתובת האימייל שלך.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        throw new Error('User data not received from registration');
       }
-
-      console.log("New User Data:", newUser);
-
-      const { error: dbError } = await supabase
-        .from('users')
-        .insert({
-          id: newUser.user.id,
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          phone_num: phone,
-          created_at: new Date().toISOString(),
-        });
-
-      if (dbError) {
-        console.error('Error saving user to database:', dbError);
-        setMessage(`שגיאה בהוספת המשתמש לבסיס הנתונים: ${dbError.message}`);
-        return;
-      }
-
-      setMessage('נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר הנכנס שלך.');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
     } catch (error) {
-      console.error('Unexpected error:', error);
-      setMessage('אירעה שגיאה בלתי צפויה.');
+      console.error('Error during registration:', error);
+      setMessage(`שגיאה בהרשמה: ${error.message}`);
     }
   };
 
   const handleOAuthSignIn = async (provider) => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({ provider });
-
-      if (error) {
-        console.error(`Error signing in with ${provider}:`, error);
-        setMessage(`שגיאה בהרשמה עם ${provider}: ${error.message}`);
-        return;
-      }
-
-      if (data?.user) {
-        Swal.fire({
-          title: 'השלמת פרטים',
-          html: `
-            <input type="text" id="firstName" class="swal2-input" placeholder="שם פרטי">
-            <input type="text" id="lastName" class="swal2-input" placeholder="שם משפחה">
-            <input type="text" id="phone" class="swal2-input" placeholder="נייד">
-          `,
-          confirmButtonText: 'שמור',
-          focusConfirm: false,
-          preConfirm: () => {
-            const firstName = Swal.getPopup().querySelector('#firstName').value;
-            const lastName = Swal.getPopup().querySelector('#lastName').value;
-            const phone = Swal.getPopup().querySelector('#phone').value;
-            return { firstName, lastName, phone };
-          },
-        }).then(async (result) => {
-          const { firstName, lastName, phone } = result.value;
-
-          const { error: updateUserError } = await supabase
-            .from('users')
-            .update({
-              first_name: firstName,
-              last_name: lastName,
-              phone_num: phone,
-            })
-            .eq('id', data.user.id);
-
-          if (updateUserError) {
-            console.error('Error updating user details:', updateUserError);
-            setMessage(`שגיאה בעדכון פרטי המשתמש: ${updateUserError.message}`);
-          } else {
-            setMessage('הרשמה הושלמה בהצלחה.');
-            setTimeout(() => {
-              navigate('/personal-area');
-            }, 3000);
-          }
-        });
-      }
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+  
+      if (error) throw error;
     } catch (error) {
-      console.error('Unexpected error:', error);
-      setMessage('אירעה שגיאה בלתי צפויה.');
+      console.error('Error during OAuth sign in:', error);
+      setMessage('אירעה שגיאה בהתחברות. אנא נסה שוב.');
     }
   };
 
@@ -261,6 +215,7 @@ const RegisterPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
                 />
                 <Input
                   type="password"
@@ -268,6 +223,7 @@ const RegisterPage = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
                 />
                 <ActionButton type="button" onClick={handleBack}>חזור</ActionButton>
                 <ActionButton type="button" onClick={handleNext}>הבא</ActionButton>
@@ -276,7 +232,7 @@ const RegisterPage = () => {
             {step === 3 && (
               <>
                 <Input
-                  type="text"
+                  type="tel"
                   placeholder="נייד"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -286,7 +242,7 @@ const RegisterPage = () => {
                 <ActionButton type="button" onClick={handleRegister}>הרשמה</ActionButton>
               </>
             )}
-            {message && <Message>{message}</Message>}
+            {message && <Message $error={message.includes('שגיאה')}>{message}</Message>}
           </form>
           {step === 1 && (
             <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>

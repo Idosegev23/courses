@@ -5,66 +5,55 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+    };
+
+    fetchSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
     });
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password, name, phone) => {
-    const { user, error } = await supabase.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) {
-      console.error('Error signing up:', error);
+  const value = {
+    signUp: async ({ email, password, options }) => {
+      const { data, error } = await supabase.auth.signUp({ email, password, options });
+      if (data.user) {
+        setUser(data.user);
+        setSession(data.session);
+      }
+      return { data, error };
+    },
+    signIn: async (email, password) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (data.user) {
+        setUser(data.user);
+        setSession(data.session);
+      }
+      return { data, error };
+    },
+    signOut: async () => {
+      const { error } = await supabase.auth.signOut();
+      if (!error) {
+        setUser(null);
+        setSession(null);
+      }
       return { error };
-    }
-
-    const { data, error: updateUserError } = await supabase
-      .from('users')
-      .update({ name, phone })
-      .eq('id', user.id);
-
-    if (updateUserError) {
-      console.error('Error updating user:', updateUserError);
-      return { error: updateUserError };
-    }
-
-    await fetch('/api/sendMail', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ name, email, phone })
-    });
-
-    setUser(user);
-    return { user };
+    },
+    user,
+    session
   };
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error.message);
-    } else {
-      setUser(null);
-    }
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, signUp, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
-import { Typography, Container, Checkbox, FormControlLabel, Dialog, DialogContent } from '@mui/material';
+import { Typography, Container, Checkbox, FormControlLabel, Dialog, DialogContent, Snackbar } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
-import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
+import LoginPopup from './LoginPopup';
 
 const theme = createTheme({
   palette: {
@@ -217,6 +217,14 @@ const ProgressStep = styled.div`
   font-weight: bold;
 `;
 
+const LinkText = styled.p`
+  font-size: 1rem;
+  color: #666;
+  margin-top: 1rem;
+  cursor: pointer;
+  text-decoration: underline;
+`;
+
 const CourseDetailsPage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -236,11 +244,16 @@ const CourseDetailsPage = () => {
     companyId: '',
   });
   const [formErrors, setFormErrors] = useState({});
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [isGoogleUser, setIsGoogleUser] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
+      console.log('Fetching course details for courseId:', courseId);
       const { data, error } = await supabase
         .from('courses')
         .select('*')
@@ -249,6 +262,7 @@ const CourseDetailsPage = () => {
       if (error) {
         console.error('Error fetching course:', error);
       } else {
+        console.log('Course data fetched:', data);
         setCourse(data);
       }
     };
@@ -256,25 +270,37 @@ const CourseDetailsPage = () => {
     fetchCourse();
 
     if (user) {
+      console.log('User is logged in, fetching user details');
       fetchUserDetails(user.id);
+    } else {
+      console.log('No user logged in');
     }
   }, [courseId, user]);
 
   const fetchUserDetails = async (userId) => {
+    console.log('Fetching user details for userId:', userId);
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .single();
-
+  
     if (error) {
       console.error('Error fetching user details:', error);
     } else {
+      console.log('User details fetched:', data);
+      
+      let formattedPhone = '';
+      if (data.phone_num != null) {
+        const phoneString = String(data.phone_num);
+        formattedPhone = phoneString.startsWith('0') ? phoneString : `0${phoneString}`;
+      }
+  
       setFormValues(prevValues => ({
         ...prevValues,
         firstName: data.first_name || '',
         lastName: data.last_name || '',
-        phone: data.phone_num || '',
+        phone: formattedPhone,
         email: data.email || '',
         idNum: data.id_num || '',
         streetAddress: data.street_address || '',
@@ -282,13 +308,20 @@ const CourseDetailsPage = () => {
         isCompany: data.is_company || false,
         companyId: data.is_company ? data.id_num : '',
       }));
+      
+      const adminStatus = data.email === 'triroars@gmail.com';
+      setIsAdmin(adminStatus);
+      console.log('Is user admin?', adminStatus);
     }
 
     const { data: authData } = await supabase.auth.getUser();
-    setIsGoogleUser(authData?.user?.app_metadata?.provider === 'google');
+    const googleUserStatus = authData?.user?.app_metadata?.provider === 'google';
+    setIsGoogleUser(googleUserStatus);
+    console.log('Is Google user?', googleUserStatus);
   };
 
   const validateForm = (step) => {
+    console.log('Validating form for step:', step);
     const errors = {};
     switch (step) {
       case 1:
@@ -313,6 +346,7 @@ const CourseDetailsPage = () => {
         break;
     }
     setFormErrors(errors);
+    console.log('Form errors:', errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -322,19 +356,24 @@ const CourseDetailsPage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    console.log(`Input changed: ${name} = ${type === 'checkbox' ? checked : value}`);
   };
 
   const handleNextStep = () => {
+    console.log('Attempting to move to next step. Current step:', currentStep);
     if (validateForm(currentStep)) {
       if (user && currentStep === 1) {
+        console.log('User is logged in, skipping to step 3');
         setCurrentStep(3);
       } else {
+        console.log('Moving to next step');
         setCurrentStep(currentStep + 1);
       }
     }
   };
 
   const handlePreviousStep = () => {
+    console.log('Moving to previous step. Current step:', currentStep);
     if (user && currentStep === 3) {
       setCurrentStep(1);
     } else {
@@ -344,9 +383,11 @@ const CourseDetailsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted. Is admin?', isAdmin);
     if (validateForm(3)) {
       try {
         if (!user) {
+          console.log('Registering new user');
           const { data: newUserData, error: registrationError } = await supabase.auth.signUp({
             email: formValues.email,
             password: formValues.password,
@@ -370,6 +411,7 @@ const CourseDetailsPage = () => {
 
           if (userError) throw userError;
         } else {
+          console.log('Updating existing user');
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -386,7 +428,13 @@ const CourseDetailsPage = () => {
           if (updateError) throw updateError;
         }
 
-        await handlePurchase();
+        if (isAdmin) {
+          console.log('Admin user detected, proceeding with admin purchase');
+          await handleAdminPurchase();
+        } else {
+          console.log('Regular user detected, proceeding with normal purchase');
+          await handlePurchase();
+        }
       } catch (error) {
         console.error('Error during registration or purchase:', error);
         alert('An error occurred. Please try again.');
@@ -394,10 +442,42 @@ const CourseDetailsPage = () => {
     }
   };
 
-  const handlePurchase = async () => {
+  const handleAdminPurchase = async () => {
+    console.log('Starting admin purchase process');
     try {
-      console.log('Starting purchase process...');
-      
+      const { error: enrollmentError } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id: user.id,
+          course_id: courseId,
+          current_lesson: 1,
+          amount_paid: 0, // Admin doesn't pay
+          course_title: course.title,
+          total_lessons: course.lessons?.length || 0
+        });
+  
+      if (enrollmentError) {
+        console.error('Error during admin enrollment:', enrollmentError);
+        throw enrollmentError;
+      }
+  
+      console.log('Admin enrollment successful');
+      setSnackbarMessage('הקורס נוסף בהצלחה לאזור האישי שלך');
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        console.log('Redirecting admin to personal area');
+        window.location.href = '/personal-area';
+      }, 3000);
+    } catch (error) {
+      console.error('Error during admin purchase:', error);
+      alert('An error occurred. Please try again.');
+    }
+  };
+
+  const handlePurchase = async () => {
+    console.log('Starting regular purchase process');
+    try {
+      console.log('Requesting token from Green Invoice');
       const tokenResponse = await fetch('/api/green-invoice', {
         method: 'POST',
         headers: {
@@ -407,8 +487,8 @@ const CourseDetailsPage = () => {
         body: JSON.stringify({
           endpoint: 'account/token',
           data: {
-            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_SANDBOX,
-            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_SANDBOX
+            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
+            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
           }
         })
       });
@@ -430,7 +510,12 @@ const CourseDetailsPage = () => {
         .eq('id', user.id)
         .single();
   
-      if (userError) throw userError;
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        throw userError;
+      }
+  
+      console.log('User data fetched for invoice:', userData);
   
       const finalPrice = course.discountPrice || course.price;
   
@@ -454,14 +539,15 @@ const CourseDetailsPage = () => {
           phone: userData.phone_num,
           add: true
         },
-        successUrl: `https://courses-seven-alpha.vercel.app/personal-area?status=success`,
-        failureUrl: `https://courses-seven-alpha.vercel.app/course/${courseId}?status=failure`,
-        notifyUrl: "https://courses-seven-alpha.vercel.app/notify",
+        successUrl: `${process.env.REACT_APP_API_URL}/personal-area?status=success`,
+        failureUrl: `${process.env.REACT_APP_API_URL}/course/${courseId}?status=failure`,
+        notifyUrl: `${process.env.REACT_APP_API_URL}/notify`,
         custom: "300700556"
       };
   
       console.log('Invoice Data:', invoiceData);
   
+      console.log('Requesting payment form from Green Invoice');
       const paymentFormResponse = await fetch('/api/green-invoice', {
         method: 'POST',
         headers: {
@@ -486,6 +572,7 @@ const CourseDetailsPage = () => {
   
       const paymentFormUrl = paymentFormResponseData.url;
   
+      console.log('Creating enrollment record');
       const { error: enrollmentError } = await supabase
         .from('enrollments')
         .insert({
@@ -494,11 +581,15 @@ const CourseDetailsPage = () => {
           current_lesson: 1,
           amount_paid: finalPrice,
           course_title: course.title,
-          total_lessons: course.total_lessons
+          total_lessons: course.lessons.length
         });
   
-      if (enrollmentError) throw enrollmentError;
+      if (enrollmentError) {
+        console.error('Error creating enrollment:', enrollmentError);
+        throw enrollmentError;
+      }
   
+      console.log('Redirecting to payment form URL:', paymentFormUrl);
       window.location.href = paymentFormUrl;
     } catch (error) {
       console.error('Error during purchase:', error);
@@ -508,7 +599,17 @@ const CourseDetailsPage = () => {
       alert('An error occurred during the purchase. Please try again.');
     }
   };
-  
+
+  const handleLoginClick = () => {
+    setShowLoginPopup(true);
+  };
+
+  const handleLoginSuccess = async (userData) => {
+    setShowLoginPopup(false);
+    setUser(userData);
+    await fetchUserDetails(userData.id);
+    setCurrentStep(3); // מעביר ישירות לשלב האחרון של הטופס
+  };
 
   if (!course) return <div>טוען...</div>;
 
@@ -528,7 +629,12 @@ const CourseDetailsPage = () => {
             <p><strong>משך הקורס:</strong> {course.duration}</p>
             <p><strong>פרטים נוספים:</strong> {course.details}</p>
           </CourseDescription>
-          <PurchaseButton onClick={() => setShowRegistrationForm(true)}>רכוש עכשיו</PurchaseButton>
+          <PurchaseButton onClick={() => {
+            console.log('Purchase button clicked. Is admin?', isAdmin);
+            setShowRegistrationForm(true);
+          }}>
+            {isAdmin ? 'הוסף לאזור האישי' : 'רכוש עכשיו'}
+          </PurchaseButton>
         </PageContent>
 
         <StyledDialog open={showRegistrationForm} onClose={() => setShowRegistrationForm(false)}>
@@ -571,6 +677,12 @@ const CourseDetailsPage = () => {
                   {formErrors.phone && <ErrorMessage>{formErrors.phone}</ErrorMessage>}
                   
                   <FormButton type="button" onClick={handleNextStep}>הבא</FormButton>
+                  
+                  {!user && (
+                    <LinkText onClick={handleLoginClick}>
+                      כבר רשום אצלנו? לחץ כאן להתחברות
+                    </LinkText>
+                  )}
                 </FormFieldset>
               )}
 
@@ -668,12 +780,31 @@ const CourseDetailsPage = () => {
                   )}
                   
                   <FormButton type="button" onClick={handlePreviousStep}>הקודם</FormButton>
-                  <FormButton type="submit">רכוש</FormButton>
+                  <FormButton type="submit">{isAdmin ? 'הוסף לאזור האישי' : 'רכוש'}</FormButton>
                 </FormFieldset>
               )}
             </MultiStepForm>
           </DialogContent>
         </StyledDialog>
+
+        <LoginPopup
+  open={showLoginPopup}
+  onClose={() => setShowLoginPopup(false)}
+  onLoginSuccess={handleLoginSuccess}
+/>
+
+
+
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          message={snackbarMessage}
+        />
       </PageContainer>
     </ThemeProvider>
   );
