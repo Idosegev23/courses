@@ -34,10 +34,14 @@ module.exports = async (req, res) => {
     let response;
 
     if (endpoint === 'account/token') {
-      const { id, secret } = data;
+      const id = process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST;
+      const secret = process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST;
+      console.log('API Key:', process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST);
+console.log('API Secret:', process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST);
+
       if (!id || !secret) {
-        console.log('Missing API key or secret for token request');
-        return res.status(400).json({ message: 'Missing API key or secret for token request' });
+        console.log('Missing API key or secret in server environment');
+        return res.status(500).json({ message: 'Server configuration error' });
       }
 
       console.log('Requesting token from Green Invoice Sandbox API');
