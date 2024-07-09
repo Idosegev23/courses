@@ -7,6 +7,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 import { useAuth } from '../hooks/useAuth';
 import LoginPopup from './LoginPopup';
+import { AuthApiError } from '@supabase/supabase-js';
+
 
 const theme = createTheme({
   palette: {
