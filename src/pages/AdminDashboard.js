@@ -711,8 +711,8 @@ setInterval(checkCourseProgress, 24 * 60 * 60 * 1000); // לדוגמה, כל י�
         >
           <SectionTitle variant="h4"><FaMoneyBillWave /> ניהול הרשמות</SectionTitle>
           {renderTable(enrollments, [
-            { key: 'user_id', label: 'משתמש' },
-            { key: 'course_id', label: 'קורס' },
+            { key: 'username', label: 'משתמש' },
+            { key: 'course_title', label: 'קורס' },
             { key: 'current_lesson', label: 'שיעור נוכחי' },
             { key: 'amount_paid', label: 'תשלום' }
           ], 'enrollments')}
