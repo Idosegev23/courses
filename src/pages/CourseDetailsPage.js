@@ -487,8 +487,8 @@ const CourseDetailsPage = () => {
         body: JSON.stringify({
           endpoint: 'account/token',
           data: {
-            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
-            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
+            id: process.env.API_KEY_GREEN_INVOICE_TEST,
+            secret: process.env.API_SECRET_GREEN_INVOICE_TEST
           }
         })
       });
