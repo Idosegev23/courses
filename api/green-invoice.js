@@ -34,10 +34,10 @@ module.exports = async (req, res) => {
     let response;
 
     if (endpoint === 'account/token') {
-      const id = process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST;
-      const secret = process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST;
-      console.log('API Key:', process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST);
-console.log('API Secret:', process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST);
+      const id = process.env.API_KEY_GREEN_INVOICE_TEST
+      const secret = process.env.API_SECRET_GREEN_INVOICE_TEST;
+      console.log('API Key:', process.env.API_KEY_GREEN_INVOICE_TEST);
+console.log('API Secret:', process.env.API_SECRET_GREEN_INVOICE_TEST);
 
       if (!id || !secret) {
         console.log('Missing API key or secret in server environment');
