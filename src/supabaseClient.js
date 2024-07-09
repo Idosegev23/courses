@@ -13,17 +13,20 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   detectSessionInUrl: true
 });
 
-// Listen for auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN') {
-    localStorage.setItem('supabaseSession', JSON.stringify(session));
-  } else if (event === 'SIGNED_OUT') {
-    localStorage.removeItem('supabaseSession');
+export const getSession = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Error fetching session:', error);
+    return null;
   }
-});
+  return data.session;
+};
 
-// Function to get the current session
-export const getSession = () => {
-  const sessionStr = localStorage.getItem('supabaseSession');
-  return sessionStr ? JSON.parse(sessionStr) : null;
+export const getCurrentUser = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error fetching user:', error);
+    return null;
+  }
+  return user;
 };

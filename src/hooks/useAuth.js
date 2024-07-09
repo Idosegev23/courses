@@ -1,30 +1,29 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, getSession } from '../supabaseClient';
+import { supabase, getSession, getCurrentUser } from '../supabaseClient';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedSession = getSession();
-    if (savedSession) {
-      setSession(savedSession);
-      setUser(savedSession.user);
-    }
-
-    const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const loadUserSession = async () => {
+      setLoading(true);
+      const session = await getSession();
+      const user = await getCurrentUser();
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(user);
+      setLoading(false);
     };
 
-    fetchSession();
+    loadUserSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      const user = await getCurrentUser();
+      setUser(user);
     });
 
     return () => subscription.unsubscribe();
@@ -52,12 +51,12 @@ export const AuthProvider = ({ children }) => {
       if (!error) {
         setUser(null);
         setSession(null);
-        localStorage.removeItem('supabaseSession');
       }
       return { error };
     },
     user,
-    session
+    session,
+    loading
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

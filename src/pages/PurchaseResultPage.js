@@ -28,10 +28,12 @@ const PurchaseResultPage = () => {
   const courseId = searchParams.get('courseId');
   const message = searchParams.get('message');
   const [showConfetti, setShowConfetti] = useState(success);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (loading) return;
+
       if (!user) {
         console.error('Auth error: User not found');
         Swal.fire({
@@ -90,7 +92,11 @@ const PurchaseResultPage = () => {
     };
 
     checkAuth();
-  }, [success, courseId, navigate, message, user]);
+  }, [success, courseId, navigate, message, user, loading]);
+
+  if (loading) {
+    return <div>טוען...</div>;
+  }
 
   return (
     <>
