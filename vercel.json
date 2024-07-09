@@ -7,6 +7,14 @@
     {
       "source": "/api/sendMail",
       "destination": "/api/sendMail.js"
+    },
+    {
+      "source": "/api/purchase-result",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
