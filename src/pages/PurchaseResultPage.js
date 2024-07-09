@@ -25,13 +25,14 @@ const PurchaseResultPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const success = searchParams.get('success') === 'true';
   const courseId = searchParams.get('courseId');
+  const message = searchParams.get('message');
   const [showConfetti, setShowConfetti] = useState(success);
 
   useEffect(() => {
     if (success) {
       Swal.fire({
         title: 'רכישה מוצלחת!',
-        text: 'הקורס נוסף בהצלחה לאזור האישי שלך',
+        text: message || 'הקורס נוסף בהצלחה לאזור האישי שלך',
         icon: 'success',
         confirmButtonText: 'לאזור האישי',
         confirmButtonColor: '#4CAF50',
@@ -48,7 +49,7 @@ const PurchaseResultPage = () => {
     } else {
       Swal.fire({
         title: 'הרכישה נכשלה',
-        text: 'מצטערים, הרכישה לא הושלמה. אנא נסה שוב',
+        text: message || 'מצטערים, הרכישה לא הושלמה. אנא נסה שוב',
         icon: 'error',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
@@ -67,7 +68,7 @@ const PurchaseResultPage = () => {
         }
       });
     }
-  }, [success, courseId, navigate]);
+  }, [success, courseId, navigate, message]);
 
   return (
     <>

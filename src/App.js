@@ -37,8 +37,7 @@ const App = () => {
           <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
           <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
           <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
-          <Route path="/purchase-result" element={<PurchaseResultPage />} />
-        </Routes>
+          <Route path="/api/purchase-result" element={<PurchaseResultPage />} />        </Routes>
         <Footer />
       </AuthProvider>
     </Router>
