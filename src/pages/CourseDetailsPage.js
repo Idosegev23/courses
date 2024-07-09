@@ -525,6 +525,7 @@ const CourseDetailsPage = () => {
         date: new Date().toISOString().split('T')[0],
         dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
         lang: "he",
+        pluginId:"74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
         currency: "ILS",
         vatType: 0,
         amount: finalPrice,
