@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase, getSession } from '../supabaseClient';
 
 const AuthContext = createContext();
 
@@ -8,6 +8,12 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
 
   useEffect(() => {
+    const savedSession = getSession();
+    if (savedSession) {
+      setSession(savedSession);
+      setUser(savedSession.user);
+    }
+
     const fetchSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
@@ -46,6 +52,7 @@ export const AuthProvider = ({ children }) => {
       if (!error) {
         setUser(null);
         setSession(null);
+        localStorage.removeItem('supabaseSession');
       }
       return { error };
     },

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import Swal from 'sweetalert2';
 import Confetti from 'react-confetti';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 
 const GlobalStyle = createGlobalStyle`
   .custom-swal-container {
@@ -28,12 +28,12 @@ const PurchaseResultPage = () => {
   const courseId = searchParams.get('courseId');
   const message = searchParams.get('message');
   const [showConfetti, setShowConfetti] = useState(success);
+  const { user } = useAuth();
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        console.error('Auth error:', error);
+      if (!user) {
+        console.error('Auth error: User not found');
         Swal.fire({
           title: 'שגיאת אימות',
           text: 'אנא התחבר מחדש',
@@ -90,7 +90,7 @@ const PurchaseResultPage = () => {
     };
 
     checkAuth();
-  }, [success, courseId, navigate, message]);
+  }, [success, courseId, navigate, message, user]);
 
   return (
     <>
