@@ -536,7 +536,7 @@ const CourseDetailsPage = () => {
           address: userData.street_address,
           city: userData.city,
           country: "IL",
-          phone: userData.formattedPhone,
+          phone: userData.phone_num,
           add: true
         },
         successUrl: `${process.env.REACT_APP_API_URL}/personal-area?status=success`,
