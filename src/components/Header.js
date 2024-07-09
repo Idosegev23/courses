@@ -172,7 +172,7 @@ const Header = () => {
             {isAdmin && (
               <StyledButton to="/admin-dashboard">אזור אדמין</StyledButton>
             )}
-            <StyledSignOutButton onClick={handleSignOut}>התנתק</StyledSignOutButton>
+            <StyledSignOutButton onClick={handleSignOut}>התנתקות</StyledSignOutButton>
           </>
         ) : (
           <StyledButton to="/login">התחברות</StyledButton>

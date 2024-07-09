@@ -1,0 +1,231 @@
+import React, { useState, useEffect, useRef } from 'react';
+import styled from 'styled-components';
+import { supabase } from '../supabaseClient';
+
+const Overlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+`;
+
+const Container = styled.div`
+  width: 350px;
+  height: auto;
+  border-radius: 20px;
+  padding: 40px;
+  background: #ecf0f3;
+  box-shadow: 14px 14px 20px #cbced1, -14px -14px 20px white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Heebo', sans-serif;
+`;
+
+const BrandLogo = styled.div`
+  height: 150px;
+  width: 150px;
+  background: url("https://courses.triroars.co.il/static/media/NewLogo_BLANK.331a9671220d7891575e.png");
+  background-size: cover;
+  margin: auto;
+  border-radius: 50%;
+  box-shadow: 7px 7px 10px #cbced1, -7px -7px 10px white;
+`;
+
+const BrandTitle = styled.div`
+  margin-top: 10px;
+  font-weight: 900;
+  font-size: 1.8rem;
+  color: #62238C;
+  letter-spacing: 1px;
+`;
+
+const Inputs = styled.div`
+  text-align: right;
+  margin-top: 30px;
+  width: 100%;
+`;
+
+const Label = styled.label`
+  margin-bottom: 4px;
+  display: block;
+  text-align: right;
+`;
+
+const Input = styled.input`
+  background: #ecf0f3;
+  padding: 10px;
+  padding-left: 20px;
+  height: 50px;
+  font-size: 14px;
+  border-radius: 50px;
+  box-shadow: inset 6px 6px 6px #cbced1, inset -6px -6px 6px white;
+  margin-bottom: 12px;
+  width: 100%;
+`;
+
+const Button = styled.button`
+  color: white;
+  margin-top: 20px;
+  background: #62238C;
+  height: 40px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 900;
+  box-shadow: 6px 6px 6px #cbced1, -6px -6px 6px white;
+  transition: 0.5s;
+  width: 100%;
+  
+  &:hover {
+    box-shadow: none;
+  }
+`;
+
+const GoogleButton = styled(Button)`
+  background: #DB4437;
+  margin-top: 10px;
+`;
+
+const ErrorMessage = styled.div`
+  color: red;
+  margin-top: 10px;
+`;
+
+const RegisterPopup = ({ onRegisterSuccess, onShowLogin, onClose }) => {
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const containerRef = useRef(null);
+
+  const handleNextStep = () => {
+    if (!firstName || !lastName || !email) {
+      setError('כל השדות חייבים להיות מלאים');
+      return;
+    }
+    setStep(2);
+    setError('');
+  };
+
+  const handlePreviousStep = () => {
+    setStep(1);
+  };
+
+  const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      setError('הסיסמאות אינן תואמות');
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    }, {
+      data: {
+        firstName,
+        lastName,
+      },
+    });
+
+    if (error) {
+      setError('שגיאה ברישום, נסה שוב');
+    } else {
+      setError('');
+      onRegisterSuccess();
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+
+    if (error) {
+      setError('שגיאה בהתחברות עם גוגל');
+    }
+  };
+
+  const handleClickOutside = (event) => {
+    if (containerRef.current && !containerRef.current.contains(event.target)) {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <Overlay>
+      <Container ref={containerRef}>
+        <BrandLogo />
+        <BrandTitle>הרשמה</BrandTitle>
+        <Inputs>
+          {step === 1 && (
+            <>
+              <Label>שם פרטי</Label>
+              <Input 
+                type="text" 
+                placeholder="לדוגמה: יוסי" 
+                value={firstName} 
+                onChange={(e) => setFirstName(e.target.value)} 
+              />
+              <Label>שם משפחה</Label>
+              <Input 
+                type="text" 
+                placeholder="לדוגמה: כהן" 
+                value={lastName} 
+                onChange={(e) => setLastName(e.target.value)} 
+              />
+              <Label>אימייל</Label>
+              <Input 
+                type="email" 
+                placeholder="example@test.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+              />
+              <Button onClick={handleNextStep}>הבא</Button>
+              <GoogleButton onClick={handleGoogleLogin}>הירשם עם גוגל</GoogleButton>
+              <Button onClick={onShowLogin}>כבר רשומים אצלנו? התחברו כאן</Button>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <Label>סיסמה</Label>
+              <Input 
+                type="password" 
+                placeholder="מינימום 6 תווים" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+              />
+              <Label>אימות סיסמה</Label>
+              <Input 
+                type="password" 
+                placeholder="הקלד שוב את הסיסמה" 
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)} 
+              />
+              <Button onClick={handlePreviousStep}>הקודם</Button>
+              <Button onClick={handleRegister}>הירשם</Button>
+            </>
+          )}
+          {error && <ErrorMessage>{error}</ErrorMessage>}
+        </Inputs>
+      </Container>
+    </Overlay>
+  );
+};
+
+export default RegisterPopup;
