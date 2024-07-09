@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import Swal from 'sweetalert2';
 import Confetti from 'react-confetti';
+import { supabase } from '../supabaseClient';
 
 const GlobalStyle = createGlobalStyle`
   .custom-swal-container {
@@ -29,45 +30,66 @@ const PurchaseResultPage = () => {
   const [showConfetti, setShowConfetti] = useState(success);
 
   useEffect(() => {
-    if (success) {
-      Swal.fire({
-        title: 'רכישה מוצלחת!',
-        text: message || 'הקורס נוסף בהצלחה לאזור האישי שלך',
-        icon: 'success',
-        confirmButtonText: 'לאזור האישי',
-        confirmButtonColor: '#4CAF50',
-        allowOutsideClick: false,
-        customClass: {
-          container: 'custom-swal-container'
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          setShowConfetti(false);
-          navigate('/personal-area');
-        }
-      });
-    } else {
-      Swal.fire({
-        title: 'הרכישה נכשלה',
-        text: message || 'מצטערים, הרכישה לא הושלמה. אנא נסה שוב',
-        icon: 'error',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'חזרה לדף הקורס',
-        cancelButtonText: 'חזרה לדף הבית',
-        allowOutsideClick: false,
-        customClass: {
-          container: 'custom-swal-container'
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          navigate(`/course/${courseId}`);
-        } else {
-          navigate('/');
-        }
-      });
-    }
+    const checkAuth = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        console.error('Auth error:', error);
+        Swal.fire({
+          title: 'שגיאת אימות',
+          text: 'אנא התחבר מחדש',
+          icon: 'error',
+          confirmButtonText: 'עבור לדף ההתחברות',
+          customClass: {
+            container: 'custom-swal-container'
+          }
+        }).then(() => {
+          navigate('/login');
+        });
+        return;
+      }
+
+      if (success) {
+        Swal.fire({
+          title: 'רכישה מוצלחת!',
+          text: message || 'הקורס נוסף בהצלחה לאזור האישי שלך',
+          icon: 'success',
+          confirmButtonText: 'לאזור האישי',
+          confirmButtonColor: '#4CAF50',
+          allowOutsideClick: false,
+          customClass: {
+            container: 'custom-swal-container'
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            setShowConfetti(false);
+            navigate('/personal-area');
+          }
+        });
+      } else {
+        Swal.fire({
+          title: 'הרכישה נכשלה',
+          text: message || 'מצטערים, הרכישה לא הושלמה. אנא נסה שוב',
+          icon: 'error',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'חזרה לדף הקורס',
+          cancelButtonText: 'חזרה לדף הבית',
+          allowOutsideClick: false,
+          customClass: {
+            container: 'custom-swal-container'
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate(`/course/${courseId}`);
+          } else {
+            navigate('/');
+          }
+        });
+      }
+    };
+
+    checkAuth();
   }, [success, courseId, navigate, message]);
 
   return (

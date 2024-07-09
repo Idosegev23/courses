@@ -9,7 +9,7 @@
       "destination": "/api/sendMail.js"
     },
     {
-      "source": "/api/purchase-result",
+      "source": "/purchase-result",
       "destination": "/index.html"
     },
     {

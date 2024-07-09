@@ -477,6 +477,10 @@ const CourseDetailsPage = () => {
   const handlePurchase = async () => {
     console.log('Starting regular purchase process');
     try {
+      // בדיקת אימות המשתמש
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+  
       console.log('Requesting token from Green Invoice');
       const tokenResponse = await fetch('/api/green-invoice', {
         method: 'POST',
@@ -487,8 +491,8 @@ const CourseDetailsPage = () => {
         body: JSON.stringify({
           endpoint: 'account/token',
           data: {
-            id: process.env.API_KEY_GREEN_INVOICE_TEST,
-            secret: process.env.API_SECRET_GREEN_INVOICE_TEST
+            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
+            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
           }
         })
       });
@@ -537,12 +541,12 @@ const CourseDetailsPage = () => {
           address: userData.street_address,
           city: userData.city,
           country: "IL",
-          phone: `0${userData.phone_num}`,
+          phone: userData.phone_num.startsWith('0') ? userData.phone_num : `0${userData.phone_num}`,
           add: true
         },
-        successUrl: `${process.env.REACT_APP_API_URL}/api/purchase-result?success=true&courseId=${courseId}`,
-  failureUrl: `${process.env.REACT_APP_API_URL}/api/purchase-result?success=false&courseId=${courseId}`,
-  notifyUrl: `${process.env.REACT_APP_API_URL}/api/notify`,
+        successUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=true&courseId=${courseId}`,
+        failureUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=false&courseId=${courseId}`,
+        notifyUrl: `${process.env.REACT_APP_API_URL}/api/notify`,
         custom: "300700556"
       };
   
@@ -582,7 +586,7 @@ const CourseDetailsPage = () => {
           current_lesson: 1,
           amount_paid: finalPrice,
           course_title: course.title,
-          total_lessons: course.lessons?.length || 0 // שימוש ב-Optional Chaining ובערך ברירת מחדל
+          total_lessons: course.lessons?.length || 0
         });
   
       if (enrollmentError) {
@@ -597,10 +601,14 @@ const CourseDetailsPage = () => {
       if (error.response) {
         console.error('Error response:', error.response.data);
       }
-      alert('An error occurred during the purchase. Please try again.');
+      if (error instanceof AuthApiError && error.message === 'Invalid Refresh Token') {
+        alert('אנא התחבר מחדש ונסה שוב.');
+        // ניתן להוסיף כאן לוגיקה לניתוב לדף ההתחברות
+      } else {
+        alert('אירעה שגיאה במהלך הרכישה. אנא נסה שוב מאוחר יותר.');
+      }
     }
   };
-
   const handleLoginClick = () => {
     setShowLoginPopup(true);
   };
