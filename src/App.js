@@ -15,6 +15,8 @@ import ContactAndPolicyPage from './pages/ContactAndPolicyPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider } from './hooks/useAuth';
+import PurchaseResultPage from './path/to/PurchaseResultPage';
+
 
 require('dotenv').config();
 
@@ -36,6 +38,7 @@ const App = () => {
           <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
           <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
           <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
+          <Route path="/purchase-result" element={<PurchaseResultPage />} />
         </Routes>
         <Footer />
       </AuthProvider>

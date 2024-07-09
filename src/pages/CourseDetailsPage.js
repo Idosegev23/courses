@@ -540,9 +540,9 @@ const CourseDetailsPage = () => {
           phone: `0${userData.phone_num}`,
           add: true
         },
-        successUrl: `${process.env.REACT_APP_API_URL}/personal-area?status=success`,
-        failureUrl: `${process.env.REACT_APP_API_URL}/course/${courseId}?status=failure`,
-        notifyUrl: `${process.env.REACT_APP_API_URL}/notify`,
+        successUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=true&courseId=${courseId}`,
+        failureUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=false&courseId=${courseId}`,
+        notifyUrl: `${process.env.REACT_APP_API_URL}/api/notify`,      
         custom: "300700556"
       };
   
