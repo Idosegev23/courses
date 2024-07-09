@@ -23,6 +23,11 @@ export const getSession = async () => {
 };
 
 export const getCurrentUser = async () => {
+  const session = await getSession();
+  if (!session) {
+    console.log('No active session found');
+    return null;
+  }
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) {
     console.error('Error fetching user:', error);

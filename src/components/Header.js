@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
 import { useAuth } from '../hooks/useAuth';
+import Swal from 'sweetalert2';
 
 const HeaderContainer = styled.header`
   background-color: #ffffff;
@@ -134,13 +135,27 @@ const StyledSignOutButton = styled.button`
 
 const Header = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
       await signOut();
       console.log("User signed out successfully.");
+      Swal.fire({
+        title: 'התנתקת בהצלחה',
+        icon: 'success',
+        confirmButtonText: 'אישור'
+      }).then(() => {
+        navigate('/'); // ניווט לדף הבית לאחר התנתקות מוצלחת
+      });
     } catch (error) {
       console.error("Error signing out:", error);
+      Swal.fire({
+        title: 'שגיאה בהתנתקות',
+        text: 'אנא נסה שוב מאוחר יותר',
+        icon: 'error',
+        confirmButtonText: 'אישור'
+      });
     }
   };
 

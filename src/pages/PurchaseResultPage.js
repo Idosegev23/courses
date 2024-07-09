@@ -4,6 +4,7 @@ import styled, { createGlobalStyle } from 'styled-components';
 import Swal from 'sweetalert2';
 import Confetti from 'react-confetti';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../supabaseClient';
 
 const GlobalStyle = createGlobalStyle`
   .custom-swal-container {
@@ -34,8 +35,9 @@ const PurchaseResultPage = () => {
     const checkAuth = async () => {
       if (loading) return;
 
-      if (!user) {
-        console.error('Auth error: User not found');
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        console.error('Auth error: Session not found');
         Swal.fire({
           title: 'שגיאת אימות',
           text: 'אנא התחבר מחדש',
@@ -47,6 +49,11 @@ const PurchaseResultPage = () => {
         }).then(() => {
           navigate('/login');
         });
+        return;
+      }
+
+      if (!user) {
+        console.error('Auth error: User not found');
         return;
       }
 
