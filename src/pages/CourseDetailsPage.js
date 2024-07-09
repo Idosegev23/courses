@@ -582,7 +582,7 @@ const CourseDetailsPage = () => {
           current_lesson: 1,
           amount_paid: finalPrice,
           course_title: course.title,
-          total_lessons: course.lessons.length
+          total_lessons: course.lessons?.length || 0 // שימוש ב-Optional Chaining ובערך ברירת מחדל
         });
   
       if (enrollmentError) {
