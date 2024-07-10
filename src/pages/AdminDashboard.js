@@ -278,16 +278,27 @@ const AdminDashboard = () => {
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'כן, מחק!'
     });
-
+  
     if (result.isConfirmed) {
       try {
-        const { error } = await supabase.from('users').delete().eq('id', userId);
-        if (error) throw error;
+        // מחיקת המשתמש מטבלת האימות של Supabase
+        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+        if (authError) throw authError;
+  
+        // מחיקת המשתמש מטבלת users
+        const { error: userError } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', userId);
+        if (userError) throw userError;
+  
+        // עדכון המצב המקומי
         setUsers(users.filter(user => user.id !== userId));
+        
         Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
       } catch (error) {
         console.error('Error deleting user:', error);
-        Swal.fire('שגיאה', 'אירעה שגיאה במחיקת המשתמש', 'error');
+        Swal.fire('שגיאה', `אירעה שגיאה במחיקת המשתמש: ${error.message}`, 'error');
       }
     }
   };
@@ -799,6 +810,7 @@ setInterval(checkCourseProgress, 24 * 60 * 60 * 1000); // לדוגמה, כל י�
       </Modal>
     </ThemeProvider>
   );
+
 };
 
 export default AdminDashboard;

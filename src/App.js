@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import PersonalArea from './pages/PersonalArea';
-//import PurchasePage from './pages/PurchasePage';
 import LoginPage from './pages/LoginPage';
-//import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import AddCoursePage from './pages/AddCoursePage';
@@ -16,29 +14,35 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider } from './hooks/useAuth';
 import PurchaseResultPage from './pages/PurchaseResultPage';
-
+import LoginPopupNew from './components/loginPopUpNew';
+import RegisterPopup from './components/registerPopup';
+import { PopupProvider } from './PopupContext';
 
 require('dotenv').config();
-
 
 const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <Header />
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/personal-area" element={<PersonalArea />} />
-          <Route path="/course/:courseId" element={<CourseDetailsPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/add-course" element={<AddCoursePage />} />
-          <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
-          <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
-          <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
-          <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
-          <Route path="/api/purchase-result" element={<PurchaseResultPage />} />        </Routes>
-        <Footer />
+        <PopupProvider>
+          <Header />
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/personal-area" element={<PersonalArea />} />
+            <Route path="/course/:courseId" element={<CourseDetailsPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/add-course" element={<AddCoursePage />} />
+            <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
+            <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
+            <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
+            <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
+            <Route path="/api/purchase-result" element={<PurchaseResultPage />} />
+          </Routes>
+          <LoginPopupNew />
+          <RegisterPopup />
+          <Footer />
+        </PopupProvider>
       </AuthProvider>
     </Router>
   );

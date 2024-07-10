@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { supabase } from '../supabaseClient';
+import { usePopup } from '../PopupContext'
 
 const Overlay = styled.div`
   position: fixed;
@@ -97,77 +98,99 @@ const ErrorMessage = styled.div`
   margin-top: 10px;
 `;
 
-const LoginPopupNew = ({ onLoginSuccess, onShowRegister, onClose }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const containerRef = useRef(null);
-
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError('שם משתמש או סיסמה שגויים');
-    } else {
-      setError('');
-      onLoginSuccess();
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    });
-
-    if (error) {
-      setError('שגיאה בהתחברות עם גוגל');
-    }
-  };
-
-  const handleClickOutside = (event) => {
-    if (containerRef.current && !containerRef.current.contains(event.target)) {
-      onClose();
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+const LoginPopupNew = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const containerRef = useRef(null);
+    const { showLoginPopup, closeAllPopups, openRegisterPopup } = usePopup();
+  
+    const handleLogin = async (e) => {
+      e.preventDefault();
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+  
+        if (error) throw error;
+  
+        if (data.user) {
+          closeAllPopups();
+          // You might want to add some success feedback here
+        } else {
+          setError('התחברות נכשלה. אנא נסה שנית.');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        setError('שם משתמש או סיסמה שגויים');
+      }
     };
-  }, []);
-
-  return (
-    <Overlay>
-      <Container ref={containerRef}>
-        <BrandLogo />
-        <BrandTitle>התחברות</BrandTitle>
-        <Inputs>
-          <Label>אימייל</Label>
-          <Input 
-            type="email" 
-            placeholder="example@test.com" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-          />
-          <Label>סיסמה</Label>
-          <Input 
-            type="password" 
-            placeholder="מינימום 8 תווים" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-          />
-          <Button type="submit" onClick={handleLogin}>התחבר</Button>
-          <GoogleButton onClick={handleGoogleLogin}>התחבר עם גוגל</GoogleButton>
-          <Button onClick={onShowRegister}>לא רשומים? לחצו כאן להרשמה</Button>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-        </Inputs>
-      </Container>
-    </Overlay>
-  );
-};
-
-export default LoginPopupNew;
+  
+    const handleGoogleLogin = async () => {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+        });
+  
+        if (error) throw error;
+      } catch (error) {
+        console.error('Google login error:', error);
+        setError('שגיאה בהתחברות עם גוגל');
+      }
+    };
+  
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (containerRef.current && !containerRef.current.contains(event.target)) {
+          closeAllPopups();
+        }
+      };
+  
+      if (showLoginPopup) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+  
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [showLoginPopup, closeAllPopups]);
+  
+    if (!showLoginPopup) return null;
+  
+    return (
+      <Overlay>
+        <Container ref={containerRef}>
+          <BrandLogo />
+          <BrandTitle>התחברות</BrandTitle>
+          <Inputs>
+            <form onSubmit={handleLogin}>
+              <Label>אימייל</Label>
+              <Input 
+                type="email" 
+                placeholder="example@test.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required
+              />
+              <Label>סיסמה</Label>
+              <Input 
+                type="password" 
+                placeholder="הכנס סיסמה" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required
+              />
+              <Button type="submit">התחבר</Button>
+            </form>
+            <GoogleButton onClick={handleGoogleLogin}>התחבר עם גוגל</GoogleButton>
+            <Button onClick={openRegisterPopup}>לא רשומים? הירשמו כאן</Button>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+          </Inputs>
+        </Container>
+      </Overlay>
+    );
+  };
+  
+  export default LoginPopupNew;
+  

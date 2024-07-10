@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
 import { useAuth } from '../hooks/useAuth';
 import Swal from 'sweetalert2';
+import { usePopup } from '../PopupContext';
 
 const HeaderContainer = styled.header`
   background-color: #ffffff;
@@ -16,7 +17,7 @@ const HeaderContainer = styled.header`
 `;
 
 const LogoImage = styled.img`
-  width: 150px;
+  width: 250px;
   height: auto;
   display: block;
   margin: 0 auto;
@@ -83,7 +84,7 @@ const StyledButton = styled(Link)`
 `;
 
 const StyledSignOutButton = styled.button`
-  background: none;
+background: none;
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
   display: inline-block;
@@ -136,6 +137,7 @@ const StyledSignOutButton = styled.button`
 const Header = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { openLoginPopup, openRegisterPopup } = usePopup();
 
   const handleSignOut = async () => {
     try {
@@ -146,7 +148,7 @@ const Header = () => {
         icon: 'success',
         confirmButtonText: 'אישור'
       }).then(() => {
-        navigate('/'); // ניווט לדף הבית לאחר התנתקות מוצלחת
+        navigate('/');
       });
     } catch (error) {
       console.error("Error signing out:", error);
@@ -175,7 +177,10 @@ const Header = () => {
             <StyledSignOutButton onClick={handleSignOut}>התנתקות</StyledSignOutButton>
           </>
         ) : (
-          <StyledButton to="/login">התחברות</StyledButton>
+          <>
+            <StyledButton as="button" onClick={openLoginPopup}>התחברות</StyledButton>
+            <StyledButton as="button" onClick={openRegisterPopup}>הרשמה</StyledButton>
+          </>
         )}
       </ButtonContainer>
     </HeaderContainer>

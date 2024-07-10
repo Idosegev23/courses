@@ -92,7 +92,14 @@ const ErrorMessage = styled.div`
   margin-top: 10px;
 `;
 
-const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
+const ErrorText = styled.p`
+  color: red;
+  font-size: 0.8rem;
+  margin-top: -10px;
+  margin-bottom: 10px;
+`;
+
+const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose, isOpen }) => {
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -106,25 +113,39 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
   const [error, setError] = useState('');
   const containerRef = useRef(null);
 
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    idNum: '',
+    streetAddress: '',
+    city: '',
+    companyId: '',
+  });
+
   useEffect(() => {
     if (userId) {
       const fetchUserData = async () => {
-        const { data, error } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('users')
           .select('*')
           .eq('id', userId)
           .single();
 
-        if (data) {
-          setFirstName(data.first_name);
-          setLastName(data.last_name);
-          setEmail(data.email);
-          setPhone(data.phone_num);
-          setIdNum(data.id_num);
-          setStreetAddress(data.street_address);
-          setCity(data.city);
-          setIsCompany(data.is_company);
-          setCompanyId(data.company_id);
+        if (fetchError) {
+          console.error('Error fetching user data:', fetchError);
+          setError('שגיאה בטעינת נתוני המשתמש');
+        } else if (data) {
+          setFirstName(data.first_name || '');
+          setLastName(data.last_name || '');
+          setEmail(data.email || '');
+          setPhone(data.phone_num || '');
+          setIdNum(data.id_num || '');
+          setStreetAddress(data.street_address || '');
+          setCity(data.city || '');
+          setIsCompany(data.is_company || false);
+          setCompanyId(data.company_id || '');
         }
       };
 
@@ -132,16 +153,143 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
     }
   }, [userId]);
 
+  const isValidName = (name) => {
+    const nameRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
+    return nameRegex.test(name);
+  };
+
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isValidPhone = (phone) => {
+    const phoneRegex = /^05\d{8}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const isValidIdNumber = (id) => {
+    if (id.length !== 9) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      let digit = parseInt(id[i]);
+      if (i % 2 === 0) digit *= 1;
+      else digit *= 2;
+      if (digit > 9) digit -= 9;
+      sum += digit;
+    }
+    return sum % 10 === 0;
+  };
+
+  const isValidAddress = (address) => {
+    return address.trim().split(' ').length >= 2;
+  };
+
+  const isValidCity = (city) => {
+    const cityRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
+    return cityRegex.test(city);
+  };
+
+  const isValidCompanyId = (id) => {
+    const companyIdRegex = /^\d{9}$/;
+    return companyIdRegex.test(id);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    let error = '';
+
+    switch (name) {
+      case 'firstName':
+      case 'lastName':
+        if (!isValidName(value)) error = 'שם לא תקין';
+        break;
+      case 'email':
+        if (!isValidEmail(value)) error = 'אימייל לא תקין';
+        break;
+      case 'phone':
+        if (!isValidPhone(value)) error = 'מספר טלפון לא תקין';
+        break;
+      case 'idNum':
+        if (!isValidIdNumber(value)) error = 'מספר זהות לא תקין';
+        break;
+      case 'streetAddress':
+        if (!isValidAddress(value)) error = 'כתובת לא תקינה';
+        break;
+      case 'city':
+        if (!isValidCity(value)) error = 'שם עיר לא תקין';
+        break;
+      case 'companyId':
+        if (isCompany && !isValidCompanyId(value)) error = 'מספר חברה/עוסק מורשה לא תקין';
+        break;
+      default:
+        break;
+    }
+
+    setErrors(prevErrors => ({ ...prevErrors, [name]: error }));
+    
+    switch (name) {
+      case 'firstName':
+        setFirstName(value);
+        break;
+      case 'lastName':
+        setLastName(value);
+        break;
+      case 'email':
+        setEmail(value);
+        break;
+      case 'phone':
+        setPhone(value);
+        break;
+      case 'idNum':
+        setIdNum(value);
+        break;
+      case 'streetAddress':
+        setStreetAddress(value);
+        break;
+      case 'city':
+        setCity(value);
+        break;
+      case 'companyId':
+        setCompanyId(value);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleNextStep = () => {
-    if (step === 1 && (!firstName || !lastName || !email)) {
-      setError('כל השדות חייבים להיות מלאים');
-      return;
-    } else if (step === 2 && (!phone || !idNum)) {
-      setError('כל השדות חייבים להיות מלאים');
+    let hasErrors = false;
+    
+    if (step === 1) {
+      if (!isValidName(firstName)) {
+        setErrors(prev => ({ ...prev, firstName: 'שם פרטי לא תקין' }));
+        hasErrors = true;
+      }
+      if (!isValidName(lastName)) {
+        setErrors(prev => ({ ...prev, lastName: 'שם משפחה לא תקין' }));
+        hasErrors = true;
+      }
+      if (!isValidEmail(email)) {
+        setErrors(prev => ({ ...prev, email: 'כתובת אימייל לא תקינה' }));
+        hasErrors = true;
+      }
+    } else if (step === 2) {
+      if (!isValidPhone(phone)) {
+        setErrors(prev => ({ ...prev, phone: 'מספר טלפון לא תקין' }));
+        hasErrors = true;
+      }
+      if (!isValidIdNumber(idNum)) {
+        setErrors(prev => ({ ...prev, idNum: 'מספר תעודת זהות לא תקין' }));
+        hasErrors = true;
+      }
+    }
+
+    if (hasErrors) {
       return;
     }
+
     setStep(step + 1);
-    setError('');
   };
 
   const handlePreviousStep = () => {
@@ -161,8 +309,8 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
         body: JSON.stringify({
           endpoint: 'account/token',
           data: {
-            id: process.env.API_KEY_GREEN_INVOICE_TEST,
-            secret: process.env.API_SECRET_GREEN_INVOICE_TEST
+            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
+            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
           }
         })
       });
@@ -205,13 +353,13 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
         amount: finalPrice,
         group: 100,
         client: {
-          name: `${userData.first_name} ${userData.last_name}`,
-          emails: [userData.email],
-          taxId: userData.id_num,
-          address: userData.street_address,
-          city: userData.city,
+          name: `${firstName} ${lastName}`,
+          emails: [email],
+          taxId: idNum,
+          address: streetAddress,
+          city: city,
           country: "IL",
-          phone: `0${userData.phone_num}`,
+          phone: phone,
           add: true
         },
         successUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=true&courseId=${course.id}`,
@@ -256,7 +404,7 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
           current_lesson: 1,
           amount_paid: finalPrice,
           course_title: course.title,
-          total_lessons: course.lessons?.length || 0 // שימוש ב-Optional Chaining ובערך ברירת מחדל
+          total_lessons: course.lessons?.length || 0
         });
 
       if (enrollmentError) {
@@ -271,22 +419,27 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
       if (error.response) {
         console.error('Error response:', error.response.data);
       }
-      alert('An error occurred during the purchase. Please try again.');
-    }
-  };
-
-  const handleClickOutside = (event) => {
-    if (containerRef.current && !containerRef.current.contains(event.target)) {
-      onClose();
+      setError('אירעה שגיאה במהלך הרכישה. אנא נסה שוב.');
     }
   };
 
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   return (
     <Overlay>
@@ -299,24 +452,33 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
               <Label>שם פרטי</Label>
               <Input 
                 type="text" 
+                name="firstName"
                 placeholder="לדוגמה: יוסי" 
                 value={firstName} 
-                onChange={(e) => setFirstName(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.firstName && <ErrorText>{errors.firstName}</ErrorText>}
+              
               <Label>שם משפחה</Label>
               <Input 
-                type="text" 
+                type="text"
+                name="lastName" 
                 placeholder="לדוגמה: כהן" 
                 value={lastName} 
-                onChange={(e) => setLastName(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.lastName && <ErrorText>{errors.lastName}</ErrorText>}
+              
               <Label>אימייל</Label>
               <Input 
-                type="email" 
+                type="email"
+                name="email" 
                 placeholder="example@test.com" 
                 value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.email && <ErrorText>{errors.email}</ErrorText>}
+              
               <Button onClick={handleNextStep}>הבא</Button>
             </>
           )}
@@ -324,18 +486,24 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
             <>
               <Label>מספר טלפון</Label>
               <Input 
-                type="tel" 
+                type="tel"
+                name="phone" 
                 placeholder="לדוגמה: 0501234567" 
                 value={phone} 
-                onChange={(e) => setPhone(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.phone && <ErrorText>{errors.phone}</ErrorText>}
+              
               <Label>תעודת זהות</Label>
               <Input 
-                type="text" 
+                type="text"
+                name="idNum" 
                 placeholder="לדוגמה: 123456789" 
                 value={idNum} 
-                onChange={(e) => setIdNum(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.idNum && <ErrorText>{errors.idNum}</ErrorText>}
+              
               <Button onClick={handlePreviousStep}>הקודם</Button>
               <Button onClick={handleNextStep}>הבא</Button>
             </>
@@ -344,18 +512,24 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
             <>
               <Label>כתובת רחוב</Label>
               <Input 
-                type="text" 
+                type="text"
+                name="streetAddress" 
                 placeholder="לדוגמה: הרצל 1" 
                 value={streetAddress} 
-                onChange={(e) => setStreetAddress(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.streetAddress && <ErrorText>{errors.streetAddress}</ErrorText>}
+              
               <Label>עיר</Label>
               <Input 
-                type="text" 
+                type="text"
+                name="city" 
                 placeholder="לדוגמה: תל אביב" 
                 value={city} 
-                onChange={(e) => setCity(e.target.value)} 
+                onChange={handleInputChange} 
               />
+              {errors.city && <ErrorText>{errors.city}</ErrorText>}
+              
               <Label style={{ display: 'flex', alignItems: 'center' }}>
                 <input 
                   type="checkbox" 
@@ -369,11 +543,13 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose }) => {
                 <>
                   <Label>מספר חברה/עוסק מורשה</Label>
                   <Input 
-                    type="text" 
+                    type="text"
+                    name="companyId" 
                     placeholder="לדוגמה: 123456789" 
                     value={companyId} 
-                    onChange={(e) => setCompanyId(e.target.value)} 
+                    onChange={handleInputChange} 
                   />
+                  {errors.companyId && <ErrorText>{errors.companyId}</ErrorText>}
                 </>
               )}
               <Button onClick={handlePreviousStep}>הקודם</Button>

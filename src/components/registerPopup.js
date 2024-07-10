@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { supabase } from '../supabaseClient';
+import Swal from 'sweetalert2';
+import { usePopup } from '../PopupContext';
 
 const Overlay = styled.div`
   position: fixed;
@@ -97,7 +99,7 @@ const ErrorMessage = styled.div`
   margin-top: 10px;
 `;
 
-const RegisterPopup = ({ onRegisterSuccess, onShowLogin, onClose }) => {
+const RegisterPopup = () => {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -106,6 +108,7 @@ const RegisterPopup = ({ onRegisterSuccess, onShowLogin, onClose }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const containerRef = useRef(null);
+  const { showRegisterPopup, closeAllPopups, openLoginPopup } = usePopup();
 
   const handleNextStep = () => {
     if (!firstName || !lastName || !email) {
@@ -120,52 +123,104 @@ const RegisterPopup = ({ onRegisterSuccess, onShowLogin, onClose }) => {
     setStep(1);
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (e) => {
+    e.preventDefault();
     if (password !== confirmPassword) {
       setError('הסיסמאות אינן תואמות');
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    }, {
-      data: {
-        firstName,
-        lastName,
-      },
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
 
-    if (error) {
-      setError('שגיאה ברישום, נסה שוב');
-    } else {
-      setError('');
-      onRegisterSuccess();
+      if (error) throw error;
+
+      if (data.user) {
+        console.log('Registration successful:', data);
+        
+        Swal.fire({
+          title: 'הרשמה הושלמה בהצלחה!',
+          text: 'נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר שלך.',
+          icon: 'success',
+          confirmButtonText: 'פתח את תיבת הדואר',
+          showCancelButton: true,
+          cancelButtonText: 'סגור'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            openEmailClient(email);
+          }
+          closeAllPopups();
+        });
+      } else {
+        setError('הרשמה נכשלה. אנא נסה שנית.');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message || 'שגיאה ברישום, נסה שוב');
     }
   };
 
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    });
+  const openEmailClient = (email) => {
+    let emailProvider = email.split('@')[1];
+    let url;
 
-    if (error) {
+    switch(emailProvider) {
+      case 'gmail.com':
+        url = 'https://mail.google.com/';
+        break;
+      case 'outlook.com':
+      case 'hotmail.com':
+        url = 'https://outlook.live.com/';
+        break;
+      case 'yahoo.com':
+        url = 'https://mail.yahoo.com/';
+        break;
+      default:
+        url = `https://${emailProvider}`;
+    }
+
+    window.open(url, '_blank');
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Google login error:', error);
       setError('שגיאה בהתחברות עם גוגל');
     }
   };
 
-  const handleClickOutside = (event) => {
-    if (containerRef.current && !containerRef.current.contains(event.target)) {
-      onClose();
-    }
-  };
-
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        closeAllPopups();
+      }
+    };
+
+    if (showRegisterPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [showRegisterPopup, closeAllPopups]);
+
+  if (!showRegisterPopup) return null;
 
   return (
     <Overlay>
@@ -198,7 +253,7 @@ const RegisterPopup = ({ onRegisterSuccess, onShowLogin, onClose }) => {
               />
               <Button onClick={handleNextStep}>הבא</Button>
               <GoogleButton onClick={handleGoogleLogin}>הירשם עם גוגל</GoogleButton>
-              <Button onClick={onShowLogin}>כבר רשומים אצלנו? התחברו כאן</Button>
+              <Button onClick={openLoginPopup}>כבר רשומים אצלנו? התחברו כאן</Button>
             </>
           )}
           {step === 2 && (
