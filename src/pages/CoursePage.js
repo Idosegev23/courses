@@ -32,7 +32,7 @@ const PageContainer = styled.div`
 `;
 
 const PageTitle = styled.h1`
-  font-size: 2rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #F25C78;
   margin-bottom: 1.5rem;
@@ -42,7 +42,7 @@ const PageTitle = styled.h1`
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 
   @media (min-width: 768px) {
-    font-size: 3rem;
+    font-size: 1rem;
     margin-bottom: 2rem;
   }
 `;
@@ -89,33 +89,33 @@ const CourseContent = styled.div`
 `;
 
 const CourseTitle = styled.h2`
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
   color: #333;
 
   @media (min-width: 768px) {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
   }
 `;
 
 const CourseDescription = styled.p`
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #666;
   margin-bottom: 1rem;
 
   @media (min-width: 768px) {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
 `;
 
 const CourseDetails = styled.p`
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: #888;
   margin-bottom: 1rem;
 
   @media (min-width: 768px) {
-    font-size: 0.875rem;
+    font-size: 1.3rem;
   }
 `;
 

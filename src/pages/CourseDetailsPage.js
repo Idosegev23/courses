@@ -6,9 +6,7 @@ import { Typography, Container, Snackbar, CircularProgress } from '@mui/material
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 import { useAuth } from '../hooks/useAuth';
-import RegisterPopup from '../components/registerPopup';
-import PurchasePopup from '../components/PurchasePopup';
-import LoginPopupNew from '../components/loginPopUpNew';
+import { usePopup } from '../PopupContext';
 
 const theme = createTheme({
   palette: {
@@ -71,27 +69,28 @@ const PageContainer = styled(Container)`
 `;
 
 const PageTitle = styled(Typography)`
-  font-size: 1.8rem; // גודל ברירת מחדל למסכים קטנים
-  font-weight: bold;
+  font-size: 0.8rem;
+  font-weight: light;
   color: #62238C;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
   position: relative;
   z-index: 1;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
   
   @media (min-width: 480px) {
-    font-size: 2rem;
+    font-size: 1rem;
   }
   
   @media (min-width: 768px) {
-    font-size: 2.2rem;
-    margin-bottom: 2rem;
+    font-size: 1.1rem;
   }
   
-  @media (min-width: 1024px) {
-    font-size: 2.5rem;
+  &:hover {
+    transform: scale(1.05);
+    text-shadow: 2px 2px 4px rgba(98, 35, 140, 0.3);
   }
 `;
-
 
 const PageContent = styled.div`
   display: flex;
@@ -128,7 +127,7 @@ const CourseDescription = styled.div`
     max-width: 800px;
 
     h2 {
-      font-size: 1.8rem;
+      font-size: 2rem;
     }
   }
 `;
@@ -152,6 +151,12 @@ const PurchaseButton = styled.button`
   &:focus {
     outline: none;
   }
+
+  @media (max-width: 768px) {
+    width: 180px;
+    height: 50px;
+    font-size: 18px;
+  }
 `;
 
 const LoadingSpinner = styled(CircularProgress)`
@@ -164,10 +169,8 @@ const CourseDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [showRegisterPopup, setShowRegisterPopup] = useState(false);
-  const [showPurchasePopup, setShowPurchasePopup] = useState(false);
+  const [snackbarMessage,] = useState('');
+  const { openLoginPopup, openPurchasePopup } = usePopup();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -189,29 +192,15 @@ const CourseDetailsPage = () => {
     fetchCourse();
   }, [courseId]);
 
-  const handleLoginSuccess = () => {
-    setShowLoginPopup(false);
-    setShowPurchasePopup(true);
-  };
-
-  const handleRegisterSuccess = () => {
-    setShowRegisterPopup(false);
-    setShowPurchasePopup(true);
-  };
-
-  const handlePurchaseSuccess = () => {
-    setShowPurchasePopup(false);
-    setSnackbarMessage('הרכישה בוצעה בהצלחה!');
-    setSnackbarOpen(true);
-  };
-
   const handlePurchaseClick = () => {
     if (user) {
-      setShowPurchasePopup(true);
+      openPurchasePopup(course);
     } else {
-      setShowLoginPopup(true);
+      openLoginPopup();
     }
   };
+
+
 
   return (
     <ThemeProvider theme={theme}>
@@ -225,6 +214,10 @@ const CourseDetailsPage = () => {
             <CourseDescription>
               <h2>{course.title}</h2>
               <p>{course.description}</p>
+              <p>{course.details}</p>
+              <p>משך זמן :{course.duration}</p>
+              <p>עלות : {course.price} ש״ח</p>
+              <p>מספר שיעורים : {course.total_lessons}</p>
             </CourseDescription>
             <PurchaseButton onClick={handlePurchaseClick}>
               רכוש עכשיו
@@ -237,34 +230,10 @@ const CourseDetailsPage = () => {
           autoHideDuration={6000}
           onClose={() => setSnackbarOpen(false)}
         />
-        <LoginPopupNew
-          isOpen={showLoginPopup}
-          onClose={() => setShowLoginPopup(false)}
-          onLoginSuccess={handleLoginSuccess}
-          onShowRegister={() => {
-            setShowLoginPopup(false);
-            setShowRegisterPopup(true);
-          }}
-        />
-        <RegisterPopup
-          isOpen={showRegisterPopup}
-          onClose={() => setShowRegisterPopup(false)}
-          onRegisterSuccess={handleRegisterSuccess}
-          onShowLogin={() => {
-            setShowRegisterPopup(false);
-            setShowLoginPopup(true);
-          }}
-        />
-        <PurchasePopup
-          isOpen={showPurchasePopup}
-          onClose={() => setShowPurchasePopup(false)}
-          userId={user ? user.id : null}
-          course={course}
-          onPurchaseSuccess={handlePurchaseSuccess}
-        />
       </PageContainer>
     </ThemeProvider>
   );
 };
 
 export default CourseDetailsPage;
+

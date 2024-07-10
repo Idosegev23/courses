@@ -53,7 +53,7 @@ const PurchaseResultPage = () => {
       if (success) {
         Swal.fire({
           title: 'רכישה מוצלחת!',
-          text: message || 'הקורס נוסף בהצלחה לאזור האישי שלך',
+          text: message || 'הקורס נוסף בהצלחה לאזור האישי שלך. קבלה תשלח לתיבת המייל שלך',
           icon: 'success',
           confirmButtonText: 'לאזור האישי',
           confirmButtonColor: '#4CAF50',
