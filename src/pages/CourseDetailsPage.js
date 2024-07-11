@@ -169,7 +169,7 @@ const CourseDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage,] = useState('');
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const { openLoginPopup, openPurchasePopup } = usePopup();
 
   useEffect(() => {
@@ -193,37 +193,50 @@ const CourseDetailsPage = () => {
   }, [courseId]);
 
   const handlePurchaseClick = () => {
+    console.log('Purchase button clicked');
     if (user) {
+      console.log('User is logged in, opening purchase popup');
       openPurchasePopup(course);
     } else {
+      console.log('User is not logged in, opening login popup');
       openLoginPopup();
     }
   };
 
+  const handlePurchaseSuccess = () => {
+    setSnackbarMessage('הרכישה בוצעה בהצלחה!');
+    setSnackbarOpen(true);
+  };
 
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <GlobalStyle />
+        <PageContainer>
+          <LoadingSpinner />
+        </PageContainer>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
         <PageTitle variant="h1">פרטי הקורס</PageTitle>
-        {loading ? (
-          <LoadingSpinner />
-        ) : (
-          <PageContent>
-            <CourseDescription>
-              <h2>{course.title}</h2>
-              <p>{course.description}</p>
-              <p>{course.details}</p>
-              <p>משך זמן :{course.duration}</p>
-              <p>עלות : {course.price} ש״ח</p>
-              <p>מספר שיעורים : {course.total_lessons}</p>
-            </CourseDescription>
-            <PurchaseButton onClick={handlePurchaseClick}>
-              רכוש עכשיו
-            </PurchaseButton>
-          </PageContent>
-        )}
+        <PageContent>
+          <CourseDescription>
+            <h2>{course.title}</h2>
+            <p>{course.description}</p>
+            <p>{course.details}</p>
+            <p>משך זמן: {course.duration}</p>
+            <p>עלות: {course.price} ש״ח</p>
+            <p>מספר שיעורים: {course.total_lessons}</p>
+          </CourseDescription>
+          <PurchaseButton onClick={handlePurchaseClick}>
+            רכוש עכשיו
+          </PurchaseButton>
+        </PageContent>
         <Snackbar
           open={snackbarOpen}
           message={snackbarMessage}

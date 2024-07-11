@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 
 const Overlay = styled.div`
   position: fixed;
@@ -99,7 +100,8 @@ const ErrorText = styled.p`
   margin-bottom: 10px;
 `;
 
-const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose, isOpen }) => {
+const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -125,12 +127,12 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose, isOpen }) =
   });
 
   useEffect(() => {
-    if (userId) {
+    if (user) {
       const fetchUserData = async () => {
         const { data, error: fetchError } = await supabase
           .from('users')
           .select('*')
-          .eq('id', userId)
+          .eq('id', user.id)
           .single();
 
         if (fetchError) {
@@ -151,7 +153,7 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose, isOpen }) =
 
       fetchUserData();
     }
-  }, [userId]);
+  }, [user]);
 
   const isValidName = (name) => {
     const nameRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
@@ -329,7 +331,7 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose, isOpen }) =
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
+        .eq('id', user.id)
         .single();
 
       if (userError) {
@@ -399,7 +401,7 @@ const PurchasePopup = ({ userId, course, onPurchaseSuccess, onClose, isOpen }) =
       const { error: enrollmentError } = await supabase
         .from('enrollments')
         .insert({
-          user_id: userId,
+          user_id: user.id,
           course_id: course.id,
           current_lesson: 1,
           amount_paid: finalPrice,

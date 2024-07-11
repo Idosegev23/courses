@@ -11,18 +11,21 @@ export const PopupProvider = ({ children }) => {
   const [purchaseCourse, setPurchaseCourse] = useState(null);
 
   const openLoginPopup = () => {
+    console.log('Opening login popup');
     setShowRegisterPopup(false);
     setShowPurchasePopup(false);
     setShowLoginPopup(true);
   };
 
   const openRegisterPopup = () => {
+    console.log('Opening register popup');
     setShowLoginPopup(false);
     setShowPurchasePopup(false);
     setShowRegisterPopup(true);
   };
 
   const openPurchasePopup = (course) => {
+    console.log('Opening purchase popup for course:', course);
     setShowLoginPopup(false);
     setShowRegisterPopup(false);
     setPurchaseCourse(course);
@@ -30,6 +33,7 @@ export const PopupProvider = ({ children }) => {
   };
 
   const closeAllPopups = () => {
+    console.log('Closing all popups');
     setShowLoginPopup(false);
     setShowRegisterPopup(false);
     setShowPurchasePopup(false);
