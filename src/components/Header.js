@@ -1,16 +1,58 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
 import { useAuth } from '../hooks/useAuth';
 import Swal from 'sweetalert2';
 import { usePopup } from '../PopupContext';
+import { Menu, X, User, LogOut, Home, Settings } from 'lucide-react';
 
+// אנימציות
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const slideIn = keyframes`
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+`;
+
+// סגנונות משותפים
+const buttonStyles = css`
+  background: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-family: 'Heebo', sans-serif;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  border: 2px solid #ffffff;
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    color: #8b81a8;
+    background-color: #ffffff;
+    border: 2px solid #8b81a8;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+// רכיבים מעוצבים
 const HeaderContainer = styled.header`
-  background-color: #8b81a8; /* Faded purple */
+  background-color: #8b81a8;
   padding: 1rem;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #f2d1b3;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -21,76 +63,71 @@ const HeaderContainer = styled.header`
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
-  justify-self: start;
 `;
 
 const LogoImage = styled.img`
   width: 125px;
   height: auto;
+
+  @media (max-width: 768px) {
+    width: 100px; // לוגו קטן יותר למסכים ניידים
+  }
 `;
 
 const NavContainer = styled.nav`
   display: flex;
   gap: 1rem;
   align-items: center;
-  justify-content: center;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
-const UserContainer = styled.div`
-  justify-self: end;
+const MobileMenuButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+`;
+
+const MobileMenu = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(139, 129, 168, 0.95);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 1000;
+  animation: ${fadeIn} 0.3s ease-out, ${slideIn} 0.3s ease-out;
+`;
+
+const CloseButton = styled.button`
+  align-self: flex-end;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
 `;
 
 const StyledButton = styled(Link)`
-  background: none;
-  padding: 0.75rem 1.5rem; /* Increased button size */
-  border-radius: 0.5rem;
-  font-family: 'Heebo', sans-serif;
-  color: #ffffff; /* White color for better contrast */
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 1rem; /* Increased font size */
-  border: 2px solid #ffffff; /* White border for better contrast */
-  transition: all 0.3s ease-in-out;
-  position: relative;
-  cursor: pointer;
-
-  &:hover {
-    color: #8b81a8; /* Match the background color */
-    background-color: #ffffff; /* White background on hover */
-    border: 2px solid #8b81a8; /* Match the background color */
-  }
-
-  &::before,
-  &::after {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-style: solid;
-    border-width: 2px 0 0 2px;
-    border-color: #ffffff;
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    transition: all 0.3s ease-in-out;
-  }
-
-  &::after {
-    border-width: 0 2px 2px 0;
-    top: auto;
-    bottom: -4px;
-    left: auto;
-    right: -4px;
-  }
-
-  &:hover::before,
-  &:hover::after {
-    width: calc(100% + 8px);
-    height: calc(100% + 8px);
-    border-color: #8b81a8; /* Match the background color */
-  }
+  ${buttonStyles}
 `;
 
-const StyledSignOutButton = styled(StyledButton).attrs({ as: 'button' })``;
+const StyledSignOutButton = styled.button`
+  ${buttonStyles}
+`;
 
 const UserStatus = styled.div`
   display: flex;
@@ -99,7 +136,11 @@ const UserStatus = styled.div`
   font-family: 'Heebo', sans-serif;
   font-size: 1.3rem;
   color: #ffffff;
-  margin-left: 1rem; /* Add some space between logo and status */
+  margin-right: 1rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const StatusDot = styled.div`
@@ -113,10 +154,47 @@ const Greeting = styled.span`
   font-weight: bold;
 `;
 
+const UserMenu = styled.div`
+  position: relative;
+`;
+
+const UserMenuButton = styled.button`
+  ${buttonStyles}
+`;
+
+const UserMenuDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid #8b81a8;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  display: ${props => props.isOpen ? 'flex' : 'none'};
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 150px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+`;
+
+const UserMenuItem = styled(Link)`
+  ${buttonStyles}
+  color: #8b81a8;
+  border: none;
+  justify-content: flex-start;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+`;
+
 const Header = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { openLoginPopup, openRegisterPopup } = usePopup();
+  const userMenuRef = useRef(null);
 
   const handleSignOut = async () => {
     try {
@@ -146,8 +224,73 @@ const Header = () => {
     if (user.user_metadata && user.user_metadata.full_name) {
       return user.user_metadata.full_name.split(' ')[0];
     }
-    return 'אורח'; // Default to 'Guest' in Hebrew if no name is available
+    return 'אורח';
   };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const renderNavItems = () => (
+    <>
+      <StyledButton to="/">
+        <Home size={18} />
+        דף הבית
+      </StyledButton>
+      {user ? (
+        <UserMenu ref={userMenuRef}>
+          <UserMenuButton onClick={toggleUserMenu}>
+            <User size={18} />
+            {getFirstName(user)}
+          </UserMenuButton>
+          <UserMenuDropdown isOpen={isUserMenuOpen}>
+            <UserMenuItem to="/personal-area">
+              <Settings size={18} />
+              איזור אישי
+            </UserMenuItem>
+            {isAdmin && (
+              <UserMenuItem to="/admin-dashboard">
+                <Settings size={18} />
+                אזור אדמין
+              </UserMenuItem>
+            )}
+            <UserMenuItem as="button" onClick={handleSignOut}>
+              <LogOut size={18} />
+              התנתקות
+            </UserMenuItem>
+          </UserMenuDropdown>
+        </UserMenu>
+      ) : (
+        <>
+          <StyledButton as="button" onClick={openLoginPopup}>
+            <User size={18} />
+            התחברות
+          </StyledButton>
+          <StyledButton as="button" onClick={openRegisterPopup}>
+            <User size={18} />
+            הרשמה
+          </StyledButton>
+        </>
+      )}
+    </>
+  );
 
   return (
     <HeaderContainer>
@@ -161,23 +304,19 @@ const Header = () => {
         )}
       </LogoContainer>
       <NavContainer>
-        <StyledButton to="/">דף הבית</StyledButton>
-        {user ? (
-          <>
-            <StyledButton to="/personal-area">איזור אישי</StyledButton>
-            {isAdmin && (
-              <StyledButton to="/admin-dashboard">אזור אדמין</StyledButton>
-            )}
-            <StyledSignOutButton onClick={handleSignOut}>התנתקות</StyledSignOutButton>
-          </>
-        ) : (
-          <>
-            <StyledButton as="button" onClick={openLoginPopup}>התחברות</StyledButton>
-            <StyledButton as="button" onClick={openRegisterPopup}>הרשמה</StyledButton>
-          </>
-        )}
+        {renderNavItems()}
       </NavContainer>
-      <UserContainer />
+      <MobileMenuButton onClick={toggleMobileMenu} aria-label="פתח תפריט">
+        <Menu />
+      </MobileMenuButton>
+      {isMobileMenuOpen && (
+        <MobileMenu>
+          <CloseButton onClick={toggleMobileMenu} aria-label="סגור תפריט">
+            <X />
+          </CloseButton>
+          {renderNavItems()}
+        </MobileMenu>
+      )}
     </HeaderContainer>
   );
 };
