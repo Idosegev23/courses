@@ -5,6 +5,8 @@ import styled, { createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Container, Grid } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import Hero from './hero';
+import StyledButton from '../components/StyledButton';
 
 const theme = createTheme({
   palette: {
@@ -62,27 +64,6 @@ const ButtonContainer = styled.div`
   margin-top: auto;
 `;
 
-const StyledButton = styled(Link)`
-  display: inline-block;
-  margin: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
-  text-decoration: none;
-  color: #fff;
-  background: ${(props) =>
-    props.isprimary
-      ? 'linear-gradient(45deg, #6DBFF2 30%, #62238C 90%)'
-      : 'linear-gradient(45deg, #F2D1B3 30%, #0D0D0D 90%)'};
-  transition: all 0.3s;
-  border: none;
-  box-shadow: 0 3px 5px 2px rgba(0, 0, 0, .3);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 10px 4px rgba(0, 0, 0, .3);
-  }
-`;
-
 const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [userEnrollments, setUserEnrollments] = useState([]);
@@ -126,6 +107,7 @@ const LandingPage = () => {
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
+      <Hero />
       <PageContainer maxWidth="lg">
         <Header>
           <Typography variant="h2" component="h1" sx={{
@@ -141,7 +123,7 @@ const LandingPage = () => {
           </Typography>
         </Header>
 
-        <Grid container spacing={4}>
+        <Grid container spacing={4} id="course-content">
           <AnimatePresence>
             {courses.map((course) => (
               <Grid item xs={12} sm={6} md={4} key={course.id}>
@@ -164,11 +146,21 @@ const LandingPage = () => {
                       </div>
                       <ButtonContainer>
                         {userEnrollments.includes(course.id) ? (
-                          <StyledButton to={`/course-learning/${course.id}`} isprimary="true">
+                          <StyledButton 
+                            as={Link} 
+                            to={`/course-learning/${course.id}`} 
+                            isprimary="true"
+                            data-text="כניסה לקורס"
+                          >
                             כניסה לקורס
                           </StyledButton>
                         ) : (
-                          <StyledButton to={`/course/${course.id}`} isprimary="true">
+                          <StyledButton 
+                            as={Link} 
+                            to={`/course/${course.id}`} 
+                            isprimary="true"
+                            data-text="פרטים נוספים"
+                          >
                             פרטים נוספים
                           </StyledButton>
                         )}

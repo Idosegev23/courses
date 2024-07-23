@@ -19,7 +19,7 @@
   ],
   "headers": [
     {
-      "source": "/api/green-invoice/:path*",
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -27,11 +27,11 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "POST"
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Authorization, Content-Type"
+          "value": "X-Requested-With, Content-Type, Authorization"
         }
       ]
     }

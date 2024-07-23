@@ -7,6 +7,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 import { useAuth } from '../hooks/useAuth';
 import { usePopup } from '../PopupContext';
+import StyledButton from '../components/StyledButton'; // ייבוא הכפתור
 
 const theme = createTheme({
   palette: {
@@ -22,23 +23,13 @@ const theme = createTheme({
   },
 });
 
-const GlobalStyle = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css?family=Montserrat');
-  
+const GlobalStyles = createGlobalStyle`
   body {
-    font-family: 'Montserrat', arial, verdana;
-    background-color: white;
+    font-family: 'Heebo', sans-serif;
+    background-color: #ffffff;
     direction: rtl;
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow-y: auto;
-  }
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
   }
 `;
 
@@ -132,35 +123,19 @@ const CourseDescription = styled.div`
   }
 `;
 
-const PurchaseButton = styled.button`
-  width: 200px;
-  height: 60px;
-  cursor: pointer;
-  font-size: 20px;
-  font-weight: bold;
-  color: white;
-  background: #BF4B81;
-  border: 2px solid #62238C;
-  box-shadow: 5px 5px 0 #62238C, -5px -5px 0 #62238C, -5px 5px 0 #62238C, 5px -5px 0 #62238C;
-  transition: 500ms ease-in-out;
-
-  &:hover {
-    box-shadow: 20px 5px 0 #62238C, -20px -5px 0 #62238C;
-  }
-
-  &:focus {
-    outline: none;
-  }
-
-  @media (max-width: 768px) {
-    width: 180px;
-    height: 50px;
-    font-size: 18px;
-  }
-`;
-
 const LoadingSpinner = styled(CircularProgress)`
   color: #62238C;
+`;
+
+// כפתור רכישה מותאם לדף הנוכחי
+const LargeStyledButton = styled(StyledButton)`
+  padding: 20px 40px; /* Increased padding */
+  font-size: 20px; /* Increased font size */
+
+  @media (max-width: 768px) {
+    padding: 18px 36px; /* Adjusted padding for smaller screens */
+    font-size: 18px; /* Adjusted font size for smaller screens */
+  }
 `;
 
 const CourseDetailsPage = () => {
@@ -211,7 +186,7 @@ const CourseDetailsPage = () => {
   if (loading) {
     return (
       <ThemeProvider theme={theme}>
-        <GlobalStyle />
+        <GlobalStyles />
         <PageContainer>
           <LoadingSpinner />
         </PageContainer>
@@ -221,7 +196,7 @@ const CourseDetailsPage = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <GlobalStyle />
+      <GlobalStyles />
       <PageContainer>
         <PageTitle variant="h1">פרטי הקורס</PageTitle>
         <PageContent>
@@ -233,9 +208,9 @@ const CourseDetailsPage = () => {
             <p>עלות: {course.price} ש״ח</p>
             <p>מספר שיעורים: {course.total_lessons}</p>
           </CourseDescription>
-          <PurchaseButton onClick={handlePurchaseClick}>
+          <LargeStyledButton as="button" onClick={handlePurchaseClick} isprimary="true">
             רכוש עכשיו
-          </PurchaseButton>
+          </LargeStyledButton>
         </PageContent>
         <Snackbar
           open={snackbarOpen}
@@ -249,4 +224,3 @@ const CourseDetailsPage = () => {
 };
 
 export default CourseDetailsPage;
-

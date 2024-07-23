@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
-import { Button, TextField, Typography, Box } from '@mui/material';
+import { Button, TextField, Typography, Box, Checkbox, FormControlLabel, CircularProgress } from '@mui/material';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
@@ -79,20 +79,13 @@ const ActionButton = styled(Button)`
 
 const EditCoursePage = () => {
   const { courseId } = useParams();
-  const [course, setCourse] = useState({
-    title: '',
-    description: '',
-    price: 0,
-    discountPrice: 0,
-    discountPercentage: 0,
-    duration: '',
-    details: '',
-    lessons: [{ title: '', videoLink: '', duration: '', summary: '', faq: [], exercises: [] }],
-  });
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCourse = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from('courses')
         .select('*')
@@ -101,29 +94,35 @@ const EditCoursePage = () => {
 
       if (error) {
         console.error('Error fetching course:', error);
+        setLoading(false);
         return;
       }
 
       setCourse({
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        discountPrice: data.discountPrice || 0,
-        discountPercentage: data.discountPercentage || 0,
-        duration: data.duration,
-        details: data.details,
-        lessons: data.lessons || [],
+        title: data.title ?? '',
+        description: data.description ?? '',
+        price: data.price ?? 0,
+        discountPrice: data.discountPrice ?? 0,
+        discountPercentage: data.discountPercentage ?? 0,
+        duration: data.duration ?? '',
+        details: data.details ?? '',
+        lessons: data.lessons ?? [],
+        lesson_links: data.lesson_links ?? [],
+        faq: data.faq ?? [],
+        is_available: data.is_available ?? false,
+        total_lessons: data.total_lessons ?? 0
       });
+      setLoading(false);
     };
 
     fetchCourse();
   }, [courseId]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setCourse((prevCourse) => ({
       ...prevCourse,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
 
     if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
@@ -166,61 +165,75 @@ const EditCoursePage = () => {
   };
 
   const handleLessonChange = (index, name, value) => {
-    const newLessons = [...course.lessons];
-    newLessons[index][name] = value;
+    const newLessons = [...(course?.lessons ?? [])];
+    newLessons[index] = { ...newLessons[index], [name]: value };
     setCourse((prevCourse) => ({
       ...prevCourse,
       lessons: newLessons,
     }));
   };
 
-  const handleFaqChange = (lessonIndex, faqIndex, name, value) => {
-    const newLessons = [...course.lessons];
-    newLessons[lessonIndex].faq[faqIndex][name] = value;
+  const handleFaqChange = (index, name, value) => {
+    const newFaq = [...(course?.faq ?? [])];
+    newFaq[index] = { ...newFaq[index], [name]: value };
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: newLessons,
+      faq: newFaq,
     }));
   };
 
   const handleExerciseChange = (lessonIndex, exerciseIndex, name, value) => {
-    const newLessons = [...course.lessons];
-    newLessons[lessonIndex].exercises[exerciseIndex][name] = value;
-    setCourse((prevCourse) => ({
-      ...prevCourse,
-      lessons: newLessons,
-    }));
+    const newLessons = [...(course?.lessons ?? [])];
+    if (newLessons[lessonIndex]?.exercises) {
+      newLessons[lessonIndex].exercises[exerciseIndex] = {
+        ...newLessons[lessonIndex].exercises[exerciseIndex],
+        [name]: value
+      };
+      setCourse((prevCourse) => ({
+        ...prevCourse,
+        lessons: newLessons,
+      }));
+    }
   };
 
   const addLesson = () => {
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: [...prevCourse.lessons, { title: '', videoLink: '', duration: '', summary: '', faq: [], exercises: [] }],
+      lessons: [...(prevCourse?.lessons ?? []), { title: '', videoLink: '', duration: '', summary: '', exercises: [] }],
+      total_lessons: (prevCourse?.total_lessons ?? 0) + 1
     }));
   };
 
-  const addFaq = (lessonIndex) => {
-    const newLessons = [...course.lessons];
-    newLessons[lessonIndex].faq.push({ question: '', answer: '' });
+  const addFaq = () => {
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: newLessons,
+      faq: [...(prevCourse?.faq ?? []), { question: '', answer: '' }],
     }));
   };
 
   const addExercise = (lessonIndex) => {
-    const newLessons = [...course.lessons];
-    newLessons[lessonIndex].exercises.push({ description: '', solution: '' });
-    setCourse((prevCourse) => ({
-      ...prevCourse,
-      lessons: newLessons,
-    }));
+    const newLessons = [...(course?.lessons ?? [])];
+    if (newLessons[lessonIndex]) {
+      newLessons[lessonIndex].exercises = [...(newLessons[lessonIndex].exercises ?? []), { description: '', solution: '' }];
+      setCourse((prevCourse) => ({
+        ...prevCourse,
+        lessons: newLessons,
+      }));
+    }
   };
 
   const removeLesson = (index) => {
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: prevCourse.lessons.filter((_, i) => i !== index),
+      lessons: (prevCourse?.lessons ?? []).filter((_, i) => i !== index),
+      total_lessons: Math.max(0, (prevCourse?.total_lessons ?? 1) - 1)
+    }));
+  };
+
+  const removeFaq = (index) => {
+    setCourse((prevCourse) => ({
+      ...prevCourse,
+      faq: (prevCourse?.faq ?? []).filter((_, i) => i !== index),
     }));
   };
 
@@ -241,6 +254,22 @@ const EditCoursePage = () => {
     navigate('/admin-dashboard');
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!course) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <Typography>קורס לא נמצא או שגיאה בטעינה</Typography>
+      </Box>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
@@ -257,6 +286,7 @@ const EditCoursePage = () => {
             value={course.title}
             onChange={handleChange}
             margin="normal"
+            required
           />
           <TextField
             fullWidth
@@ -282,7 +312,7 @@ const EditCoursePage = () => {
           <TextField
             fullWidth
             type="number"
-            label="מחיר מבצע (אופציונלי)"
+            label="מחיר מבצע"
             name="discountPrice"
             variant="outlined"
             value={course.discountPrice}
@@ -292,7 +322,7 @@ const EditCoursePage = () => {
           <TextField
             fullWidth
             type="number"
-            label="אחוז הנחה (אופציונלי)"
+            label="אחוז הנחה"
             name="discountPercentage"
             variant="outlined"
             value={course.discountPercentage}
@@ -319,8 +349,28 @@ const EditCoursePage = () => {
             onChange={handleChange}
             margin="normal"
           />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={course.is_available}
+                onChange={handleChange}
+                name="is_available"
+              />
+            }
+            label="הקורס זמין"
+          />
+          <TextField
+            fullWidth
+            type="number"
+            label="מספר שיעורים כולל"
+            name="total_lessons"
+            variant="outlined"
+            value={course.total_lessons}
+            onChange={handleChange}
+            margin="normal"
+          />
 
-          {course.lessons.map((lesson, index) => (
+          {(course?.lessons ?? []).map((lesson, index) => (
             <Box key={index} sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, boxShadow: 1 }}>
               <Typography variant="h6" gutterBottom>{`שיעור ${index + 1}`}</Typography>
               <TextField
@@ -358,43 +408,7 @@ const EditCoursePage = () => {
                 onChange={(e) => handleLessonChange(index, 'summary', e.target.value)}
                 margin="normal"
               />
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => addFaq(index)}
-                sx={{ mt: 2 }}
-              >
-                הוסף שאלה ותשובה
-              </Button>
-              {lesson.faq.map((faqItem, faqIndex) => (
-                <Box key={faqIndex} sx={{ mt: 2, p: 2, bgcolor: 'background.paper' }}>
-                  <TextField
-                    fullWidth
-                    label={`שאלה ${faqIndex + 1}`}
-                    variant="outlined"
-                    value={faqItem.question}
-                    onChange={(e) => handleFaqChange(index, faqIndex, 'question', e.target.value)}
-                    margin="normal"
-                  />
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={2}
-                    label={`תשובה ${faqIndex + 1}`}
-                    variant="outlined"
-                    value={faqItem.answer}
-                    onChange={(e) => handleFaqChange(index, faqIndex, 'answer', e.target.value)}
-                    margin="normal"
-                  />
-                </Box>
-              ))}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => addExercise(index)}
-                sx={{ mt: 2 }}
-              >
-                הוסף תרגיל
-              </Button>
-              {lesson.exercises.map((exercise, exerciseIndex) => (
+              {(lesson?.exercises ?? []).map((exercise, exerciseIndex) => (
                 <Box key={exerciseIndex} sx={{ mt: 2, p: 2, bgcolor: 'background.paper' }}>
                   <TextField
                     fullWidth
@@ -417,6 +431,13 @@ const EditCoursePage = () => {
                 </Box>
               ))}
               <Button
+                startIcon={<AddIcon />}
+                onClick={() => addExercise(index)}
+                sx={{ mt: 2 }}
+              >
+                הוסף תרגיל
+              </Button>
+              <Button
                 startIcon={<RemoveIcon />}
                 onClick={() => removeLesson(index)}
                 sx={{ mt: 2 }}
@@ -433,6 +454,45 @@ const EditCoursePage = () => {
           >
             הוסף שיעור
           </ActionButton>
+
+          {(course?.faq ?? []).map((faqItem, index) => (
+            <Box key={index} sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, boxShadow: 1 }}>
+              <TextField
+                fullWidth
+                label={`שאלה ${index + 1}`}
+                variant="outlined"
+                value={faqItem.question}
+                onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                label={`תשובה ${index + 1}`}
+                variant="outlined"
+                value={faqItem.answer}
+                onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
+                margin="normal"
+              />
+              <Button
+                startIcon={<RemoveIcon />}
+                onClick={() => removeFaq(index)}
+                sx={{ mt: 2 }}
+                color="error"
+              >
+                הסר שאלה ותשובה
+              </Button>
+            </Box>
+          ))}
+          <ActionButton
+            startIcon={<AddIcon />}
+            onClick={addFaq}
+            sx={{ mt: 2 }}
+          >
+            הוסף שאלה ותשובה
+          </ActionButton>
+
           <ActionButton
             type="submit"
             sx={{ mt: 2 }}

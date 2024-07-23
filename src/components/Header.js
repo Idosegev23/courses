@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
@@ -7,131 +7,110 @@ import Swal from 'sweetalert2';
 import { usePopup } from '../PopupContext';
 
 const HeaderContainer = styled.header`
-  background-color: #ffffff;
-  padding: 2rem 1rem;
-  text-align: center;
+  background-color: #8b81a8; /* Faded purple */
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   border-bottom: 1px solid #f2d1b3;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 10;
 `;
 
-const LogoImage = styled.img`
-  width: 250px;
-  height: auto;
-  display: block;
-  margin: 0 auto;
+const LogoContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-self: start;
 `;
 
-const ButtonContainer = styled.div`
+const LogoImage = styled.img`
+  width: 125px;
+  height: auto;
+`;
+
+const NavContainer = styled.nav`
   display: flex;
-  justify-content: center;
+  gap: 1rem;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 2rem;
-  margin-top: 1rem;
+  justify-content: center;
+`;
+
+const UserContainer = styled.div`
+  justify-self: end;
 `;
 
 const StyledButton = styled(Link)`
   background: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
-  display: inline-block;
+  padding: 0.75rem 1.5rem; /* Increased button size */
+  border-radius: 0.5rem;
   font-family: 'Heebo', sans-serif;
-  color: #62238C;
+  color: #ffffff; /* White color for better contrast */
   text-decoration: none;
   font-weight: bold;
-  font-size: 1rem;
-  border: 2px solid #62238C;
+  font-size: 1rem; /* Increased font size */
+  border: 2px solid #ffffff; /* White border for better contrast */
   transition: all 0.3s ease-in-out;
   position: relative;
   cursor: pointer;
 
   &:hover {
-    color: #6DBFF2;
-    border: 2px solid #6DBFF2;
+    color: #8b81a8; /* Match the background color */
+    background-color: #ffffff; /* White background on hover */
+    border: 2px solid #8b81a8; /* Match the background color */
   }
 
   &::before,
   &::after {
     content: "";
-    width: 16px;
-    height: 16px;
+    width: 8px;
+    height: 8px;
     border-style: solid;
     border-width: 2px 0 0 2px;
-    border-color: #62238C;
+    border-color: #ffffff;
     position: absolute;
-    top: -6px;
-    left: -6px;
+    top: -4px;
+    left: -4px;
     transition: all 0.3s ease-in-out;
   }
 
   &::after {
     border-width: 0 2px 2px 0;
     top: auto;
-    bottom: -6px;
+    bottom: -4px;
     left: auto;
-    right: -6px;
+    right: -4px;
   }
 
   &:hover::before,
   &:hover::after {
-    width: calc(100% + 12px);
-    height: calc(100% + 12px);
-    border-color: #6DBFF2;
-    transform: rotateY(180deg);
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    border-color: #8b81a8; /* Match the background color */
   }
 `;
 
-const StyledSignOutButton = styled.button`
-background: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
-  display: inline-block;
+const StyledSignOutButton = styled(StyledButton).attrs({ as: 'button' })``;
+
+const UserStatus = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: 'Heebo', sans-serif;
-  color: #62238C;
-  text-decoration: none;
+  font-size: 1.3rem;
+  color: #ffffff;
+  margin-left: 1rem; /* Add some space between logo and status */
+`;
+
+const StatusDot = styled.div`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4CAF50;
+`;
+
+const Greeting = styled.span`
   font-weight: bold;
-  font-size: 1rem;
-  border: 2px solid #62238C;
-  transition: all 0.3s ease-in-out;
-  position: relative;
-  cursor: pointer;
-
-  &:hover {
-    color: #6DBFF2;
-    border: 2px solid #6DBFF2;
-  }
-
-  &::before,
-  &::after {
-    content: "";
-    width: 16px;
-    height: 16px;
-    border-style: solid;
-    border-width: 2px 0 0 2px;
-    border-color: #62238C;
-    position: absolute;
-    top: -6px;
-    left: -6px;
-    transition: all 0.3s ease-in-out;
-  }
-
-  &::after {
-    border-width: 0 2px 2px 0;
-    top: auto;
-    bottom: -6px;
-    left: auto;
-    right: -6px;
-  }
-
-  &:hover::before,
-  &:hover::after {
-    width: calc(100% + 12px);
-    height: calc(100% + 12px);
-    border-color: #6DBFF2;
-    transform: rotateY(180deg);
-  }
 `;
 
 const Header = () => {
@@ -163,10 +142,25 @@ const Header = () => {
 
   const isAdmin = user && user.email === 'triroars@gmail.com';
 
+  const getFirstName = (user) => {
+    if (user.user_metadata && user.user_metadata.full_name) {
+      return user.user_metadata.full_name.split(' ')[0];
+    }
+    return 'אורח'; // Default to 'Guest' in Hebrew if no name is available
+  };
+
   return (
     <HeaderContainer>
-      <LogoImage src={newLogo} alt="TriRoars Logo" />
-      <ButtonContainer>
+      <LogoContainer>
+        <LogoImage src={newLogo} alt="TriRoars Logo" />
+        {user && (
+          <UserStatus>
+            <StatusDot />
+            <Greeting>שלום, {getFirstName(user)}</Greeting>
+          </UserStatus>
+        )}
+      </LogoContainer>
+      <NavContainer>
         <StyledButton to="/">דף הבית</StyledButton>
         {user ? (
           <>
@@ -182,7 +176,8 @@ const Header = () => {
             <StyledButton as="button" onClick={openRegisterPopup}>הרשמה</StyledButton>
           </>
         )}
-      </ButtonContainer>
+      </NavContainer>
+      <UserContainer />
     </HeaderContainer>
   );
 };

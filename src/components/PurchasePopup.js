@@ -16,11 +16,26 @@ const Overlay = styled.div`
   z-index: 1000;
 `;
 
+const CloseButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #62238C;
+  &:hover {
+    color: #4a1b6d;
+  }
+`;
+
 const Container = styled.div`
-  width: 350px;
-  height: auto;
+  position: relative;
+  width: 300px;
+  height: 600px;
   border-radius: 20px;
-  padding: 40px;
+  padding: 30px;
   background: #ecf0f3;
   box-shadow: 14px 14px 20px #cbced1, -14px -14px 20px white;
   display: flex;
@@ -33,26 +48,27 @@ const BrandLogo = styled.div`
   height: 150px;
   width: 150px;
   background: url("https://courses.triroars.co.il/static/media/NewLogo_BLANK.331a9671220d7891575e.png");
-  background-size: cover;
-  margin: auto;
-  border-radius: 50%;
-  box-shadow: 7px 7px 10px #cbced1, -7px -7px 10px white;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 auto 10px;
 `;
-
 const BrandTitle = styled.div`
-  margin-top: 10px;
+  margin: 10px 0 20px;
   font-weight: 900;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   color: #62238C;
   letter-spacing: 1px;
 `;
 
 const Inputs = styled.div`
   text-align: right;
-  margin-top: 30px;
   width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 `;
-
 const Label = styled.label`
   margin-bottom: 4px;
   display: block;
@@ -61,33 +77,49 @@ const Label = styled.label`
 
 const Input = styled.input`
   background: #ecf0f3;
-  padding: 10px;
-  padding-left: 20px;
-  height: 50px;
+  padding: 5px 10px;
+  height: 40px;
   font-size: 14px;
   border-radius: 50px;
   box-shadow: inset 6px 6px 6px #cbced1, inset -6px -6px 6px white;
-  margin-bottom: 12px;
-  width: 100%;
+  margin-bottom: 15px;
+  width: 90%;
 `;
+
 
 const Button = styled.button`
-  color: white;
-  margin-top: 20px;
-  background: #62238C;
-  height: 40px;
-  border-radius: 20px;
+  display: inline-block;
+  margin: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(45deg, #000080, #62238C, #9D4EDD, #62238C, #000080);
+  background-size: 300% 300%;
+  transition: all 0.3s;
+  border: none;
+  box-shadow: 0 3px 5px 2px rgba(0, 0, 0, .3);
   cursor: pointer;
   font-weight: 900;
-  box-shadow: 6px 6px 6px #cbced1, -6px -6px 6px white;
-  transition: 0.5s;
-  width: 100%;
-  
+  width: 90%;
+
   &:hover {
-    box-shadow: none;
+    animation: wave 3s ease infinite;
+    box-shadow: 0 0 15px rgba(157, 78, 221, 0.6);
+  }
+
+  @keyframes wave {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
 `;
-
 const ErrorMessage = styled.div`
   color: red;
   margin-top: 10px;
@@ -446,6 +478,7 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
   return (
     <Overlay>
       <Container ref={containerRef}>
+      <CloseButton onClick={onClose}>✕</CloseButton>
         <BrandLogo />
         <BrandTitle>רכישה</BrandTitle>
         <Inputs>

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion } from 'framer-motion';
-import { Typography, Container, Grid, Button, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Typography, Container, Grid, CircularProgress, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 import Swal from 'sweetalert2';
 import { FaCalendarAlt } from 'react-icons/fa';
+import StyledButton from '../components/StyledButton'; // ייבוא הכפתור
 
 const theme = createTheme({
   palette: {
@@ -59,33 +59,11 @@ const PageContainer = styled(Container)`
   }
 `;
 
-const StyledButton = styled(Button)`
-  margin: 0.5rem;
-  padding: 1rem 2rem;
-  border-radius: 1rem;
-  text-decoration: none;
-  color: #fff !important;
-  background: linear-gradient(45deg, #6DBFF2 30%, #62238C 90%);
-  transition: all 0.3s;
-  border: none;
-  box-shadow: 0 3px 5px 2px rgba(0, 0, 0, .3);
+const ButtonContainer = styled.div`
   display: flex;
-  align-items: center;
   justify-content: center;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 10px 4px rgba(0, 0, 0, .3);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
-  }
-
-  svg {
-    margin-left: 8px;
-  }
+  flex-wrap: wrap;
+  margin-top: auto;
 `;
 
 const CardContainer = styled(motion.div)`
@@ -167,6 +145,13 @@ const CourseGrid = styled(Grid)`
 const CourseCard = styled(Grid)`
   display: flex;
   align-items: stretch;
+`;
+
+const SpinnerContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 `;
 
 const PersonalArea = () => {
@@ -420,15 +405,27 @@ const PersonalArea = () => {
     );
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>Please log in to access this page.</div>;
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <GlobalStyle />
+        <SpinnerContainer>
+          <CircularProgress color="primary" />
+        </SpinnerContainer>
+      </ThemeProvider>
+    );
+  }
+
+  if (!user) {
+    return <div>Please log in to access this page.</div>;
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageContainer>
-        <Typography variant="h2" component="h1" gutterBottom color="primary" align="center" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem', md: '3rem' } }}>
-          שלום, {user.email}
+        <Typography variant="h2" component="h1" gutterBottom color="primary" align="center" sx={{ fontSize: { xs: '0.5rem', sm: '1.5rem', md: '2rem' } }}>
+          שלום, {user.username}!
         </Typography>
 
         {discount > 0 && (

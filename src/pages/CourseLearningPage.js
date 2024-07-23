@@ -30,7 +30,7 @@ const PageContainer = styled.div`
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0;
     width: 100%;
     height: 100%;
     background: url(${newLogo}) no-repeat center;
@@ -45,11 +45,37 @@ const PageTitle = styled.h1`
   font-size: 3rem;
   font-weight: bold;
   color: #F25C78;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   text-align: center;
   position: relative;
   z-index: 1;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+`;
+
+const CourseProgress = styled.div`
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: #3498db;
+  font-weight: bold;
+  text-align: center;
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 20px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div`
+  width: ${props => props.progress}%;
+  height: 100%;
+  background-color: #3498db;
+  transition: width 0.5s ease-in-out;
 `;
 
 const PageContent = styled.div`
@@ -114,7 +140,7 @@ const LessonNavigation = styled.div`
 
 const FAQSection = styled.div`
   margin-top: 2rem;
-  text-align: left;
+  text-align: right;
   max-width: 800px;
   width: 100%;
 
@@ -145,7 +171,7 @@ const FAQSection = styled.div`
 
 const ExerciseSection = styled.div`
   margin-top: 2rem;
-  text-align: left;
+  text-align: right;
   max-width: 800px;
   width: 100%;
 
@@ -171,7 +197,7 @@ const ExerciseSection = styled.div`
 
 const SummarySection = styled.div`
   margin-top: 2rem;
-  text-align: left;
+  text-align: right;
   max-width: 800px;
   width: 100%;
 
@@ -196,7 +222,25 @@ const CheckboxLabel = styled.label`
   cursor: pointer;
 
   input {
-    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+  }
+`;
+
+const CompletionButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #F25C78;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: #e84468;
+    transform: translateY(-2px);
   }
 `;
 
@@ -212,31 +256,41 @@ const CourseLearningPage = () => {
 
   useEffect(() => {
     const fetchCourseContent = async () => {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('lessons, faq, total_lessons')
-        .eq('id', courseId)
-        .single();
-      if (error) {
-        console.error('Error fetching course content:', error);
-      } else {
-        setLessons(data.lessons || []);
-        setFaqs(data.faq || []);
-        setTotalLessons(data.total_lessons || 0);
-        
-        // Set current lesson based on URL parameter
-        const urlParams = new URLSearchParams(location.search);
-        const lessonParam = urlParams.get('lesson');
-        if (lessonParam) {
-          const lessonIndex = parseInt(lessonParam) - 1;
-          if (lessonIndex >= 0 && lessonIndex < data.lessons.length) {
-            setCurrentLessonIndex(lessonIndex);
-          }
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('lessons, faq, total_lessons')
+          .eq('id', courseId)
+          .single();
 
-        // Check if this is the last lesson
-        if (parseInt(lessonParam) === data.total_lessons) {
-          showCourseCompletionCelebration();
+        const { data: enrollmentData, error: enrollmentError } = await supabase
+          .from('enrollments')
+          .select('current_lesson')
+          .eq('user_id', user.id)
+          .eq('course_id', courseId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching course content:', error);
+        } else if (enrollmentError) {
+          console.error('Error fetching enrollment data:', enrollmentError);
+        } else {
+          setLessons(data.lessons || []);
+          setFaqs(data.faq || []);
+          setTotalLessons(data.total_lessons || 0);
+          
+          const urlParams = new URLSearchParams(location.search);
+          const lessonParam = urlParams.get('lesson');
+          if (lessonParam) {
+            const lessonIndex = parseInt(lessonParam) - 1;
+            if (lessonIndex >= 0 && lessonIndex < data.lessons.length) {
+              setCurrentLessonIndex(lessonIndex);
+              updateProgress(lessonIndex);
+            }
+          } else if (enrollmentData && enrollmentData.current_lesson) {
+            setCurrentLessonIndex(enrollmentData.current_lesson - 1);
+          }
         }
       }
     };
@@ -258,6 +312,11 @@ const CourseLearningPage = () => {
     });
   };
 
+  const handleCourseCompletion = async () => {
+    await updateProgress(totalLessons - 1);
+    showCourseCompletionCelebration();
+  };
+
   const handleNextLesson = async () => {
     if (currentLessonIndex < lessons.length - 1) {
       const currentLesson = lessons[currentLessonIndex];
@@ -276,10 +335,6 @@ const CourseLearningPage = () => {
             await updateProgress(nextLessonIndex);
             navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
             Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
-
-            if (nextLessonIndex === lessons.length - 1) {
-              showCourseCompletionCelebration();
-            }
           }
         });
       } else {
@@ -288,18 +343,16 @@ const CourseLearningPage = () => {
         await updateProgress(nextLessonIndex);
         navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
         Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
-
-        if (nextLessonIndex === lessons.length - 1) {
-          showCourseCompletionCelebration();
-        }
       }
     }
   };
 
-  const handlePrevLesson = () => {
+  const handlePrevLesson = async () => {
     if (currentLessonIndex > 0) {
-      setCurrentLessonIndex(currentLessonIndex - 1);
-      navigate(`/course-learning/${courseId}?lesson=${currentLessonIndex}`);
+      const prevLessonIndex = currentLessonIndex - 1;
+      setCurrentLessonIndex(prevLessonIndex);
+      await updateProgress(prevLessonIndex);
+      navigate(`/course-learning/${courseId}?lesson=${prevLessonIndex + 1}`);
     }
   };
 
@@ -307,9 +360,10 @@ const CourseLearningPage = () => {
     console.log("Updating progress for lesson index:", lessonIndex + 1);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      const newCurrentLesson = lessonIndex + 1;
       const { error } = await supabase
         .from('enrollments')
-        .update({ current_lesson: lessonIndex + 1 })
+        .update({ current_lesson: newCurrentLesson })
         .eq('user_id', user.id)
         .eq('course_id', courseId);
       if (error) {
@@ -334,15 +388,27 @@ const CourseLearningPage = () => {
     }));
   };
 
-  if (lessons.length === 0) return <div>Loading...</div>;
+  if (lessons.length === 0) return <div>טוען...</div>;
 
   const currentLesson = lessons[currentLessonIndex];
+  const progressPercentage = ((currentLessonIndex + 1) / totalLessons) * 100;
 
   return (
     <>
       <GlobalStyle />
       <PageContainer>
         <PageTitle>{currentLesson.title}</PageTitle>
+        <CourseProgress>
+          שיעור {currentLessonIndex + 1} מתוך {totalLessons}
+          <ProgressBar>
+            <ProgressFill progress={progressPercentage} />
+          </ProgressBar>
+          {currentLessonIndex + 1 === totalLessons ? (
+            'הגעת לשיעור האחרון בקורס.'
+          ) : (
+            `נותרו ${totalLessons - (currentLessonIndex + 1)} שיעורים להשלמת הקורס`
+          )}
+        </CourseProgress>
         <PageContent>
           <VideoContainer>
             <iframe
@@ -358,9 +424,15 @@ const CourseLearningPage = () => {
           <button onClick={handlePrevLesson} disabled={currentLessonIndex === 0}>
             שיעור קודם
           </button>
-          <button onClick={handleNextLesson} disabled={currentLessonIndex === lessons.length - 1}>
-            שיעור הבא
-          </button>
+          {currentLessonIndex === lessons.length - 1 ? (
+            <CompletionButton onClick={handleCourseCompletion}>
+              סיום קורס
+            </CompletionButton>
+          ) : (
+            <button onClick={handleNextLesson}>
+              שיעור הבא
+            </button>
+          )}
         </LessonNavigation>
 
         {currentLesson.summary && (
@@ -424,3 +496,4 @@ const CourseLearningPage = () => {
 };
 
 export default CourseLearningPage;
+
