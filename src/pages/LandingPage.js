@@ -64,9 +64,42 @@ const ButtonContainer = styled.div`
   margin-top: auto;
 `;
 
+const CookieConsentBanner = styled(motion.div)`
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  background-color: #62238C;
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  z-index: 1000;
+`;
+
+const AcceptButton = styled.button`
+  background-color: #ffffff;
+  color: #62238C;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background-color 0.3s, color 0.3s;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+`;
+
 const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [userEnrollments, setUserEnrollments] = useState([]);
+  const [cookiesAccepted, setCookiesAccepted] = useState(localStorage.getItem('cookiesAccepted'));
 
   useEffect(() => {
     const fetchCoursesAndEnrollments = async () => {
@@ -103,6 +136,11 @@ const LandingPage = () => {
 
     fetchCoursesAndEnrollments();
   }, []);
+
+  const handleAcceptCookies = () => {
+    localStorage.setItem('cookiesAccepted', 'true');
+    setCookiesAccepted('true');
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -179,6 +217,25 @@ const LandingPage = () => {
           </Typography>
         )}
       </PageContainer>
+
+      <AnimatePresence>
+        {!cookiesAccepted && (
+          <CookieConsentBanner
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Typography variant="body1" sx={{ color: '#ffffff', marginBottom: 2 }}>
+              האתר שלנו משתמש בעוגיות על מנת לשפר את חוויית הגלישה שלך. 
+              <Link to="/privacy-policy" style={{ color: '#ffffff', textDecoration: 'underline', marginRight: '5px' }}>
+                קרא עוד
+              </Link>
+            </Typography>
+            <AcceptButton onClick={handleAcceptCookies}>אני מסכים</AcceptButton>
+          </CookieConsentBanner>
+        )}
+      </AnimatePresence>
     </ThemeProvider>
   );
 };

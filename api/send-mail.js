@@ -1,33 +1,34 @@
-// api/send-mail.js
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
-const sgMail = require('@sendgrid/mail');
-
-sgMail.setApiKey(process.env.REACT_APP_SENDGRID_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: process.env.EMAIL_SECURE === 'true',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
   const { name, email, message } = req.body;
 
-  const msg = {
-    to: 'triroars@gmail.com', // כתובת האימייל שאליה יישלחו ההודעות
-    from: 'triroars@gmail.com', // כתובת האימייל המאומתת שלך ב-SendGrid
-    subject: 'New Contact Form Submission',
-    html: `
-      <h1>New Contact Form Submission</h1>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Message:</strong> ${message}</p>
-    `,
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: process.env.EMAIL_TO,
+    subject: 'הודעה חדשה מטופס יצירת קשר',
+    text: `שם: ${name}\nאימייל: ${email}\nהודעה: ${message}`,
+    html: `<p><strong>שם:</strong> ${name}</p>
+           <p><strong>אימייל:</strong> ${email}</p>
+           <p><strong>הודעה:</strong> ${message}</p>`
   };
 
   try {
-    await sgMail.send(msg);
-    res.status(200).json({ message: 'Email sent successfully' });
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'המייל נשלח בהצלחה' });
   } catch (error) {
-    console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Failed to send email' });
+    console.error('שגיאה בשליחת המייל:', error);
+    res.status(500).json({ message: 'אירעה שגיאה בשליחת המייל' });
   }
 };

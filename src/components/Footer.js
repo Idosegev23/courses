@@ -120,6 +120,11 @@ const SubmitButton = styled.button`
   &:hover {
     background-color: #A33A6A;
   }
+
+  &:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
 `;
 
 const Footer = () => {
@@ -139,31 +144,31 @@ const Footer = () => {
     setLoading(true);
     setSuccess(false);
     setError(null);
-
+  
     try {
-      const response = await fetch('/api/sendMail', {
+      const response = await fetch('http://localhost:3001/api/send-mail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
-
+  
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error('שליחת המייל נכשלה');
       }
-
+  
       setSuccess(true);
       setFormData({ name: '', email: '', message: '' });
       setTimeout(() => setShowPopup(false), 3000);
     } catch (error) {
-      setError('יש לנו בעיה לשלוח את ההודעה, אנא נסה שוב מאוחר יותר');
+      setError('אירעה שגיאה בשליחת ההודעה, אנא נסה שוב מאוחר יותר');
     } finally {
       setLoading(false);
     }
   };
-
-  return (
+  
+    return (
     <>
       <FooterContainer>
         <p>&copy; 2024 TriRoars - נבנה בעזרת AI</p>
@@ -194,9 +199,29 @@ const Footer = () => {
             <CloseButton onClick={() => setShowPopup(false)}>&times;</CloseButton>
             <h2>צור קשר</h2>
             <ContactForm onSubmit={handleSubmit}>
-              <Input type="text" name="name" placeholder="שם" value={formData.name} onChange={handleChange} required />
-              <Input type="email" name="email" placeholder="אימייל" value={formData.email} onChange={handleChange} required />
-              <TextArea name="message" placeholder="הודעה" value={formData.message} onChange={handleChange} required></TextArea>
+              <Input 
+                type="text" 
+                name="name" 
+                placeholder="שם" 
+                value={formData.name} 
+                onChange={handleChange} 
+                required 
+              />
+              <Input 
+                type="email" 
+                name="email" 
+                placeholder="אימייל" 
+                value={formData.email} 
+                onChange={handleChange} 
+                required 
+              />
+              <TextArea 
+                name="message" 
+                placeholder="הודעה" 
+                value={formData.message} 
+                onChange={handleChange} 
+                required
+              ></TextArea>
               <SubmitButton type="submit" disabled={loading}>
                 {loading ? 'שולח...' : 'שלח'}
               </SubmitButton>

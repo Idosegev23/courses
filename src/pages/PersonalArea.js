@@ -304,22 +304,22 @@ const PersonalArea = () => {
       confirmButtonText: 'כן, קבע פגישה!',
       cancelButtonText: 'ביטול'
     });
-
+  
     if (result.isConfirmed) {
       try {
         const { error } = await supabase
           .from('meetings')
           .insert({ user_id: user.id });
-
+  
         if (error) {
           console.error('Error requesting meeting:', error);
           alert('אירעה שגיאה בבקשה לפגישה.');
           return;
         }
-
+  
         setMeetingUsed(true);
         Swal.fire('הבקשה נשלחה!', 'הבקשה לפגישה נשלחה בהצלחה!', 'success').then(() => {
-          window.location.href = 'https://calendly.com/your-calendly-link';
+          window.open('https://calendly.com/triroars/meeting', '_blank');
         });
       } catch (error) {
         console.error('Unexpected error:', error);
@@ -327,6 +327,7 @@ const PersonalArea = () => {
       }
     }
   };
+  
 
   const handleCourseEnter = async (courseId, currentLesson, totalLessons) => {
     try {

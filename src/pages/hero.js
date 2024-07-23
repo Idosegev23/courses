@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 const HeroContainer = styled.div`
   position: relative;
@@ -10,6 +10,13 @@ const HeroContainer = styled.div`
   justify-content: center;
   align-items: center;
   background-color: #ffffff;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    height: auto;
+    min-height: 100vh;
+    padding: 2rem 0;
+  }
 `;
 
 const Canvas = styled.canvas`
@@ -24,6 +31,12 @@ const Content = styled.div`
   z-index: 1;
   text-align: center;
   padding: 0 20px;
+  max-width: 800px;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 0 1rem;
+  }
 `;
 
 const Title = styled.h1`
@@ -31,6 +44,10 @@ const Title = styled.h1`
   color: #62238C;
   margin-bottom: 1rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
 `;
 
 const Subtitle = styled.h2`
@@ -39,22 +56,48 @@ const Subtitle = styled.h2`
   height: 2.5rem;
   margin-bottom: 2rem;
   min-height: 2.5rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    height: 4rem;
+    min-height: 4rem;
+  }
+`;
+
+const wave = keyframes`
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 `;
 
 const CTA = styled.button`
-  padding: 1.2rem 2.4rem;
-  font-size: 1.4rem;
-  background-color: #62238C;
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: none;
   color: white;
+  background: linear-gradient(45deg, #000080, #62238C, #9D4EDD, #62238C, #000080);
+  background-size: 300% 300%;
   border: none;
-  border-radius: 50px;
+  border-radius: 30px;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #4a1b6d;
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    animation: ${wave} 3s ease infinite;
+    box-shadow: 0 0 15px rgba(157, 78, 221, 0.6);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+    padding: 10px 20px;
   }
 `;
 
@@ -226,10 +269,10 @@ const Hero = () => {
     };
   }, []);
 
-  const scrollToContent = () => {
-    const contentElement = document.getElementById('course-content');
-    if (contentElement) {
-      contentElement.scrollIntoView({ behavior: 'smooth' });
+  const scrollToCourses = () => {
+    const coursesElement = document.getElementById('course-content');
+    if (coursesElement) {
+      coursesElement.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -239,7 +282,7 @@ const Hero = () => {
       <Content>
         <Title>ברוכים הבאים לעולם הלמידה המתקדם</Title>
         <Subtitle>{typingText}</Subtitle>
-        <CTA onClick={scrollToContent}>גלו את הקורסים שלנו</CTA>
+        <CTA onClick={scrollToCourses}>גלו את הקורסים שלנו</CTA>
       </Content>
     </HeroContainer>
   );

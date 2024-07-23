@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled, { css, keyframes } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
@@ -18,7 +18,7 @@ const slideIn = keyframes`
   to { transform: translateX(0); }
 `;
 
-// סגנונות משותפים
+// סגנונות משותפים לכפתורים
 const buttonStyles = css`
   background: none;
   padding: 0.75rem 1.5rem;
@@ -34,6 +34,7 @@ const buttonStyles = css`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
 
   &:hover {
     color: #8b81a8;
@@ -41,9 +42,33 @@ const buttonStyles = css`
     border: 2px solid #8b81a8;
   }
 
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: center;
+  &::before,
+  &::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-style: solid;
+    border-width: 2px 0 0 2px;
+    border-color: #ffffff;
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    transition: all 0.3s ease-in-out;
+  }
+
+  &::after {
+    border-width: 0 2px 2px 0;
+    top: auto;
+    bottom: -4px;
+    left: auto;
+    right: -4px;
+  }
+
+  &:hover::before,
+  &:hover::after {
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    border-color: #8b81a8;
   }
 `;
 
@@ -70,7 +95,7 @@ const LogoImage = styled.img`
   height: auto;
 
   @media (max-width: 768px) {
-    width: 100px; // לוגו קטן יותר למסכים ניידים
+    width: 100px;
   }
 `;
 
@@ -78,6 +103,8 @@ const NavContainer = styled.nav`
   display: flex;
   gap: 1rem;
   align-items: center;
+  justify-content: center;
+  flex-grow: 1;
 
   @media (max-width: 768px) {
     display: none;
@@ -154,47 +181,11 @@ const Greeting = styled.span`
   font-weight: bold;
 `;
 
-const UserMenu = styled.div`
-  position: relative;
-`;
-
-const UserMenuButton = styled.button`
-  ${buttonStyles}
-`;
-
-const UserMenuDropdown = styled.div`
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: #ffffff;
-  border: 1px solid #8b81a8;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  display: ${props => props.isOpen ? 'flex' : 'none'};
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 150px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const UserMenuItem = styled(Link)`
-  ${buttonStyles}
-  color: #8b81a8;
-  border: none;
-  justify-content: flex-start;
-
-  &:hover {
-    background-color: #f0f0f0;
-  }
-`;
-
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { openLoginPopup, openRegisterPopup } = usePopup();
-  const userMenuRef = useRef(null);
 
   const handleSignOut = async () => {
     try {
@@ -231,52 +222,29 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const toggleUserMenu = () => {
-    setIsUserMenuOpen(!isUserMenuOpen);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setIsUserMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const renderNavItems = () => (
+  const renderNavItems = (isMobile = false) => (
     <>
       <StyledButton to="/">
         <Home size={18} />
         דף הבית
       </StyledButton>
       {user ? (
-        <UserMenu ref={userMenuRef}>
-          <UserMenuButton onClick={toggleUserMenu}>
+        <>
+          <StyledButton to="/personal-area">
             <User size={18} />
-            {getFirstName(user)}
-          </UserMenuButton>
-          <UserMenuDropdown isOpen={isUserMenuOpen}>
-            <UserMenuItem to="/personal-area">
+            איזור אישי
+          </StyledButton>
+          {isAdmin && (
+            <StyledButton to="/admin-dashboard">
               <Settings size={18} />
-              איזור אישי
-            </UserMenuItem>
-            {isAdmin && (
-              <UserMenuItem to="/admin-dashboard">
-                <Settings size={18} />
-                אזור אדמין
-              </UserMenuItem>
-            )}
-            <UserMenuItem as="button" onClick={handleSignOut}>
-              <LogOut size={18} />
-              התנתקות
-            </UserMenuItem>
-          </UserMenuDropdown>
-        </UserMenu>
+              אזור אדמין
+            </StyledButton>
+          )}
+          <StyledSignOutButton onClick={handleSignOut}>
+            <LogOut size={18} />
+            התנתקות
+          </StyledSignOutButton>
+        </>
       ) : (
         <>
           <StyledButton as="button" onClick={openLoginPopup}>
@@ -314,7 +282,7 @@ const Header = () => {
           <CloseButton onClick={toggleMobileMenu} aria-label="סגור תפריט">
             <X />
           </CloseButton>
-          {renderNavItems()}
+          {renderNavItems(true)}
         </MobileMenu>
       )}
     </HeaderContainer>
