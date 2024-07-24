@@ -5,7 +5,6 @@ import Swal from 'sweetalert2';
 import { usePopup } from '../PopupContext';
 import { FaGoogle } from 'react-icons/fa';
 
-
 const Overlay = styled.div`
   position: fixed;
   top: 0;
@@ -73,6 +72,7 @@ const Inputs = styled.div`
   flex-direction: column;
   overflow-y: auto;
 `;
+
 const Label = styled.label`
   margin-bottom: 4px;
   display: block;
@@ -140,10 +140,16 @@ const GoogleButton = styled(BaseButton)`
   }
 `;
 
-
 const ErrorMessage = styled.div`
   color: red;
   margin-top: 10px;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 `;
 
 const RegisterPopup = () => {
@@ -155,7 +161,7 @@ const RegisterPopup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const containerRef = useRef(null);
-  const { showRegisterPopup, closeAllPopups, openLoginPopup } = usePopup();
+  const { showRegisterPopup, closeAllPopups, openLoginPopup, isFromCourseDetails, navigateBack } = usePopup();
 
   const handleNextStep = () => {
     if (!firstName || !lastName || !email) {
@@ -206,6 +212,7 @@ const RegisterPopup = () => {
             openEmailClient(email);
           }
           closeAllPopups();
+          navigateBack();
         });
       } else {
         setError('הרשמה נכשלה. אנא נסה שנית.');
@@ -213,6 +220,18 @@ const RegisterPopup = () => {
     } catch (error) {
       console.error('Registration error:', error);
       setError(error.message || 'שגיאה ברישום, נסה שוב');
+    }
+  };
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError('שגיאה בהתחברות עם גוגל');
     }
   };
 
@@ -236,19 +255,6 @@ const RegisterPopup = () => {
     }
 
     window.open(url, '_blank');
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Google login error:', error);
-      setError('שגיאה בהתחברות עם גוגל');
-    }
   };
 
   useEffect(() => {
@@ -275,6 +281,9 @@ const RegisterPopup = () => {
       <CloseButton onClick={closeAllPopups}>✕</CloseButton>
         <BrandLogo />
         <BrandTitle>הרשמה</BrandTitle>
+        {isFromCourseDetails && (
+          <div style={{marginBottom: '10px', color: '#62238C'}}>יש להרשם על מנת להשלים את הרכישה</div>
+        )}
         <Inputs>
           {step === 1 && (
             <>
@@ -299,12 +308,14 @@ const RegisterPopup = () => {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
               />
-              <Button onClick={handleNextStep}>הבא</Button>
-              <GoogleButton onClick={handleGoogleLogin}>
-        <FaGoogle />
-        הירשם עם גוגל
-      </GoogleButton>
-              <Button onClick={openLoginPopup}>כבר רשומים אצלנו? התחברו כאן</Button>
+              <ButtonContainer>
+                <Button onClick={handleNextStep}>הבא</Button>
+                <GoogleButton onClick={handleGoogleLogin}>
+                  <FaGoogle />
+                  הירשם עם גוגל
+                </GoogleButton>
+                <Button onClick={openLoginPopup}>כבר רשומים אצלנו? התחברו כאן</Button>
+              </ButtonContainer>
             </>
           )}
           {step === 2 && (
@@ -323,8 +334,10 @@ const RegisterPopup = () => {
                 value={confirmPassword} 
                 onChange={(e) => setConfirmPassword(e.target.value)} 
               />
-              <Button onClick={handlePreviousStep}>הקודם</Button>
-              <Button onClick={handleRegister}>הירשם</Button>
+              <ButtonContainer>
+                <Button onClick={handleRegister}>הירשם</Button>
+                <Button onClick={handlePreviousStep}>הקודם</Button>
+              </ButtonContainer>
             </>
           )}
           {error && <ErrorMessage>{error}</ErrorMessage>}

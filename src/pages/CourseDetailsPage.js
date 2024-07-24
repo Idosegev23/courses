@@ -7,7 +7,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import newLogo from '../components/NewLogo_BLANK-outer.png';
 import { useAuth } from '../hooks/useAuth';
 import { usePopup } from '../PopupContext';
-import StyledButton from '../components/StyledButton'; // ייבוא הכפתור
+import StyledButton from '../components/StyledButton';
 
 const theme = createTheme({
   palette: {
@@ -127,14 +127,13 @@ const LoadingSpinner = styled(CircularProgress)`
   color: #62238C;
 `;
 
-// כפתור רכישה מותאם לדף הנוכחי
 const LargeStyledButton = styled(StyledButton)`
-  padding: 20px 40px; /* Increased padding */
-  font-size: 20px; /* Increased font size */
+  padding: 20px 40px;
+  font-size: 20px;
 
   @media (max-width: 768px) {
-    padding: 18px 36px; /* Adjusted padding for smaller screens */
-    font-size: 18px; /* Adjusted font size for smaller screens */
+    padding: 18px 36px;
+    font-size: 18px;
   }
 `;
 
@@ -145,7 +144,7 @@ const CourseDetailsPage = () => {
   const { user } = useAuth();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const { openLoginPopup, openPurchasePopup } = usePopup();
+  const { openLoginPopup, openRegisterPopup, openPurchasePopup } = usePopup();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -173,8 +172,8 @@ const CourseDetailsPage = () => {
       console.log('User is logged in, opening purchase popup');
       openPurchasePopup(course);
     } else {
-      console.log('User is not logged in, opening login popup');
-      openLoginPopup();
+      console.log('User is not logged in, opening register popup');
+      openRegisterPopup(true);  // true indicates it's from course details
     }
   };
 

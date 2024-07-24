@@ -86,7 +86,6 @@ const Input = styled.input`
   width: 90%;
 `;
 
-
 const Button = styled.button`
   display: inline-block;
   margin: 0.5rem;
@@ -120,6 +119,7 @@ const Button = styled.button`
     }
   }
 `;
+
 const ErrorMessage = styled.div`
   color: red;
   margin-top: 10px;
@@ -130,6 +130,19 @@ const ErrorText = styled.p`
   font-size: 0.8rem;
   margin-top: -10px;
   margin-bottom: 10px;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+`;
+
+const LargePurchaseButton = styled(Button)`
+  font-size: 1.2em;
+  padding: 15px 30px;
+  margin-top: 20px;
 `;
 
 const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
@@ -396,7 +409,7 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
           phone: phone,
           add: true
         },
-        successUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=true&courseId=${course.id}`,
+        successUrl: `${process.env.REACT_APP_API_URL}/payment-success?courseId=${course.id}`,
         failureUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=false&courseId=${course.id}`,
         notifyUrl: `${process.env.REACT_APP_API_URL}/api/notify`,
         custom: "300700556"
@@ -480,7 +493,7 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
       <Container ref={containerRef}>
       <CloseButton onClick={onClose}>✕</CloseButton>
         <BrandLogo />
-        <BrandTitle>רכישה</BrandTitle>
+        <BrandTitle>כמה פרטים אחרונים להשלמת הרכישה</BrandTitle>
         <Inputs>
           {step === 1 && (
             <>
@@ -514,7 +527,9 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
               />
               {errors.email && <ErrorText>{errors.email}</ErrorText>}
               
-              <Button onClick={handleNextStep}>הבא</Button>
+              <ButtonContainer>
+                <Button onClick={handleNextStep}>הבא</Button>
+              </ButtonContainer>
             </>
           )}
           {step === 2 && (
@@ -539,8 +554,10 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
               />
               {errors.idNum && <ErrorText>{errors.idNum}</ErrorText>}
               
-              <Button onClick={handlePreviousStep}>הקודם</Button>
-              <Button onClick={handleNextStep}>הבא</Button>
+              <ButtonContainer>
+                <Button onClick={handleNextStep}>הבא</Button>
+                <Button onClick={handlePreviousStep}>הקודם</Button>
+              </ButtonContainer>
             </>
           )}
           {step === 3 && (
@@ -587,8 +604,10 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
                   {errors.companyId && <ErrorText>{errors.companyId}</ErrorText>}
                 </>
               )}
-              <Button onClick={handlePreviousStep}>הקודם</Button>
-              <Button onClick={handlePurchase}>רכוש עכשיו</Button>
+              <ButtonContainer>
+                <LargePurchaseButton onClick={handlePurchase}>רכוש עכשיו</LargePurchaseButton>
+                <Button onClick={handlePreviousStep}>הקודם</Button>
+              </ButtonContainer>
             </>
           )}
           {error && <ErrorMessage>{error}</ErrorMessage>}

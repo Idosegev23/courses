@@ -4,7 +4,6 @@ import { supabase } from '../supabaseClient';
 import { usePopup } from '../PopupContext'
 import { FaGoogle } from 'react-icons/fa';
 
-
 const Overlay = styled.div`
   position: fixed;
   top: 0;
@@ -72,6 +71,7 @@ const Inputs = styled.div`
   flex-direction: column;
   overflow-y: auto;
 `;
+
 const Label = styled.label`
   margin-bottom: 4px;
   display: block;
@@ -139,18 +139,17 @@ const GoogleButton = styled(BaseButton)`
   }
 `;
 
-
 const ErrorMessage = styled.div`
   color: red;
   margin-top: 10px;
 `;
 
-const LoginPopupNew = () => {
+const LoginPopup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const containerRef = useRef(null);
-    const { showLoginPopup, closeAllPopups, openRegisterPopup } = usePopup();
+    const { showLoginPopup, closeAllPopups, openRegisterPopup, navigateBack } = usePopup();
   
     const handleLogin = async (e) => {
       e.preventDefault();
@@ -164,7 +163,7 @@ const LoginPopupNew = () => {
   
         if (data.user) {
           closeAllPopups();
-          // You might want to add some success feedback here
+          navigateBack();
         } else {
           setError('התחברות נכשלה. אנא נסה שנית.');
         }
@@ -232,9 +231,9 @@ const LoginPopupNew = () => {
               <Button type="submit">התחבר</Button>
             </form>
             <GoogleButton onClick={handleGoogleLogin}>
-        <FaGoogle />  
-          התחבר עם Google
-      </GoogleButton>
+              <FaGoogle />  
+              התחבר עם Google
+            </GoogleButton>
             <Button onClick={openRegisterPopup}>לא רשומים? הירשמו כאן</Button>
             {error && <ErrorMessage>{error}</ErrorMessage>}
           </Inputs>
@@ -243,5 +242,4 @@ const LoginPopupNew = () => {
     );
   };
   
-  export default LoginPopupNew;
-  
+  export default LoginPopup;

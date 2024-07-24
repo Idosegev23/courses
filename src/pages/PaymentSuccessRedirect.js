@@ -1,46 +1,57 @@
-// src/pages/PaymentSuccessRedirect.js
-
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import confetti from 'canvas-confetti';
+import { useAuth } from '../hooks/useAuth'; // ייתכן שתצטרך להתאים את הנתיב
 
-const MessageContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #ffffff;
-  text-align: center;
-  padding: 2rem;
-`;
-
-const MessageTitle = styled.h1`
-  font-size: 2rem;
-  color: #F25C78;
-`;
-
-const MessageText = styled.p`
-  font-size: 1rem;
-  color: #333;
-`;
+const MySwal = withReactContent(Swal);
 
 const PaymentSuccessRedirect = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // כיוון מחדש לאזור האישי אחרי כמה שניות
-    setTimeout(() => {
-      navigate('/personal-area');
-    }, 3000);
-  }, [navigate]);
+    const courseId = new URLSearchParams(location.search).get('courseId');
+    
+    // הפעלת אנימציית הקונפטי
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
 
-  return (
-    <MessageContainer>
-      <MessageTitle>התשלום הושלם בהצלחה!</MessageTitle>
-      <MessageText>מעביר לאזור האישי שלך...</MessageText>
-    </MessageContainer>
-  );
+    let timerInterval;
+    MySwal.fire({
+      title: 'התשלום הושלם בהצלחה!',
+      html: 'תודה על רכישת הקורס. מעביר אותך לאזור האישי בעוד <b></b> שניות.',
+      timer: 5000,
+      timerProgressBar: true,
+      didOpen: () => {
+        Swal.showLoading();
+        const b = Swal.getHtmlContainer().querySelector('b');
+        timerInterval = setInterval(() => {
+          b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+        }, 100);
+      },
+      willClose: () => {
+        clearInterval(timerInterval);
+      }
+    }).then(() => {
+      if (user) {
+        navigate('/personal-area', { state: { newPurchase: true, courseId } });
+      } else {
+        navigate('/login', { state: { from: '/payment-success', courseId } });
+      }
+    });
+
+    return () => {
+      clearInterval(timerInterval);
+    };
+  }, [navigate, location, user]);
+
+  return null; // הקומפוננטה לא מרנדרת שום דבר, כי הכל מתבצע בפופאפ
 };
 
 export default PaymentSuccessRedirect;
