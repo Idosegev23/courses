@@ -45,72 +45,88 @@ transporter.verify(function (error, success) {
 // פונקציה ליצירת תבנית HTML מעוצבת
 function createEmailTemplate(name, email, message) {
   return `
-    <!DOCTYPE html>
-    <html lang="he" dir="rtl">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>הודעה חדשה מטופס יצירת קשר - אתר הקורסים</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-          background-color: #f4f4f4;
-        }
-        .container {
-          background-color: #ffffff;
-          border-radius: 5px;
-          padding: 20px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-          color: #62238C;
-          border-bottom: 2px solid #BF4B81;
-          padding-bottom: 10px;
-        }
-        .contact-info {
-          background-color: #f9f9f9;
-          border-left: 4px solid #BF4B81;
-          padding: 10px;
-          margin-bottom: 20px;
-        }
-        .message {
-          background-color: #fff;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          padding: 15px;
-          margin-top: 20px;
-        }
-        .footer {
-          margin-top: 20px;
-          text-align: center;
-          font-size: 0.8em;
-          color: #666;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>הודעה חדשה מטופס יצירת קשר - אתר הקורסים</h1>
-        <div class="contact-info">
-          <p><strong>שם:</strong> ${name}</p>
-          <p><strong>אימייל:</strong> ${email}</p>
-        </div>
-        <div class="message">
-          <h2>תוכן ההודעה:</h2>
-          <p>${message}</p>
-        </div>
-        <div class="footer">
-          <p>© 2024 TriRoars. כל הזכויות שמורות.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הודעה חדשה מטופס יצירת קשר - אתר הקורסים</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #62238C;
+      border-bottom: 3px solid #BF4B81;
+      padding-bottom: 10px;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .contact-info {
+      background-color: #f9f9f9;
+      border-right: 5px solid #BF4B81;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    .contact-info p {
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    .message {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .message h2 {
+      color: #62238C;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    .message p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>הודעה חדשה מטופס יצירת קשר - אתר הקורסים</h1>
+    <div class="contact-info">
+      <p><strong>שם:</strong> ${name}</p>
+      <p><strong>אימייל:</strong> ${email}</p>
+    </div>
+    <div class="message">
+      <h2>תוכן ההודעה:</h2>
+      <p>${message}</p>
+    </div>
+    <div class="footer">
+      <p>© 2024 TriRoars. כל הזכויות שמורות.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
 }
 
 app.post('/api/proxy', async (req, res) => {

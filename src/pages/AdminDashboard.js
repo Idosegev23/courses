@@ -139,7 +139,18 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     const { data: usersData, error: usersError } = await supabase.from('users').select('*');
     const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
-    const { data: enrollmentsData, error: enrollmentsError } = await supabase.from('enrollments').select('*');
+    const { data: enrollmentsData, error: enrollmentsError } = await supabase
+      .from('enrollments')
+      .select(`
+        *,
+        users (
+          email
+        ),
+        courses (
+          title,
+          total_lessons
+        )
+      `);
 
     if (usersError) console.error('Error fetching users:', usersError);
     if (coursesError) console.error('Error fetching courses:', coursesError);
@@ -147,7 +158,14 @@ const AdminDashboard = () => {
 
     setUsers(usersData || []);
     setCourses(coursesData || []);
-    setEnrollments(enrollmentsData || []);
+    
+    const processedEnrollments = (enrollmentsData || []).map(enrollment => ({
+      ...enrollment,
+      user_email: enrollment.users?.email,
+      course_title: enrollment.courses?.title,
+      total_lessons: enrollment.courses?.total_lessons
+    }));
+    setEnrollments(processedEnrollments);
   };
 
   const fetchUserProgress = async (userId) => {
@@ -281,18 +299,15 @@ const AdminDashboard = () => {
   
     if (result.isConfirmed) {
       try {
-        // מחיקת המשתמש מטבלת האימות של Supabase
         const { error: authError } = await supabase.auth.admin.deleteUser(userId);
         if (authError) throw authError;
   
-        // מחיקת המשתמש מטבלת users
         const { error: userError } = await supabase
           .from('users')
           .delete()
           .eq('id', userId);
         if (userError) throw userError;
   
-        // עדכון המצב המקומי
         setUsers(users.filter(user => user.id !== userId));
         
         Swal.fire('נמחק!', 'המשתמש נמחק בהצלחה.', 'success');
@@ -399,7 +414,6 @@ const AdminDashboard = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה בעדכון פרטי המשתמש', 'error');
     }
   };
-
   const handleDeleteEnrollment = async (enrollmentId) => {
     const result = await Swal.fire({
       title: 'האם אתה בטוח?',
@@ -632,46 +646,6 @@ const AdminDashboard = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה בהוספת המשתמש החדש', 'error');
     }
   };
-  
-const checkCourseProgress = async () => {
-  try {
-    const { data: enrollments, error: enrollmentsError } = await supabase.from('enrollments').select('*, users(email), courses(total_lessons)');
-    
-    if (enrollmentsError) {
-      console.error('Error fetching enrollments:', enrollmentsError);
-      return;
-    }
-
-    enrollments.forEach(enrollment => {
-      const progress = (enrollment.current_lesson / enrollment.courses.total_lessons) * 100;
-
-      if (progress >= 80) {
-        sendEmail(
-          enrollment.users.email,
-          'קורסי המשך מומלצים',
-          `<p>היי ${enrollment.users.email},</p>
-           <p>שמחנו לראות שהתקדמת בצורה יפה בקורס שלך! נשמח להציע לך קורסים נוספים להמשך הלמידה.</p>
-           <p>לחץ <a href="your-website-link">כאן</a> כדי לגלות עוד.</p>`
-        );
-      }
-
-      if (enrollment.current_lesson === 1) {
-        sendEmail(
-          enrollment.users.email,
-          'מתחילים בקורס',
-          `<p>היי ${enrollment.users.email},</p>
-           <p>שמנו לב שאתה עדיין לא התחלת את הקורס. נשמח לראות אותך מתקדם!</p>`
-        );
-      }
-    });
-  } catch (error) {
-    console.error('Error in checkCourseProgress:', error);
-  }
-};
-
-// קריאה לפונקציה כל זמן מסוים או בהפעלה ידנית
-setInterval(checkCourseProgress, 24 * 60 * 60 * 1000); // לדוגמה, כל יום
-
 
   return (
     <ThemeProvider theme={theme}>
@@ -722,7 +696,7 @@ setInterval(checkCourseProgress, 24 * 60 * 60 * 1000); // לדוגמה, כל י�
         >
           <SectionTitle variant="h4"><FaMoneyBillWave /> ניהול הרשמות</SectionTitle>
           {renderTable(enrollments, [
-            { key: 'username', label: 'משתמש' },
+            { key: 'user_email', label: 'אימייל משתמש' },
             { key: 'course_title', label: 'קורס' },
             { key: 'current_lesson', label: 'שיעור נוכחי' },
             { key: 'amount_paid', label: 'תשלום' }
@@ -810,7 +784,6 @@ setInterval(checkCourseProgress, 24 * 60 * 60 * 1000); // לדוגמה, כל י�
       </Modal>
     </ThemeProvider>
   );
-
 };
 
 export default AdminDashboard;

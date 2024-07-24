@@ -1,20 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Typography, Container, Grid } from '@mui/material';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import Swal from 'sweetalert2';
 import Hero from './hero';
 import StyledButton from '../components/StyledButton';
-
-const theme = createTheme({
-  palette: {
-    primary: { main: '#62238C' },
-    secondary: { main: '#BF4B81' },
-  },
-  typography: { fontFamily: 'Heebo, sans-serif' },
-});
+import { supabase } from '../supabaseClient';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -66,18 +58,29 @@ const ButtonContainer = styled.div`
 
 const CookieConsentBanner = styled(motion.div)`
   position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 400px;
+  left: 0;
+  right: 0;
   background-color: #62238C;
   color: #ffffff;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   z-index: 1000;
+
+  ${({ isMobile }) => isMobile
+    ? `
+      bottom: 0;
+      border-radius: 20px 20px 0 0;
+    `
+    : `
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
+      border-radius: 10px;
+    `
+  }
 `;
 
 const AcceptButton = styled.button`
@@ -100,42 +103,80 @@ const LandingPage = () => {
   const [courses, setCourses] = useState([]);
   const [userEnrollments, setUserEnrollments] = useState([]);
   const [cookiesAccepted, setCookiesAccepted] = useState(localStorage.getItem('cookiesAccepted'));
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const fetchCoursesAndEnrollments = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData && userData.user) {
-        const userId = userData.user.id;
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 600);
+    };
 
-        const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
-        if (coursesError) {
-          console.error('Error fetching courses:', coursesError);
-        } else {
-          setCourses(coursesData);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
+      if (user && !user.email_confirmed_at) {
+        const result = await Swal.fire({
+          title: 'אימות מייל נדרש',
+          text: 'לא אישרת עדיין את כתובת המייל שלך. אנא בדוק את תיבת הדואר שלך ואשר את ההרשמה.',
+          icon: 'warning',
+          confirmButtonText: 'הבנתי',
+          showCancelButton: true,
+          cancelButtonText: 'שלח מייל אימות מחדש',
+        });
+
+        if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+          await resendVerificationEmail(user.email);
         }
+      }
 
+      const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
+      if (coursesError) {
+        console.error('Error fetching courses:', coursesError);
+      } else {
+        setCourses(coursesData);
+      }
+
+      if (user) {
         const { data: enrollmentsData, error: enrollmentsError } = await supabase
           .from('enrollments')
           .select('course_id')
-          .eq('user_id', userId);
+          .eq('user_id', user.id);
 
         if (enrollmentsError) {
           console.error('Error fetching enrollments:', enrollmentsError);
         } else {
           setUserEnrollments(enrollmentsData.map(enrollment => enrollment.course_id));
         }
-      } else {
-        const { data: coursesData, error: coursesError } = await supabase.from('courses').select('*');
-        if (coursesError) {
-          console.error('Error fetching courses:', coursesError);
-        } else {
-          setCourses(coursesData);
-        }
       }
     };
 
-    fetchCoursesAndEnrollments();
+    fetchData();
   }, []);
+
+  const resendVerificationEmail = async (email) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        console.error('Error resending verification email:', error);
+        Swal.fire('שגיאה', 'לא הצלחנו לשלוח מייל אימות. אנא נסה שוב מאוחר יותר.', 'error');
+      } else {
+        Swal.fire('נשלח בהצלחה', 'מייל אימות חדש נשלח לכתובת המייל שלך.', 'success');
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      Swal.fire('שגיאה', 'אירעה שגיאה בלתי צפויה. אנא נסה שוב מאוחר יותר.', 'error');
+    }
+  };
 
   const handleAcceptCookies = () => {
     localStorage.setItem('cookiesAccepted', 'true');
@@ -143,7 +184,7 @@ const LandingPage = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <>
       <GlobalStyle />
       <Hero />
       <PageContainer maxWidth="lg">
@@ -221,9 +262,10 @@ const LandingPage = () => {
       <AnimatePresence>
         {!cookiesAccepted && (
           <CookieConsentBanner
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
+            isMobile={isMobile}
+            initial={isMobile ? { y: '100%' } : { opacity: 0, y: 50 }}
+            animate={isMobile ? { y: 0 } : { opacity: 1, y: 0 }}
+            exit={isMobile ? { y: '100%' } : { opacity: 0, y: 50 }}
             transition={{ duration: 0.5 }}
           >
             <Typography variant="body1" sx={{ color: '#ffffff', marginBottom: 2 }}>
@@ -236,7 +278,7 @@ const LandingPage = () => {
           </CookieConsentBanner>
         )}
       </AnimatePresence>
-    </ThemeProvider>
+    </>
   );
 };
 

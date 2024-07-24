@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styled, { css, keyframes } from 'styled-components';
 import newLogo from '../components/NewLogo_BLANK.png';
 import { useAuth } from '../hooks/useAuth';
@@ -185,7 +185,13 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { openLoginPopup, openRegisterPopup } = usePopup();
+
+  useEffect(() => {
+    // סגירת התפריט הנייד בעת שינוי נתיב
+    setIsMobileMenuOpen(false);
+  }, [location]);
 
   const handleSignOut = async () => {
     try {
@@ -224,34 +230,43 @@ const Header = () => {
 
   const renderNavItems = (isMobile = false) => (
     <>
-      <StyledButton to="/">
+      <StyledButton to="/" onClick={isMobile ? toggleMobileMenu : undefined}>
         <Home size={18} />
         דף הבית
       </StyledButton>
       {user ? (
         <>
-          <StyledButton to="/personal-area">
+          <StyledButton to="/personal-area" onClick={isMobile ? toggleMobileMenu : undefined}>
             <User size={18} />
             איזור אישי
           </StyledButton>
           {isAdmin && (
-            <StyledButton to="/admin-dashboard">
+            <StyledButton to="/admin-dashboard" onClick={isMobile ? toggleMobileMenu : undefined}>
               <Settings size={18} />
               אזור אדמין
             </StyledButton>
           )}
-          <StyledSignOutButton onClick={handleSignOut}>
+          <StyledSignOutButton onClick={() => {
+            handleSignOut();
+            if (isMobile) toggleMobileMenu();
+          }}>
             <LogOut size={18} />
             התנתקות
           </StyledSignOutButton>
         </>
       ) : (
         <>
-          <StyledButton as="button" onClick={openLoginPopup}>
+          <StyledButton as="button" onClick={() => {
+            openLoginPopup();
+            if (isMobile) toggleMobileMenu();
+          }}>
             <User size={18} />
             התחברות
           </StyledButton>
-          <StyledButton as="button" onClick={openRegisterPopup}>
+          <StyledButton as="button" onClick={() => {
+            openRegisterPopup();
+            if (isMobile) toggleMobileMenu();
+          }}>
             <User size={18} />
             הרשמה
           </StyledButton>
@@ -263,7 +278,9 @@ const Header = () => {
   return (
     <HeaderContainer>
       <LogoContainer>
-        <LogoImage src={newLogo} alt="TriRoars Logo" />
+        <Link to="/">
+          <LogoImage src={newLogo} alt="TriRoars Logo" />
+        </Link>
         {user && (
           <UserStatus>
             <StatusDot />
