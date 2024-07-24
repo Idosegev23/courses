@@ -30,10 +30,11 @@ const Header = styled.header`
 `;
 
 const CardContainer = styled(motion.div)`
-  background-color: #C4E4F9;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  border: 2px solid #D16A1D;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 2rem;
   height: 80%;
   display: flex;
@@ -59,7 +60,7 @@ const CookieConsentBanner = styled(motion.div)`
   position: fixed;
   left: 0;
   right: 0;
-  background-color: #65218F;
+  background-color: #62238C;
   color: #ffffff;
   padding: 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
@@ -83,8 +84,8 @@ const CookieConsentBanner = styled(motion.div)`
 `;
 
 const AcceptButton = styled.button`
-  background-color: #346B75;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #62238C;
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
@@ -94,7 +95,7 @@ const AcceptButton = styled.button`
   transition: background-color 0.3s, color 0.3s;
 
   &:hover {
-    background-color: #D16A1D;
+    background-color: #f0f0f0;
   }
 `;
 
@@ -190,13 +191,13 @@ const LandingPage = () => {
         <Header>
           <Typography variant="h2" component="h1" sx={{
             fontWeight: 'bold',
-            color: '#D16A1D',
+            color: '#62238C',
             marginBottom: 2,
             textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
           }}>
             ברוכים הבאים לקורסים שלנו
           </Typography>
-          <Typography variant="h5" sx={{ color: '#363B46' }}>
+          <Typography variant="h5" sx={{ color: '#0D0D0D' }}>
             גלו את הקורסים החדשניים ביותר שלנו
           </Typography>
         </Header>
@@ -215,10 +216,10 @@ const LandingPage = () => {
                   <CardContainer>
                     <CardContent>
                       <div>
-                        <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#363B46' }}>
+                        <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
                           {course.title}
                         </Typography>
-                        <Typography variant="body1" sx={{ mb: 3, color: '#363B46' }}>
+                        <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
                           {course.description}
                         </Typography>
                       </div>
@@ -229,7 +230,6 @@ const LandingPage = () => {
                             to={`/course-learning/${course.id}`} 
                             isprimary="true"
                             data-text="כניסה לקורס"
-                            style={{ backgroundColor: '#346B75', color: '#ffffff' }}
                           >
                             כניסה לקורס
                           </StyledButton>
@@ -239,7 +239,6 @@ const LandingPage = () => {
                             to={`/course/${course.id}`} 
                             isprimary="true"
                             data-text="פרטים נוספים"
-                            style={{ backgroundColor: '#346B75', color: '#ffffff' }}
                           >
                             פרטים נוספים
                           </StyledButton>
@@ -254,7 +253,7 @@ const LandingPage = () => {
         </Grid>
 
         {courses.length === 0 && (
-          <Typography variant="body1" sx={{ mt: 4, color: '#363B46' }}>
+          <Typography variant="body1" sx={{ mt: 4, color: '#666' }}>
             לא נמצאו קורסים זמינים.
           </Typography>
         )}
@@ -271,7 +270,7 @@ const LandingPage = () => {
           >
             <Typography variant="body1" sx={{ color: '#ffffff', marginBottom: 2 }}>
               האתר שלנו משתמש בעוגיות על מנת לשפר את חוויית הגלישה שלך. 
-              <Link to="/privacy-policy" style={{ color: '#C4E4F9', textDecoration: 'underline', marginRight: '5px' }}>
+              <Link to="/privacy-policy" style={{ color: '#ffffff', textDecoration: 'underline', marginRight: '5px' }}>
                 קרא עוד
               </Link>
             </Typography>
