@@ -21,7 +21,7 @@ export const Overlay = styled.div`
 export const Container = styled.div`
   position: relative;
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
   border-radius: 20px;
   padding: 30px;
   background: #fff;
@@ -52,6 +52,13 @@ export const TopLeftCircle = styled(GeometricShape)`
   height: 100px;
   top: -50px;
   left: -50px;
+
+  @media (max-width: 480px) {
+    width: 80px;
+    height: 80px;
+    top: -40px;
+    left: -40px;
+  }
 `;
 
 export const BottomRightCircle = styled(GeometricShape)`
@@ -59,6 +66,13 @@ export const BottomRightCircle = styled(GeometricShape)`
   height: 150px;
   bottom: -75px;
   right: -75px;
+
+  @media (max-width: 480px) {
+    width: 120px;
+    height: 120px;
+    bottom: -60px;
+    right: -60px;
+  }
 `;
 
 export const CloseButton = styled.button`
@@ -82,6 +96,12 @@ export const CloseButton = styled.button`
   &:hover {
     background-color: #4a1b6d;
   }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    width: 25px;
+    height: 25px;
+  }
 `;
 
 export const BrandTitle = styled.div`
@@ -95,6 +115,7 @@ export const BrandTitle = styled.div`
 
   @media (max-width: 480px) {
     font-size: 2rem;
+    margin-bottom: 15px;
   }
 `;
 
@@ -115,18 +136,30 @@ export const Form = styled.form`
 export const InputWrapper = styled.div`
   position: relative;
   width: 100%;
-  max-width: 300px;
+  max-width: 280px;
   margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   animation: ${fadeIn} 0.5s ease-out;
   animation-fill-mode: both;
   animation-delay: ${props => props.delay || '0s'};
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+  }
 `;
 
 export const Label = styled.label`
   display: block;
-  text-align: right;
+  text-align: center;
   margin-bottom: 4px;
   width: 100%;
+  font-size: 14px;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
 `;
 
 export const Input = styled.input`
@@ -137,10 +170,16 @@ export const Input = styled.input`
   border-radius: 8px;
   border: 1px solid #ddd;
   width: 100%;
-  text-align: right;
+  text-align: center;
   &:focus {
     outline: none;
     border-color: #62238C;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    height: 35px;
+    padding: 8px 12px 8px 35px;
   }
 `;
 
@@ -150,6 +189,11 @@ export const Icon = styled.i`
   top: 50%;
   transform: translateY(-50%);
   color: #62238C;
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    left: 8px;
+  }
 `;
 
 export const ButtonContainer = styled.div`
@@ -157,8 +201,12 @@ export const ButtonContainer = styled.div`
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 300px;
+  max-width: 280px;
   margin: 0 auto;
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+  }
 `;
 
 const BaseButton = styled.button`
@@ -194,6 +242,11 @@ const BaseButton = styled.button`
       background-position: 0% 50%;
     }
   }
+
+  @media (max-width: 480px) {
+    padding: 0.6rem 1.2rem;
+    font-size: 14px;
+  }
 `;
 
 export const Button = styled(BaseButton)`
@@ -217,6 +270,12 @@ export const GoogleButton = styled(BaseButton)`
   svg {
     margin-left: 25px;
   }
+
+  @media (max-width: 480px) {
+    svg {
+      margin-left: 15px;
+    }
+  }
 `;
 
 export const ErrorMessage = styled.div`
@@ -224,7 +283,13 @@ export const ErrorMessage = styled.div`
   margin-top: 10px;
   text-align: center;
   width: 100%;
-  max-width: 300px;
+  max-width: 280px;
+  font-size: 14px;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    max-width: 100%;
+  }
 `;
 
 export const PopupContent = styled.div`

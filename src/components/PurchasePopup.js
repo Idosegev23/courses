@@ -79,53 +79,48 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
     }
   }, [user]);
 
-  // Validation functions remain the same
-// Validation functions
-const isValidName = (name) => {
-  const nameRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
-  return nameRegex.test(name);
-};
+  const isValidName = (name) => {
+    const nameRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
+    return nameRegex.test(name);
+  };
 
-const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
-const isValidPhone = (phone) => {
-  const phoneRegex = /^05\d{8}$/;
-  return phoneRegex.test(phone);
-};
+  const isValidPhone = (phone) => {
+    const phoneRegex = /^05\d{8}$/;
+    return phoneRegex.test(phone);
+  };
 
-const isValidIdNumber = (id) => {
-  if (id.length !== 9) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) {
-    let digit = parseInt(id[i]);
-    if (i % 2 === 0) digit *= 1;
-    else digit *= 2;
-    if (digit > 9) digit -= 9;
-    sum += digit;
-  }
-  return sum % 10 === 0;
-};
+  const isValidIdNumber = (id) => {
+    if (id.length !== 9) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      let digit = parseInt(id[i]);
+      if (i % 2 === 0) digit *= 1;
+      else digit *= 2;
+      if (digit > 9) digit -= 9;
+      sum += digit;
+    }
+    return sum % 10 === 0;
+  };
 
-const isValidAddress = (address) => {
-  return address.trim().split(' ').length >= 2;
-};
+  const isValidAddress = (address) => {
+    return address.trim().split(' ').length >= 2;
+  };
 
-const isValidCity = (city) => {
-  const cityRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
-  return cityRegex.test(city);
-};
+  const isValidCity = (city) => {
+    const cityRegex = /^[\u0590-\u05FFa-zA-Z\s]{2,}$/;
+    return cityRegex.test(city);
+  };
 
-const isValidCompanyId = (id) => {
-  const companyIdRegex = /^\d{9}$/;
-  return companyIdRegex.test(id);
-};
+  const isValidCompanyId = (id) => {
+    const companyIdRegex = /^\d{9}$/;
+    return companyIdRegex.test(id);
+  };
 
-const ErrorText = ({ children }) => (
-  <ErrorMessage>{children}</ErrorMessage>
-);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let error = '';
@@ -228,7 +223,130 @@ const ErrorText = ({ children }) => (
   };
 
   const handlePurchase = async () => {
-    // Purchase logic remains the same
+    console.log('Starting regular purchase process');
+    try {
+      console.log('Requesting token from Green Invoice');
+      const tokenResponse = await fetch('/api/green-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          endpoint: 'account/token',
+          data: {
+            id: process.env.REACT_APP_API_KEY_GREEN_INVOICE_TEST,
+            secret: process.env.REACT_APP_API_SECRET_GREEN_INVOICE_TEST
+          }
+        })
+      });
+
+      const tokenResponseData = await tokenResponse.json();
+      console.log('Token response status:', tokenResponse.status);
+      console.log('Token response data:', tokenResponseData);
+
+      if (!tokenResponse.ok) {
+        throw new Error(`HTTP error! status: ${tokenResponse.status}`);
+      }
+
+      const token = tokenResponseData.token;
+      console.log('Token received:', token);
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        throw userError;
+      }
+
+      console.log('User data fetched for invoice:', userData);
+
+      const finalPrice = course.discountPrice || course.price;
+
+      const invoiceData = {
+        description: `רכישת קורס ${course.title}`,
+        type: 400,
+        date: new Date().toISOString().split('T')[0],
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+        lang: "he",
+        pluginId:"74fd5825-12c4-4e20-9942-cc0f2b6dfe85",
+        currency: "ILS",
+        vatType: 0,
+        amount: finalPrice,
+        group: 100,
+        client: {
+          name: `${firstName} ${lastName}`,
+          emails: [email],
+          taxId: idNum,
+          address: streetAddress,
+          city: city,
+          country: "IL",
+          phone: phone,
+          add: true
+        },
+        successUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=true&courseId=${course.id}`,
+        failureUrl: `${process.env.REACT_APP_API_URL}/purchase-result?success=false&courseId=${course.id}`,
+        notifyUrl: `${process.env.REACT_APP_API_URL}/api/notify`,
+        custom: "300700556"
+      };
+
+      console.log('Invoice Data:', invoiceData);
+
+      console.log('Requesting payment form from Green Invoice');
+      const paymentFormResponse = await fetch('/api/green-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          endpoint: 'payments/form',
+          data: invoiceData,
+          tokenRequest: token
+        })
+      });
+
+      const paymentFormResponseData = await paymentFormResponse.json();
+      console.log('Payment form response status:', paymentFormResponse.status);
+      console.log('Payment form response data:', paymentFormResponseData);
+
+      if (!paymentFormResponse.ok) {
+        throw new Error(`HTTP error! status: ${paymentFormResponse.status}`);
+      }
+
+      const paymentFormUrl = paymentFormResponseData.url;
+
+      console.log('Creating enrollment record');
+      const { error: enrollmentError } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id: user.id,
+          course_id: course.id,
+          current_lesson: 1,
+          amount_paid: finalPrice,
+          course_title: course.title,
+          total_lessons: course.lessons?.length || 0
+        });
+
+      if (enrollmentError) {
+        console.error('Error creating enrollment:', enrollmentError);
+        throw enrollmentError;
+      }
+
+      console.log('Redirecting to payment form URL:', paymentFormUrl);
+      window.location.href = paymentFormUrl;
+    } catch (error) {
+      console.error('Error during purchase:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
+      setError('אירעה שגיאה במהלך הרכישה. אנא נסה שוב.');
+    }
   };
 
   useEffect(() => {
