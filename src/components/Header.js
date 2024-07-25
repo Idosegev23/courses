@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import Swal from 'sweetalert2';
 import { usePopup } from '../PopupContext';
 import { Menu, X, User, LogOut, Home, Settings } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 // אנימציות
 const fadeIn = keyframes`
@@ -218,10 +219,28 @@ const Header = () => {
   const isAdmin = user && user.email === 'triroars@gmail.com';
 
   const getFirstName = (user) => {
-    if (user.user_metadata && user.user_metadata.full_name) {
-      return user.user_metadata.full_name.split(' ')[0];
+    if (user && user.user_metadata && user.user_metadata.first_name) {
+      return user.user_metadata.first_name;
     }
     return 'אורח';
+  };
+
+  const handlePersonalAreaClick = () => {
+    if (!user.email_confirmed_at) {
+      Swal.fire({
+        title: 'אימות חשבון נדרש',
+        text: 'עליך לאמת את חשבונך במייל לפני הכניסה לאזור האישי.',
+        icon: 'warning',
+        confirmButtonText: 'שלח שוב מייל אימות'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          await supabase.auth.api.resendConfirmationEmail(user.email);
+          Swal.fire('מייל אימות נשלח', 'אנא בדוק את תיבת הדואר שלך.', 'success');
+        }
+      });
+    } else {
+      navigate('/personal-area');
+    }
   };
 
   const toggleMobileMenu = () => {
@@ -236,7 +255,7 @@ const Header = () => {
       </StyledButton>
       {user ? (
         <>
-          <StyledButton to="/personal-area" onClick={isMobile ? toggleMobileMenu : undefined}>
+          <StyledButton as="button" onClick={handlePersonalAreaClick}>
             <User size={18} />
             איזור אישי
           </StyledButton>

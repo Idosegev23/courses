@@ -26,7 +26,10 @@ const PurchaseResultPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const success = searchParams.get('success') === 'true';
   const courseId = searchParams.get('courseId');
-  const message = searchParams.get('message');
+  const message = decodeURIComponent(searchParams.get('message') || '');
+  const flow = searchParams.get('flow');
+  const requestId = searchParams.get('requestId');
+  const lang = searchParams.get('lang');
   const [showConfetti, setShowConfetti] = useState(success);
   const { user, loading } = useAuth();
 
@@ -89,10 +92,20 @@ const PurchaseResultPage = () => {
           }
         });
       }
+
+      // Log additional information
+      console.log('Purchase Result:', {
+        success,
+        courseId,
+        flow,
+        requestId,
+        lang,
+        message
+      });
     };
 
     checkAuth();
-  }, [success, courseId, navigate, message, user, loading]);
+  }, [success, courseId, navigate, message, user, loading, flow, requestId, lang]);
 
   if (loading) {
     return <div>טוען...</div>;
