@@ -27,10 +27,6 @@ import AuthCallback from './pages/AuthCallback';
 const AppContent = () => {
   const { showLoginPopup, showRegisterPopup, showPurchasePopup, purchaseCourse, closeAllPopups } = usePopup();
 
-  console.log('AppContent render');
-  console.log('showPurchasePopup:', showPurchasePopup);
-  console.log('purchaseCourse:', purchaseCourse);
-
   return (
     <>
       <Header />

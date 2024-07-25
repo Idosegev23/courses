@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import confetti from 'canvas-confetti';
-import { useAuth } from '../hooks/useAuth'; // ייתכן שתצטרך להתאים את הנתיב
+import { useAuth } from '../hooks/useAuth';
 
 const MySwal = withReactContent(Swal);
 
