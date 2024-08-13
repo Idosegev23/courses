@@ -186,10 +186,14 @@ app.use((err, req, res, next) => {
   console.error('שגיאה לא מטופלת:', err);
   res.status(500).send('שגיאת שרת פנימית');
 });
-// במקום שבו השרת מטפל בבקשת התשלום המוצלחת
 app.get('/api/payment-success', (req, res) => {
   const { courseId, success, flow, requestId, lang, message } = req.query;
   
+  if (!process.env.CLIENT_BASE_URL) {
+    console.error('CLIENT_BASE_URL is not defined in environment variables');
+    return res.status(500).send('Server configuration error');
+  }
+
   // בנה את ה-URL עבור אפליקציית הלקוח
   const clientUrl = new URL('/payment-success', process.env.CLIENT_BASE_URL);
   clientUrl.searchParams.append('courseId', courseId);
@@ -198,6 +202,8 @@ app.get('/api/payment-success', (req, res) => {
   clientUrl.searchParams.append('requestId', requestId);
   clientUrl.searchParams.append('lang', lang);
   clientUrl.searchParams.append('message', message);
+
+  console.log('Redirecting to:', clientUrl.toString());  // הוסף לוג זה
 
   // ביצוע ניתוב מחדש לאפליקציית הלקוח
   res.redirect(clientUrl.toString());
