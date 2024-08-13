@@ -186,7 +186,22 @@ app.use((err, req, res, next) => {
   console.error('שגיאה לא מטופלת:', err);
   res.status(500).send('שגיאת שרת פנימית');
 });
+// במקום שבו השרת מטפל בבקשת התשלום המוצלחת
+app.get('/api/payment-success', (req, res) => {
+  const { courseId, success, flow, requestId, lang, message } = req.query;
+  
+  // בנה את ה-URL עבור אפליקציית הלקוח
+  const clientUrl = new URL('/payment-success', process.env.CLIENT_BASE_URL);
+  clientUrl.searchParams.append('courseId', courseId);
+  clientUrl.searchParams.append('success', success);
+  clientUrl.searchParams.append('flow', flow);
+  clientUrl.searchParams.append('requestId', requestId);
+  clientUrl.searchParams.append('lang', lang);
+  clientUrl.searchParams.append('message', message);
 
+  // ביצוע ניתוב מחדש לאפליקציית הלקוח
+  res.redirect(clientUrl.toString());
+});
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`השרת פועל בפורט ${PORT}`);
