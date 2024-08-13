@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import styled, { createGlobalStyle } from 'styled-components';
@@ -253,128 +253,160 @@ const CourseLearningPage = () => {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [exercisesCompleted, setExercisesCompleted] = useState({});
   const [totalLessons, setTotalLessons] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const lastUpdatedIndex = useRef(null);
+  const isUpdatingRef = useRef(false);
+
+  const updateProgress = useCallback(async (lessonIndex, completeEntireCourse = false) => {
+    if (isUpdatingRef.current || (lessonIndex === lastUpdatedIndex.current && !completeEntireCourse)) return;
+    isUpdatingRef.current = true;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: courseData, error: courseError } = await supabase
+        .from('courses')
+        .select('total_lessons')
+        .eq('id', courseId)
+        .single();
+  
+      if (courseError) {
+        console.error('Error fetching course data:', courseError);
+        isUpdatingRef.current = false;
+        return;
+      }
+  
+      const totalLessons = courseData.total_lessons;
+      
+      const updateData = {
+        current_lesson: completeEntireCourse ? totalLessons : lessonIndex
+      };
+  
+      if (completeEntireCourse) {
+        updateData.completed = true;
+        updateData.completion_date = new Date().toISOString();
+      }
+  
+      console.log("Updating progress for lesson index:", updateData.current_lesson);
+  
+      const { error } = await supabase
+        .from('enrollments')
+        .update(updateData)
+        .eq('user_id', user.id)
+        .eq('course_id', courseId);
+  
+      if (error) {
+        console.error('Error updating progress:', error);
+      } else {
+        console.log("Progress updated successfully in the database");
+        setCurrentLessonIndex(updateData.current_lesson);
+        lastUpdatedIndex.current = updateData.current_lesson;
+  
+        if (completeEntireCourse) {
+          Swal.fire({
+            title: 'סיימת את הקורס!',
+            text: 'כל הכבוד! השלמת את כל השיעורים בקורס זה.',
+            icon: 'success',
+            confirmButtonText: 'תודה!'
+          }).then(() => {
+            navigate('/personal-area');
+          });
+        }
+      }
+    } else {
+      console.error("User not found");
+    }
+    isUpdatingRef.current = false;
+  }, [courseId, navigate, setCurrentLessonIndex]);
+  const handleNextLesson = useCallback(() => {
+    if (currentLessonIndex < lessons.length - 1) {
+      const nextLessonIndex = currentLessonIndex + 1;
+      updateProgress(nextLessonIndex);
+    }
+  }, [currentLessonIndex, lessons.length, updateProgress]);
+
+  const handlePrevLesson = useCallback(() => {
+    if (currentLessonIndex > 0) {
+      const prevLessonIndex = currentLessonIndex - 1;
+      updateProgress(prevLessonIndex);
+    }
+  }, [currentLessonIndex, updateProgress]);
 
   useEffect(() => {
     const fetchCourseContent = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('courses')
-          .select('lessons, faq, total_lessons')
-          .eq('id', courseId)
-          .single();
-
-        const { data: enrollmentData, error: enrollmentError } = await supabase
-          .from('enrollments')
-          .select('current_lesson')
-          .eq('user_id', user.id)
-          .eq('course_id', courseId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching course content:', error);
-        } else if (enrollmentError) {
-          console.error('Error fetching enrollment data:', enrollmentError);
-        } else {
-          setLessons(data.lessons || []);
-          setFaqs(data.faq || []);
-          setTotalLessons(data.total_lessons || 0);
-          
-          const urlParams = new URLSearchParams(location.search);
-          const lessonParam = urlParams.get('lesson');
-          if (lessonParam) {
-            const lessonIndex = parseInt(lessonParam) - 1;
-            if (lessonIndex >= 0 && lessonIndex < data.lessons.length) {
-              setCurrentLessonIndex(lessonIndex);
-              updateProgress(lessonIndex);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('courses')
+            .select('lessons, faq, total_lessons')
+            .eq('id', courseId)
+            .single();
+      
+          const { data: enrollmentData, error: enrollmentError } = await supabase
+            .from('enrollments')
+            .select('current_lesson')
+            .eq('user_id', user.id)
+            .eq('course_id', courseId)
+            .single();
+      
+          if (error || enrollmentError) {
+            console.error('Error fetching data:', error || enrollmentError);
+          } else {
+            setLessons(data.lessons || []);
+            setFaqs(data.faq || []);
+            setTotalLessons(data.total_lessons || 0);
+      
+            const urlParams = new URLSearchParams(location.search);
+            const lessonParam = urlParams.get('lesson');
+              
+            if (lessonParam) {
+              const lessonIndex = parseInt(lessonParam) - 1;
+              if (lessonIndex >= 0 && lessonIndex < data.lessons.length) {
+                setCurrentLessonIndex(lessonIndex);
+              }
+            } else if (enrollmentData && enrollmentData.current_lesson >= 0) {
+              setCurrentLessonIndex(enrollmentData.current_lesson);
+            } else {
+              setCurrentLessonIndex(0);
             }
-          } else if (enrollmentData && enrollmentData.current_lesson) {
-            setCurrentLessonIndex(enrollmentData.current_lesson - 1);
+      
+            // Fetch user progress
+            const { data: progressData, error: progressError } = await supabase
+              .from('user_progress')
+              .select('completed_exercises')
+              .eq('user_id', user.id)
+              .eq('course_id', courseId)
+              .single();
+      
+            if (progressError) {
+              console.error('Error fetching user progress:', progressError);
+            } else {
+              setExercisesCompleted(progressData?.completed_exercises || {});
+            }
           }
+        } else {
+          console.error("User not found");
+          navigate('/login');
         }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+      } finally {
+        setIsInitialLoad(false);
       }
     };
 
     fetchCourseContent();
-  }, [courseId, location.search]);
+  }, [courseId, location.search, navigate]);
 
-  const showCourseCompletionCelebration = () => {
+  const handleCourseCompletion = () => {
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 }
     });
-    Swal.fire({
-      title: 'כל הכבוד!',
-      text: 'סיימת את הקורס בהצלחה!',
-      icon: 'success',
-      confirmButtonText: 'תודה!'
-    });
+    updateProgress(totalLessons, true);  // שימו לב שכאן השתמשנו ב-totalLessons ולא ב-totalLessons - 1
   };
 
-  const handleCourseCompletion = async () => {
-    await updateProgress(totalLessons - 1);
-    showCourseCompletionCelebration();
-  };
-
-  const handleNextLesson = async () => {
-    if (currentLessonIndex < lessons.length - 1) {
-      const currentLesson = lessons[currentLessonIndex];
-      if (currentLesson.exercises && currentLesson.exercises.length > 0) {
-        Swal.fire({
-          title: 'לא סיימת עם התרגולים',
-          text: 'האם אתה בטוח שברצונך לעבור לשיעור הבא?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'כן, סיימתי!',
-          cancelButtonText: 'לא, עדיין לא',
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            const nextLessonIndex = currentLessonIndex + 1;
-            setCurrentLessonIndex(nextLessonIndex);
-            await updateProgress(nextLessonIndex);
-            navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
-            Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
-          }
-        });
-      } else {
-        const nextLessonIndex = currentLessonIndex + 1;
-        setCurrentLessonIndex(nextLessonIndex);
-        await updateProgress(nextLessonIndex);
-        navigate(`/course-learning/${courseId}?lesson=${nextLessonIndex + 1}`);
-        Swal.fire('מעולה!', 'עברת לשיעור הבא.', 'success');
-      }
-    }
-  };
-
-  const handlePrevLesson = async () => {
-    if (currentLessonIndex > 0) {
-      const prevLessonIndex = currentLessonIndex - 1;
-      setCurrentLessonIndex(prevLessonIndex);
-      await updateProgress(prevLessonIndex);
-      navigate(`/course-learning/${courseId}?lesson=${prevLessonIndex + 1}`);
-    }
-  };
-
-  const updateProgress = async (lessonIndex) => {
-    console.log("Updating progress for lesson index:", lessonIndex + 1);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const newCurrentLesson = lessonIndex + 1;
-      const { error } = await supabase
-        .from('enrollments')
-        .update({ current_lesson: newCurrentLesson })
-        .eq('user_id', user.id)
-        .eq('course_id', courseId);
-      if (error) {
-        console.error('Error updating progress:', error);
-      } else {
-        console.log("Progress updated successfully in the database");
-      }
-    } else {
-      console.error("User not found");
-    }
-  };
 
   const getYouTubeEmbedURL = (url) => {
     const videoId = url.split('v=')[1];
@@ -391,7 +423,7 @@ const CourseLearningPage = () => {
   if (lessons.length === 0) return <div>טוען...</div>;
 
   const currentLesson = lessons[currentLessonIndex];
-  const progressPercentage = ((currentLessonIndex + 1) / totalLessons) * 100;
+  const progressPercentage = (currentLessonIndex / totalLessons) * 100;
 
   return (
     <>
@@ -405,20 +437,26 @@ const CourseLearningPage = () => {
           </ProgressBar>
           {currentLessonIndex + 1 === totalLessons ? (
             'הגעת לשיעור האחרון בקורס.'
+          ) : currentLessonIndex + 1 === totalLessons - 1 ? (
+            'נותר שיעור אחד להשלמת הקורס'
           ) : (
             `נותרו ${totalLessons - (currentLessonIndex + 1)} שיעורים להשלמת הקורס`
           )}
         </CourseProgress>
         <PageContent>
-          <VideoContainer>
-            <iframe
-              title={`שיעור ${currentLessonIndex + 1}`}
-              src={getYouTubeEmbedURL(currentLesson.videoLink)}
-              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </VideoContainer>
-        </PageContent>
+  {currentLesson ? (
+    <VideoContainer>
+      <iframe
+        title={`שיעור ${currentLessonIndex}`}
+        src={getYouTubeEmbedURL(currentLesson.videoLink)}
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    </VideoContainer>
+  ) : (
+    <p>טוען שיעור...</p>
+  )}
+</PageContent>
 
         <LessonNavigation>
           <button onClick={handlePrevLesson} disabled={currentLessonIndex === 0}>
@@ -496,4 +534,3 @@ const CourseLearningPage = () => {
 };
 
 export default CourseLearningPage;
-

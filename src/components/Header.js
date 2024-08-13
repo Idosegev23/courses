@@ -182,6 +182,12 @@ const Greeting = styled.span`
   font-weight: bold;
 `;
 
+const ProfileImage = styled.img`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+`;
+
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -219,10 +225,21 @@ const Header = () => {
   const isAdmin = user && user.email === 'triroars@gmail.com';
 
   const getFirstName = (user) => {
-    if (user && user.user_metadata && user.user_metadata.first_name) {
-      return user.user_metadata.first_name;
+    if (user && user.user_metadata) {
+      if (user.user_metadata.first_name) {
+        return user.user_metadata.first_name;
+      } else if (user.user_metadata.full_name) {
+        return user.user_metadata.full_name.split(' ')[0];
+      }
     }
     return 'אורח';
+  };
+
+  const getProfileImage = (user) => {
+    if (user && user.user_metadata) {
+      return user.user_metadata.avatar_url || 'default-profile.png';
+    }
+    return 'default-profile.png';
   };
 
   const handlePersonalAreaClick = () => {
@@ -304,6 +321,7 @@ const Header = () => {
           <UserStatus>
             <StatusDot />
             <Greeting>שלום, {getFirstName(user)}</Greeting>
+            <ProfileImage src={getProfileImage(user)} alt="Profile" />
           </UserStatus>
         )}
       </LogoContainer>

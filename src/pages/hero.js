@@ -280,7 +280,7 @@ const Hero = () => {
     <HeroContainer>
       <Canvas ref={canvasRef} />
       <Content>
-        <Title>ברוכים הבאים לעולם הלמידה המתקדם</Title>
+        <Title>ברוכים הבאים לעולם הלמידה המתקדם בAI</Title>
         <Subtitle>{typingText}</Subtitle>
         <CTA onClick={scrollToCourses}>גלו את הקורסים שלנו</CTA>
       </Content>

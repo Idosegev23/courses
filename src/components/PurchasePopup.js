@@ -327,7 +327,7 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
         .insert({
           user_id: user.id,
           course_id: course.id,
-          current_lesson: 1,
+          current_lesson: 0,
           amount_paid: finalPrice,
           course_title: course.title,
           total_lessons: course.lessons?.length || 0
