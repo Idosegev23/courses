@@ -5,13 +5,13 @@ import { FaUser, FaBook, FaPlus, FaMoneyBillWave, FaSort, FaFileExcel } from 're
 import Swal from 'sweetalert2';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Typography, Container, Grid, Button, TextField, Modal, Box } from '@mui/material';
+import { Typography, Container, Grid, Button, TextField, Modal, Box, Pagination } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { utils, writeFile } from 'xlsx';
-import sendEmail from './sendMail'; // נייבא את הפונקציה לשליחת מיילים
-
+import sendEmail from './sendMail';
 
 const theme = createTheme({
+  direction: 'rtl',
   palette: {
     primary: {
       main: '#62238C',
@@ -40,7 +40,7 @@ const GlobalStyle = createGlobalStyle`
 const DashboardContainer = styled(Container)`
   padding: 2rem;
   background: #ffffff;
-  text-align: center;
+  text-align: right;
   border-radius: 1rem;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 `;
@@ -113,6 +113,12 @@ const ProgressBar = styled.div`
     background-color: #62238C;
     height: 20px;
   }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
 `;
 
 const AdminDashboard = () => {
@@ -499,7 +505,7 @@ const AdminDashboard = () => {
             </Button>
           </Grid>
         </Grid>
-        <table>
+        <StyledTable>
           <thead>
             <tr>
               {columns.map(column => (
@@ -525,86 +531,86 @@ const AdminDashboard = () => {
                   ))}
                   {tableName === 'enrollments' && (
                     <td>
-                      <div>
-                        <div style={{ width: `${(item.current_lesson / item.total_lessons) * 100}%` }}></div>
-                      </div>
+                      <ProgressBar progress={(item.current_lesson / item.total_lessons) * 100}>
+                        <div></div>
+                      </ProgressBar>
                       {item.current_lesson} / {item.total_lessons}
                     </td>
                   )}
                   <td>
                     {tableName === 'users' && (
                       <>
-                        <Button
+                        <ActionButton
                           variant="outlined"
                           color="primary"
                           size="small"
                           onClick={() => handleViewUser(item.id)}
                         >
                           צפייה
-                        </Button>
-                        <Button
+                        </ActionButton>
+                        <ActionButton
                           variant="outlined"
                           color="secondary"
                           size="small"
                           onClick={() => handleAddDiscount(item.id)}
                         >
                           עריכת הנחה
-                        </Button>
-                        <Button
+                        </ActionButton>
+                        <ActionButton
                           variant="outlined"
                           color="error"
                           size="small"
                           onClick={() => handleDeleteUser(item.id)}
                         >
                           מחיקה
-                        </Button>
+                        </ActionButton>
                       </>
                     )}
                     {tableName === 'courses' && (
                       <>
-                        <Button
+                        <ActionButton
                           variant="outlined"
                           color="primary"
                           size="small"
                           onClick={() => handleViewCourse(item.id)}
                         >
                           צפייה
-                        </Button>
-                        <Button
+                        </ActionButton>
+                        <ActionButton
                           variant="outlined"
                           color="secondary"
                           size="small"
                           onClick={() => handleEditCourse(item.id)}
                         >
                           עריכה
-                        </Button>
-                        <Button
+                        </ActionButton>
+                        <ActionButton
                           variant="outlined"
                           color="error"
                           size="small"
                           onClick={() => handleDeleteCourse(item.id)}
                         >
                           מחיקה
-                        </Button>
+                        </ActionButton>
                       </>
                     )}
                     {tableName === 'enrollments' && (
-                      <Button
+                      <ActionButton
                         variant="outlined"
                         color="error"
                         size="small"
                         onClick={() => handleDeleteEnrollment(item.id)}
                       >
                         מחיקה
-                      </Button>
+                      </ActionButton>
                     )}
                   </td>
                 </motion.tr>
               ))}
             </AnimatePresence>
           </tbody>
-        </table>
-        <div>
+        </StyledTable>
+        <PaginationContainer>
           <Pagination
             count={Math.ceil(sortedAndFilteredData.length / rowsPerPage)}
             page={page}
@@ -613,7 +619,7 @@ const AdminDashboard = () => {
             showFirstButton
             showLastButton
           />
-        </div>
+        </PaginationContainer>
       </>
     );
   };
@@ -649,13 +655,14 @@ const AdminDashboard = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container>
+      <GlobalStyle />
+      <DashboardContainer>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Typography variant="h4"><FaUser /> ניהול משתמשים</Typography>
+          <SectionTitle variant="h4"><FaUser /> ניהול משתמשים</SectionTitle>
           <Grid container spacing={2} style={{ marginBottom: '2rem' }}>
             <Grid item>
               <Button
@@ -680,7 +687,7 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Typography variant="h4"><FaBook /> ניהול קורסים</Typography>
+          <SectionTitle variant="h4"><FaBook /> ניהול קורסים</SectionTitle>
           {renderTable(courses, [
             { key: 'title', label: 'כותרת' },
             { key: 'description', label: 'תיאור' },
@@ -693,7 +700,7 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Typography variant="h4"><FaMoneyBillWave /> ניהול הרשמות</Typography>
+          <SectionTitle variant="h4"><FaMoneyBillWave /> ניהול הרשמות</SectionTitle>
           {renderTable(enrollments, [
             { key: 'user_email', label: 'אימייל משתמש' },
             { key: 'course_title', label: 'קורס' },
@@ -713,10 +720,10 @@ const AdminDashboard = () => {
             הוסף קורס חדש
           </Button>
         </Grid>
-      </Container>
+      </DashboardContainer>
 
       <Modal open={showAddUserModal} onClose={() => setShowAddUserModal(false)}>
-        <Box>
+        <ModalContent>
           <Typography variant="h6" style={{ marginBottom: '1rem' }}>הוסף משתמש חדש</Typography>
           <TextField
             fullWidth
@@ -754,11 +761,11 @@ const AdminDashboard = () => {
           />
           <Button variant="contained" color="primary" onClick={handleSaveNewUser}>שמור</Button>
           <Button variant="outlined" onClick={() => setShowAddUserModal(false)} style={{ marginLeft: '1rem' }}>ביטול</Button>
-        </Box>
+        </ModalContent>
       </Modal>
 
       <Modal open={showEditUserModal} onClose={() => setShowEditUserModal(false)}>
-        <Box>
+        <ModalContent>
           <Typography variant="h6" style={{ marginBottom: '1rem' }}>ערוך פרטי משתמש</Typography>
           <TextField
             fullWidth
@@ -779,7 +786,7 @@ const AdminDashboard = () => {
           />
           <Button variant="contained" color="primary" onClick={handleUpdateUserDetails}>שמור</Button>
           <Button variant="outlined" onClick={() => setShowEditUserModal(false)} style={{ marginLeft: '1rem' }}>ביטול</Button>
-        </Box>
+        </ModalContent>
       </Modal>
     </ThemeProvider>
   );
