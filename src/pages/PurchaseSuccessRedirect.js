@@ -1,70 +1,86 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-import confetti from 'canvas-confetti';
-import { useAuth } from '../hooks/useAuth';
+   import { useNavigate, useLocation } from 'react-router-dom';
+   import Swal from 'sweetalert2';
+   import withReactContent from 'sweetalert2-react-content';
+   import confetti from 'canvas-confetti';
+   import { useAuth } from '../hooks/useAuth';
 
-const MySwal = withReactContent(Swal);
+   const MySwal = withReactContent(Swal);
 
-const PurchaseSuccessRedirect = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+   const PurchaseSuccessRedirect = () => {
+     const navigate = useNavigate();
+     const location = useLocation();
+     const { user } = useAuth();
 
-  useEffect(() => {
-    const courseId = new URLSearchParams(location.search).get('courseId');
-    
-    // הפעלת אנימציית הקונפטי
-    const duration = 5 * 1000;
-    const end = Date.now() + duration;
+     useEffect(() => {
+       const params = new URLSearchParams(location.search);
+       const courseId = params.get('courseId');
+       const success = params.get('success');
+       const message = params.get('message');
+       
+       if (success !== 'true') {
+         // טיפול במקרה של כישלון בתשלום
+         MySwal.fire({
+           icon: 'error',
+           title: 'שגיאה בתשלום',
+           text: message || 'אירעה שגיאה בעת ביצוע התשלום. אנא נסה שנית.',
+         }).then(() => {
+           navigate('/courses');
+         });
+         return;
+       }
 
-    const frame = () => {
-      confetti({
-        particleCount: 2,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#ff0000', '#00ff00', '#0000ff']
-      });
-      confetti({
-        particleCount: 2,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#ff0000', '#00ff00', '#0000ff']
-      });
+       // הפעלת אנימציית הקונפטי
+       const duration = 5 * 1000;
+       const end = Date.now() + duration;
 
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
+       const frame = () => {
+         confetti({
+           particleCount: 2,
+           angle: 60,
+           spread: 55,
+           origin: { x: 0 },
+           colors: ['#ff0000', '#00ff00', '#0000ff']
+         });
+         confetti({
+           particleCount: 2,
+           angle: 120,
+           spread: 55,
+           origin: { x: 1 },
+           colors: ['#ff0000', '#00ff00', '#0000ff']
+         });
 
-    frame();
+         if (Date.now() < end) {
+           requestAnimationFrame(frame);
+         }
+       };
 
-    MySwal.fire({
-      title: 'התשלום הושלם בהצלחה!',
-      html: 'תודה על רכישת הקורס. מעביר אותך לאזור האישי בעוד <b></b> שניות.',
-      timer: 5000,
-      timerProgressBar: true,
-      didOpen: () => {
-        Swal.showLoading();
-        const b = Swal.getHtmlContainer().querySelector('b');
-        const timerInterval = setInterval(() => {
-          b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
-        }, 100);
-        return () => clearInterval(timerInterval);
-      }
-    }).then(() => {
-      if (user) {
-        navigate('/personal-area', { state: { newPurchase: true, courseId } });
-      } else {
-        navigate('/login', { state: { from: '/payment-success', courseId } });
-      }
-    });
-  }, [navigate, location, user]);
+       frame();
 
-  return null; // הקומפוננטה לא מרנדרת שום דבר, כי הכל מתבצע בפופאפ
-};
+       MySwal.fire({
+         icon: 'success',
+         title: 'התשלום הושלם בהצלחה!',
+         html: `${message}<br>מעביר אותך לאזור האישי בעוד <b></b> שניות.`,
+         timer: 5000,
+         timerProgressBar: true,
+         didOpen: () => {
+           Swal.showLoading();
+           const b = Swal.getHtmlContainer().querySelector('b');
+           const timerInterval = setInterval(() => {
+             b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+           }, 100);
+           return () => clearInterval(timerInterval);
+         }
+       }).then(() => {
+         if (user) {
+           navigate('/personal-area', { state: { newPurchase: true, courseId } });
+         } else {
+           navigate('/login', { state: { from: '/payment-success', courseId } });
+         }
+       });
+     }, [navigate, location, user]);
 
-export default PurchaseSuccessRedirect;
+     return null;
+   };
+
+   export default PurchaseSuccessRedirect;
