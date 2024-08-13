@@ -288,9 +288,9 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
           phone: phone,
           add: true
         },
-        successUrl: `${process.env.REACT_APP_CLIENT_BASE_URL}/payment-success?success=true&courseId=${course.id}`,
-failureUrl: `${process.env.REACT_APP_CLIENT_BASE_URL}/payment-success?success=false&courseId=${course.id}`,
-notifyUrl: `${process.env.REACT_APP_API_URL}/api/notify`,
+        successUrl: `https://courses.triroars.co.il//payment-success?success=true&courseId=${course.id}`,
+failureUrl: `https://courses.triroars.co.il//payment-success?success=false&courseId=${course.id}`,
+notifyUrl: `https://courses.triroars.co.il//api/notify`,
         custom: "300700556"
       };
       
