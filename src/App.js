@@ -18,7 +18,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import AddCoursePage from './pages/AddCoursePage';
 import EditCoursePage from './pages/EditCoursePage';
-import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
+import PurchaseSuccessRedirect from './pages/PurchaseSuccessRedirect';
 import CourseLearningPage from './pages/CourseLearningPage';
 import ContactAndPolicyPage from './pages/ContactAndPolicyPage';
 import PurchaseResultPage from './pages/PurchaseResultPage';
@@ -38,7 +38,7 @@ const AppContent = () => {
         <Route path="/course/:courseId" element={<CourseDetailsPage />} />
         <Route path="/add-course" element={<AddCoursePage />} />
         <Route path="/courses/:courseId/edit" element={<EditCoursePage />} />
-        <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
+        <Route path="/payment-success" element={<PurchaseSuccessRedirect />} />
         <Route path="/course-learning/:courseId" element={<CourseLearningPage />} />
         <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
         <Route path="/purchase-result" element={<PurchaseResultPage />} />

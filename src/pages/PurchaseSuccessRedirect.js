@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const MySwal = withReactContent(Swal);
 
-const PaymentSuccessRedirect = () => {
+const PurchaseSuccessRedirect = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -16,13 +16,32 @@ const PaymentSuccessRedirect = () => {
     const courseId = new URLSearchParams(location.search).get('courseId');
     
     // הפעלת אנימציית הקונפטי
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
+    const duration = 5 * 1000;
+    const end = Date.now() + duration;
 
-    let timerInterval;
+    const frame = () => {
+      confetti({
+        particleCount: 2,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#ff0000', '#00ff00', '#0000ff']
+      });
+      confetti({
+        particleCount: 2,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#ff0000', '#00ff00', '#0000ff']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    frame();
+
     MySwal.fire({
       title: 'התשלום הושלם בהצלחה!',
       html: 'תודה על רכישת הקורס. מעביר אותך לאזור האישי בעוד <b></b> שניות.',
@@ -31,12 +50,10 @@ const PaymentSuccessRedirect = () => {
       didOpen: () => {
         Swal.showLoading();
         const b = Swal.getHtmlContainer().querySelector('b');
-        timerInterval = setInterval(() => {
+        const timerInterval = setInterval(() => {
           b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
         }, 100);
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
+        return () => clearInterval(timerInterval);
       }
     }).then(() => {
       if (user) {
@@ -45,13 +62,9 @@ const PaymentSuccessRedirect = () => {
         navigate('/login', { state: { from: '/payment-success', courseId } });
       }
     });
-
-    return () => {
-      clearInterval(timerInterval);
-    };
   }, [navigate, location, user]);
 
   return null; // הקומפוננטה לא מרנדרת שום דבר, כי הכל מתבצע בפופאפ
 };
 
-export default PaymentSuccessRedirect;
+export default PurchaseSuccessRedirect;
