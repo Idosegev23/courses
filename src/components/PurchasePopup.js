@@ -288,9 +288,9 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
           phone: phone,
           add: true
         },
-        successUrl: `${process.env.CLIENT_BASE_URL}/payment-success?success=true&courseId=${course.id}`,
-        failureUrl: `${process.env.CLIENT_BASE_URL}/payment-success?success=false&courseId=${course.id}`,
-        notifyUrl: `${process.env.CLIENT_BASE_URL}/api/notify`,
+        successUrl: `${process.env.REACT_APP_URL}/payment-success?success=true&courseId=${course.id}`,
+        failureUrl: `${process.env.REACT_APP_URL}/payment-success?success=false&courseId=${course.id}`,
+        notifyUrl: `${process.env.REACT_APP_URL}/api/notify`,
         custom: "300700556"
       };
       
