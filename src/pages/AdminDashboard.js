@@ -130,6 +130,8 @@ const AdminDashboard = () => {
   const [editingUserDiscount, setEditingUserDiscount] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [filters, setFilters] = useState({});
+  const [page, setPage] = useState(1);
+  const [rowsPerPage] = useState(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -170,39 +172,31 @@ const AdminDashboard = () => {
 
   const fetchUserProgress = async (userId) => {
     try {
-      console.log('Fetching progress and enrollments for user ID:', userId);
-  
       const { data: progressData, error: progressError } = await supabase
         .from('user_progress')
         .select('*')
         .eq('user_id', userId);
-  
+
       if (progressError) {
         console.error('Error fetching user progress:', progressError);
         return;
       }
-  
-      console.log('User progress data:', progressData);
-  
+
       const { data: enrollmentsData, error: enrollmentsError } = await supabase
         .from('enrollments')
         .select('*, courses (title, total_lessons)')
         .eq('user_id', userId);
-  
+
       if (enrollmentsError) {
         console.error('Error fetching enrollments:', enrollmentsError);
         return;
       }
-  
-      console.log('User enrollments data:', enrollmentsData);
-  
+
       const progressMap = {};
       progressData.forEach(progress => {
         progressMap[progress.course_id] = progress;
       });
-  
-      console.log('Progress map:', progressMap);
-  
+
       setUserProgress(prevState => ({
         ...prevState,
         [userId]: progressMap
@@ -214,8 +208,6 @@ const AdminDashboard = () => {
   };
 
   const handleViewUser = async (userId) => {
-    console.log('Fetching user progress for user ID:', userId);
-  
     await fetchUserProgress(userId);
   
     const user = users.find((user) => user.id === userId);
@@ -224,14 +216,7 @@ const AdminDashboard = () => {
       return;
     }
   
-    console.log('User data:', user);
-  
     const userEnrollments = enrollments.filter(enrollment => enrollment.user_id === userId);
-    if (userEnrollments.length === 0) {
-      console.warn('No enrollments found for user ID:', userId);
-    }
-  
-    console.log('User enrollments:', userEnrollments);
   
     let enrollmentDetails = '';
     userEnrollments.forEach(enrollment => {
@@ -245,12 +230,8 @@ const AdminDashboard = () => {
           <p><strong>התקדמות:</strong> ${progress.current_lesson} / ${course.total_lessons}</p>
           <p><strong>סיים תרגילים:</strong> ${progress.completed_exercises?.join(', ') || 'לא סיים תרגילים'}</p>
         `;
-      } else {
-        console.warn(`No progress found for course ID: ${course?.id}, title: ${course?.title}`);
       }
     });
-  
-    console.log('Enrollment details:', enrollmentDetails);
   
     const result = await Swal.fire({
       title: `פרטי משתמש: ${user.username}`,
@@ -414,6 +395,7 @@ const AdminDashboard = () => {
       Swal.fire('שגיאה', 'אירעה שגיאה בעדכון פרטי המשתמש', 'error');
     }
   };
+
   const handleDeleteEnrollment = async (enrollmentId) => {
     const result = await Swal.fire({
       title: 'האם אתה בטוח?',
@@ -480,8 +462,18 @@ const AdminDashboard = () => {
     writeFile(wb, `${fileName}.xlsx`);
   };
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const paginateData = (data) => {
+    const startIndex = (page - 1) * rowsPerPage;
+    return data.slice(startIndex, startIndex + rowsPerPage);
+  };
+
   const renderTable = (data, columns, tableName) => {
     const sortedAndFilteredData = sortData(filterData(data, filters), sortConfig.key);
+    const paginatedData = paginateData(sortedAndFilteredData);
 
     return (
       <>
@@ -507,7 +499,7 @@ const AdminDashboard = () => {
             </Button>
           </Grid>
         </Grid>
-        <StyledTable>
+        <table>
           <thead>
             <tr>
               {columns.map(column => (
@@ -521,7 +513,7 @@ const AdminDashboard = () => {
           </thead>
           <tbody>
             <AnimatePresence>
-              {sortedAndFilteredData.map((item) => (
+              {paginatedData.map((item) => (
                 <motion.tr
                   key={item.id}
                   initial={{ opacity: 0 }}
@@ -533,92 +525,101 @@ const AdminDashboard = () => {
                   ))}
                   {tableName === 'enrollments' && (
                     <td>
-                      <ProgressBar progress={(item.current_lesson / item.total_lessons) * 100}>
-                        <div></div>
-                      </ProgressBar>
+                      <div>
+                        <div style={{ width: `${(item.current_lesson / item.total_lessons) * 100}%` }}></div>
+                      </div>
                       {item.current_lesson} / {item.total_lessons}
                     </td>
                   )}
                   <td>
                     {tableName === 'users' && (
                       <>
-                        <ActionButton
+                        <Button
                           variant="outlined"
                           color="primary"
                           size="small"
                           onClick={() => handleViewUser(item.id)}
                         >
                           צפייה
-                        </ActionButton>
-                        <ActionButton
+                        </Button>
+                        <Button
                           variant="outlined"
                           color="secondary"
                           size="small"
                           onClick={() => handleAddDiscount(item.id)}
                         >
                           עריכת הנחה
-                        </ActionButton>
-                        <ActionButton
+                        </Button>
+                        <Button
                           variant="outlined"
                           color="error"
                           size="small"
                           onClick={() => handleDeleteUser(item.id)}
                         >
                           מחיקה
-                        </ActionButton>
+                        </Button>
                       </>
                     )}
                     {tableName === 'courses' && (
                       <>
-                        <ActionButton
+                        <Button
                           variant="outlined"
                           color="primary"
                           size="small"
                           onClick={() => handleViewCourse(item.id)}
                         >
                           צפייה
-                        </ActionButton>
-                        <ActionButton
+                        </Button>
+                        <Button
                           variant="outlined"
                           color="secondary"
                           size="small"
                           onClick={() => handleEditCourse(item.id)}
                         >
                           עריכה
-                        </ActionButton>
-                        <ActionButton
+                        </Button>
+                        <Button
                           variant="outlined"
                           color="error"
                           size="small"
                           onClick={() => handleDeleteCourse(item.id)}
                         >
                           מחיקה
-                        </ActionButton>
+                        </Button>
                       </>
                     )}
                     {tableName === 'enrollments' && (
-                      <ActionButton
+                      <Button
                         variant="outlined"
                         color="error"
                         size="small"
                         onClick={() => handleDeleteEnrollment(item.id)}
                       >
                         מחיקה
-                      </ActionButton>
+                      </Button>
                     )}
                   </td>
                 </motion.tr>
               ))}
             </AnimatePresence>
           </tbody>
-        </StyledTable>
+        </table>
+        <div>
+          <Pagination
+            count={Math.ceil(sortedAndFilteredData.length / rowsPerPage)}
+            page={page}
+            onChange={handleChangePage}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </div>
       </>
     );
   };
 
   const handleSaveNewUser = async () => {
     try {
-      // Register new user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
@@ -626,7 +627,6 @@ const AdminDashboard = () => {
 
       if (authError) throw authError;
 
-      // Add user details to 'users' table
       const { error: userError } = await supabase
         .from('users')
         .insert({
@@ -640,7 +640,7 @@ const AdminDashboard = () => {
 
       Swal.fire('נוסף בהצלחה', 'המשתמש החדש נוסף בהצלחה', 'success');
       setShowAddUserModal(false);
-      fetchData(); // Refresh the users list
+      fetchData();
     } catch (error) {
       console.error('Error adding new user:', error);
       Swal.fire('שגיאה', 'אירעה שגיאה בהוספת המשתמש החדש', 'error');
@@ -649,14 +649,13 @@ const AdminDashboard = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <GlobalStyle />
-      <DashboardContainer>
+      <Container>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <SectionTitle variant="h4"><FaUser /> ניהול משתמשים</SectionTitle>
+          <Typography variant="h4"><FaUser /> ניהול משתמשים</Typography>
           <Grid container spacing={2} style={{ marginBottom: '2rem' }}>
             <Grid item>
               <Button
@@ -681,7 +680,7 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <SectionTitle variant="h4"><FaBook /> ניהול קורסים</SectionTitle>
+          <Typography variant="h4"><FaBook /> ניהול קורסים</Typography>
           {renderTable(courses, [
             { key: 'title', label: 'כותרת' },
             { key: 'description', label: 'תיאור' },
@@ -694,7 +693,7 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <SectionTitle variant="h4"><FaMoneyBillWave /> ניהול הרשמות</SectionTitle>
+          <Typography variant="h4"><FaMoneyBillWave /> ניהול הרשמות</Typography>
           {renderTable(enrollments, [
             { key: 'user_email', label: 'אימייל משתמש' },
             { key: 'course_title', label: 'קורס' },
@@ -714,10 +713,10 @@ const AdminDashboard = () => {
             הוסף קורס חדש
           </Button>
         </Grid>
-      </DashboardContainer>
+      </Container>
 
       <Modal open={showAddUserModal} onClose={() => setShowAddUserModal(false)}>
-        <ModalContent>
+        <Box>
           <Typography variant="h6" style={{ marginBottom: '1rem' }}>הוסף משתמש חדש</Typography>
           <TextField
             fullWidth
@@ -755,11 +754,11 @@ const AdminDashboard = () => {
           />
           <Button variant="contained" color="primary" onClick={handleSaveNewUser}>שמור</Button>
           <Button variant="outlined" onClick={() => setShowAddUserModal(false)} style={{ marginLeft: '1rem' }}>ביטול</Button>
-        </ModalContent>
+        </Box>
       </Modal>
 
       <Modal open={showEditUserModal} onClose={() => setShowEditUserModal(false)}>
-        <ModalContent>
+        <Box>
           <Typography variant="h6" style={{ marginBottom: '1rem' }}>ערוך פרטי משתמש</Typography>
           <TextField
             fullWidth
@@ -780,7 +779,7 @@ const AdminDashboard = () => {
           />
           <Button variant="contained" color="primary" onClick={handleUpdateUserDetails}>שמור</Button>
           <Button variant="outlined" onClick={() => setShowEditUserModal(false)} style={{ marginLeft: '1rem' }}>ביטול</Button>
-        </ModalContent>
+        </Box>
       </Modal>
     </ThemeProvider>
   );
