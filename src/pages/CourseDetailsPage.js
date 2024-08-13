@@ -137,6 +137,24 @@ const LargeStyledButton = styled(StyledButton)`
   }
 `;
 
+const PriceDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const OriginalPrice = styled.span`
+  text-decoration: line-through;
+  color: #888;
+`;
+
+const DiscountedPrice = styled.span`
+  font-weight: bold;
+  color: #62238C;
+`;
+
 const CourseDetailsPage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -145,32 +163,55 @@ const CourseDetailsPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const { openLoginPopup, openRegisterPopup, openPurchasePopup } = usePopup();
+  const [discountPercentage, setDiscountPercentage] = useState(0);
 
   useEffect(() => {
-    const fetchCourse = async () => {
+    const fetchCourseAndDiscount = async () => {
       console.log('Fetching course details for courseId:', courseId);
-      const { data, error } = await supabase
+      const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select('*')
         .eq('id', courseId)
         .single();
-      if (error) {
-        console.error('Error fetching course:', error);
+
+      if (courseError) {
+        console.error('Error fetching course:', courseError);
       } else {
-        console.log('Course data fetched:', data);
-        setCourse(data);
+        console.log('Course data fetched:', courseData);
+        setCourse(courseData);
+
+        if (user) {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('discount_percentage')
+            .eq('id', user.id)
+            .single();
+
+          if (userError) {
+            console.error('Error fetching user discount:', userError);
+          } else {
+            console.log('User discount fetched:', userData);
+            setDiscountPercentage(userData.discount_percentage || 0);
+          }
+        }
+
         setLoading(false);
       }
     };
 
-    fetchCourse();
-  }, [courseId]);
+    fetchCourseAndDiscount();
+  }, [courseId, user]);
+
+  const calculateDiscountedPrice = (originalPrice) => {
+    return originalPrice * (1 - discountPercentage / 100);
+  };
 
   const handlePurchaseClick = () => {
     console.log('Purchase button clicked');
     if (user) {
       console.log('User is logged in, opening purchase popup');
-      openPurchasePopup(course);
+      const finalPrice = calculateDiscountedPrice(course.price);
+      openPurchasePopup({ ...course, finalPrice });
     } else {
       console.log('User is not logged in, opening register popup');
       openRegisterPopup(true);  // true indicates it's from course details
@@ -193,6 +234,8 @@ const CourseDetailsPage = () => {
     );
   }
 
+  const discountedPrice = calculateDiscountedPrice(course.price);
+
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyles />
@@ -204,7 +247,12 @@ const CourseDetailsPage = () => {
             <p>{course.description}</p>
             <p>{course.details}</p>
             <p>משך זמן: {course.duration}</p>
-            <p>עלות: {course.price} ש״ח</p>
+            <PriceDisplay>
+              <OriginalPrice>{course.price} ש״ח</OriginalPrice>
+              {discountPercentage > 0 && (
+                <DiscountedPrice>{discountedPrice.toFixed(2)} ש״ח</DiscountedPrice>
+              )}
+            </PriceDisplay>
             <p>מספר שיעורים: {course.total_lessons}</p>
           </CourseDescription>
           <LargeStyledButton as="button" onClick={handlePurchaseClick} isprimary="true">
