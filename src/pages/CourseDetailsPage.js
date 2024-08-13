@@ -163,7 +163,7 @@ const CourseDetailsPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const { openLoginPopup, openRegisterPopup, openPurchasePopup } = usePopup();
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [discount, setDiscount] = useState(0);
 
   useEffect(() => {
     const fetchCourseAndDiscount = async () => {
@@ -183,7 +183,7 @@ const CourseDetailsPage = () => {
         if (user) {
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('discount_percentage')
+            .select('discount')
             .eq('id', user.id)
             .single();
 
@@ -191,7 +191,7 @@ const CourseDetailsPage = () => {
             console.error('Error fetching user discount:', userError);
           } else {
             console.log('User discount fetched:', userData);
-            setDiscountPercentage(userData.discount_percentage || 0);
+            setDiscount(userData.discount || 0);
           }
         }
 
@@ -203,7 +203,7 @@ const CourseDetailsPage = () => {
   }, [courseId, user]);
 
   const calculateDiscountedPrice = (originalPrice) => {
-    return originalPrice * (1 - discountPercentage / 100);
+    return originalPrice * (1 - discount / 100);
   };
 
   const handlePurchaseClick = () => {
@@ -249,7 +249,7 @@ const CourseDetailsPage = () => {
             <p>משך זמן: {course.duration}</p>
             <PriceDisplay>
               <OriginalPrice>{course.price} ש״ח</OriginalPrice>
-              {discountPercentage > 0 && (
+              {discount > 0 && (
                 <DiscountedPrice>{discountedPrice.toFixed(2)} ש״ח</DiscountedPrice>
               )}
             </PriceDisplay>
