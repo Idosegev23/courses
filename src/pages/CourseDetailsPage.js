@@ -155,6 +155,11 @@ const DiscountedPrice = styled.span`
   color: #62238C;
 `;
 
+const RegularPrice = styled.span`
+  font-weight: bold;
+  color: #62238C;
+`;
+
 const CourseDetailsPage = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
@@ -163,7 +168,9 @@ const CourseDetailsPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const { openLoginPopup, openRegisterPopup, openPurchasePopup } = usePopup();
-  const [discount, setDiscount] = useState(0);
+  const [finalPrice, setFinalPrice] = useState(0);
+  const [originalPrice, setOriginalPrice] = useState(0);
+  const [discountPercentage, setDiscountPercentage] = useState(0);
 
   useEffect(() => {
     const fetchCourseAndDiscount = async () => {
@@ -179,6 +186,7 @@ const CourseDetailsPage = () => {
       } else {
         console.log('Course data fetched:', courseData);
         setCourse(courseData);
+        setOriginalPrice(courseData.price);
 
         if (user) {
           const { data: userData, error: userError } = await supabase
@@ -191,8 +199,15 @@ const CourseDetailsPage = () => {
             console.error('Error fetching user discount:', userError);
           } else {
             console.log('User discount fetched:', userData);
-            setDiscount(userData.discount || 0);
+            const userDiscount = userData.discount || 0;
+            const courseDiscount = courseData.discount || 0;
+            const totalDiscount = Math.max(userDiscount, courseDiscount);
+            setDiscountPercentage(totalDiscount);
+            const discountedPrice = calculateDiscountedPrice(courseData.price, totalDiscount);
+            setFinalPrice(discountedPrice);
           }
+        } else {
+          setFinalPrice(courseData.price);
         }
 
         setLoading(false);
@@ -202,15 +217,17 @@ const CourseDetailsPage = () => {
     fetchCourseAndDiscount();
   }, [courseId, user]);
 
-  const calculateDiscountedPrice = (originalPrice) => {
-    return originalPrice * (1 - discount / 100);
+  const calculateDiscountedPrice = (price, discount) => {
+    return price * (1 - discount / 100);
   };
 
-  const handlePurchaseClick = () => {
+  const handlePurchaseClick = async () => {
     console.log('Purchase button clicked');
-    if (user) {
+    if (finalPrice === 0) {
+      console.log('Course is free, adding to user\'s courses');
+      await addCourseToUserCourses();
+    } else if (user) {
       console.log('User is logged in, opening purchase popup');
-      const finalPrice = calculateDiscountedPrice(course.price);
       openPurchasePopup({ ...course, finalPrice });
     } else {
       console.log('User is not logged in, opening register popup');
@@ -218,8 +235,25 @@ const CourseDetailsPage = () => {
     }
   };
 
-  const handlePurchaseSuccess = () => {
-    setSnackbarMessage('הרכישה בוצעה בהצלחה!');
+  const addCourseToUserCourses = async () => {
+    const { data, error } = await supabase
+      .from('enrollments')
+      .insert({
+        user_id: user.id,
+        course_id: course.id,
+        current_lesson: 0,
+        amount_paid: 0,
+        course_title: course.title,
+        total_lessons: course.total_lessons
+      });
+
+    if (error) {
+      console.error('Error adding course to user\'s courses:', error);
+      setSnackbarMessage('אירעה שגיאה בהוספת הקורס. אנא נסה שוב.');
+    } else {
+      console.log('Course added successfully:', data);
+      setSnackbarMessage('הקורס נוסף בהצלחה לאזור האישי שלך!');
+    }
     setSnackbarOpen(true);
   };
 
@@ -234,8 +268,6 @@ const CourseDetailsPage = () => {
     );
   }
 
-  const discountedPrice = calculateDiscountedPrice(course.price);
-
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyles />
@@ -248,15 +280,19 @@ const CourseDetailsPage = () => {
             <p>{course.details}</p>
             <p>משך זמן: {course.duration}</p>
             <PriceDisplay>
-              <OriginalPrice>{course.price} ש״ח</OriginalPrice>
-              {discount > 0 && (
-                <DiscountedPrice>{discountedPrice.toFixed(2)} ש״ח</DiscountedPrice>
+              {discountPercentage > 0 ? (
+                <>
+                  <OriginalPrice>{originalPrice} ש״ח</OriginalPrice>
+                  <DiscountedPrice>{finalPrice.toFixed(2)} ש״ח</DiscountedPrice>
+                </>
+              ) : (
+                <RegularPrice>{finalPrice.toFixed(2)} ש״ח</RegularPrice>
               )}
             </PriceDisplay>
             <p>מספר שיעורים: {course.total_lessons}</p>
           </CourseDescription>
           <LargeStyledButton as="button" onClick={handlePurchaseClick} isprimary="true">
-            רכוש עכשיו
+            {finalPrice === 0 ? 'הוסף לקורסים שלי' : 'רכוש עכשיו'}
           </LargeStyledButton>
         </PageContent>
         <Snackbar

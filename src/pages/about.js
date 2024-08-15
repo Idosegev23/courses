@@ -1,19 +1,24 @@
 import React from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, createGlobalStyle } from 'styled-components';
 import PersonIcon from '@mui/icons-material/Person';
 import WorkIcon from '@mui/icons-material/Work';
 import VisionIcon from '@mui/icons-material/Visibility';
 import OfferIcon from '@mui/icons-material/LocalOffer';
 import MotivationIcon from '@mui/icons-material/EmojiObjects';
 
+const GlobalStyle = createGlobalStyle`
+  body {
+    font-family: 'Heebo', sans-serif;
+    background-color: #ffffff;
+    direction: rtl;
+    margin: 0;
+    padding: 0;
+  }
+`;
+
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
-`;
-
-const Header = styled.header`
-  direction: ltr;
-  text-align: left;
 `;
 
 const Container = styled.div`
@@ -31,7 +36,6 @@ const Container = styled.div`
   font-family: 'Heebo', sans-serif;
   overflow: hidden;
   animation: ${fadeIn} 0.5s ease-out;
-  text-align: right;
 `;
 
 const GeometricShape = styled.div`
@@ -69,7 +73,7 @@ const Title = styled.h1`
   font-size: 2.5rem;
   color: #62238C;
   letter-spacing: 1px;
-  text-align: right;
+  text-align: center;
   margin-bottom: 1rem;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 `;
@@ -97,15 +101,13 @@ const Section = styled.div`
 `;
 
 const SectionTitle = styled.h3`
-  display: flex;
-  align-items: center;
-  justify-content: flex-end; // יישור לימין
+  justify-content: flex-end;
   font-size: 1.3rem;
   color: #62238C;
   margin-bottom: 1rem;
 
   svg {
-    margin-left: 0.5rem;
+    margin-right: 0.5rem;
     font-size: 1.5rem;
   }
 `;
@@ -125,57 +127,61 @@ const List = styled.ul`
 
 const AboutPage = () => {
   return (
-    <Container>
-      <TopLeftCircle color="#62238C" />
-      <BottomRightCircle color="#9D4EDD" />
-      
-      <ProfileImage src="https://res.cloudinary.com/dsoh3yteb/image/upload/v1723584593/%D7%AA%D7%9E%D7%95%D7%A0%D7%94_%D7%A2%D7%99%D7%93%D7%95_cjrzxy.png" alt="עידו שגב" />
-      <Title>קצת עלי</Title>
-      <Subtitle>מומחה בינה מלאכותית, יזם, ומרצה</Subtitle>
+    <>
+      <GlobalStyle />
 
-      <Section>
-        <SectionTitle><PersonIcon /> רקע אישי</SectionTitle>
-        <SectionContent>
-          <p>שמי עידו שגב, בן 37, נשוי ואב גאה ל-3 ילדים מקסימים. אני מתגורר באשקלון, עיר החוף היפהפייה בדרום הארץ. מאז שהבינה המלאכותית הפכה לחלק בלתי נפרד מחיינו, מצאתי את עצמי שוקע עמוק בעולם המרתק הזה. אני עוסק במגוון רחב של היבטים בתחום ה-AI, החל מהעברת סדנאות מעשיות לעסקים, רשויות ציבוריות וארגונים פרטיים, ועד להטמעת מערכות בינה מלאכותית מתקדמות. בנוסף, אני מרצה במכללת אולטימה, שם אני חולק את הידע והניסיון שלי עם הדור הבא של אנשי המקצוע בתחום הבינה המלאכותית.</p>
-        </SectionContent>
-      </Section>
+      <Container>
+        <TopLeftCircle color="#62238C" />
+        <BottomRightCircle color="#9D4EDD" />
+        
+        <ProfileImage src="https://res.cloudinary.com/dsoh3yteb/image/upload/v1723584593/%D7%AA%D7%9E%D7%95%D7%A0%D7%94_%D7%A2%D7%99%D7%93%D7%95_cjrzxy.png" alt="עידו שגב" />
+        <Title>קצת עלי</Title>
+        <Subtitle>מומחה בינה מלאכותית, יזם, ומרצה</Subtitle>
 
-      <Section>
-        <SectionTitle><WorkIcon /> ניסיון ומקצועיות</SectionTitle>
-        <SectionContent>
-          <p>במהלך הקריירה שלי, צברתי ניסיון עשיר בתפקידים בכירים בחברות המובילות במשק הישראלי. כיום, אני גאה להוביל כמנכ"ל את חברת Triroars, ובמקביל אני מכהן כמנכ"ל חטיבת ה-AI בחברת KA. עם למעלה מ-15 שנות ניסיון בתחום, התמחיתי בניהול והטמעה של מערכות בינה מלאכותית ואוטומציה בארגונים מובילים. הניסיון הרב שצברתי מאפשר לי להביא פתרונות AI מתקדמים ומותאמים אישית לצרכים הייחודיים של כל ארגון, תוך שילוב של חדשנות טכנולוגית עם הבנה עמוקה של צרכי העסק.</p>
-        </SectionContent>
-      </Section>
+        <Section>
+          <SectionTitle><PersonIcon /> רקע אישי</SectionTitle>
+          <SectionContent>
+            <p>שמי עידו שגב, בן 37, נשוי ואב גאה ל-3 ילדים מקסימים. אני מתגורר באשקלון, עיר החוף היפהפייה בדרום הארץ. מאז שהבינה המלאכותית הפכה לחלק בלתי נפרד מחיינו, מצאתי את עצמי שוקע עמוק בעולם המרתק הזה. אני עוסק במגוון רחב של היבטים בתחום ה-AI, החל מהעברת סדנאות מעשיות לעסקים, רשויות ציבוריות וארגונים פרטיים, ועד להטמעת מערכות בינה מלאכותית מתקדמות. בנוסף, אני מרצה במכללת אולטימה, שם אני חולק את הידע והניסיון שלי עם הדור הבא של אנשי המקצוע בתחום הבינה המלאכותית.</p>
+          </SectionContent>
+        </Section>
 
-      <Section>
-        <SectionTitle><VisionIcon /> חזון ואמונות</SectionTitle>
-        <SectionContent>
-          <p>אני מאמין בכל לבי שהבינה המלאכותית היא לא רק כלי טכנולוגי, אלא מפתח להעצמה אישית ומקצועית. חזוני הוא שכל אדם, ללא קשר לתחום העיסוק שלו, יוכל להשתמש בבינה המלאכותית כחלק אינטגרלי מארגז הכלים שלו. אני שואב השראה מהמשפט המפורסם של אלברט איינשטיין: "דמיון חשוב יותר מידע, כי ידע הוא מוגבל, אבל הדמיון מקיף את העולם." משפט זה מנחה אותי בעבודתי היומיומית ומדרבן אותי לקדם את תחום הבינה המלאכותית באופן שיהיה נגיש ומועיל לכלל האוכלוסייה.</p>
-        </SectionContent>
-      </Section>
+        <Section>
+          <SectionTitle><WorkIcon /> ניסיון ומקצועיות</SectionTitle>
+          <SectionContent>
+            <p>במהלך הקריירה שלי, צברתי ניסיון עשיר בתפקידים בכירים בחברות המובילות במשק הישראלי. כיום, אני גאה להוביל כמנכ"ל את חברת Triroars, ובמקביל אני מכהן כמנכ"ל חטיבת ה-AI בחברת KA. עם למעלה מ-15 שנות ניסיון בתחום, התמחיתי בניהול והטמעה של מערכות בינה מלאכותית ואוטומציה בארגונים מובילים. הניסיון הרב שצברתי מאפשר לי להביא פתרונות AI מתקדמים ומותאמים אישית לצרכים הייחודיים של כל ארגון, תוך שילוב של חדשנות טכנולוגית עם הבנה עמוקה של צרכי העסק.</p>
+          </SectionContent>
+        </Section>
 
-      <Section>
-        <SectionTitle><OfferIcon /> מה אנחנו מציעים</SectionTitle>
-        <SectionContent>
-          <p>כחלק מהמחויבות שלי לקידום תחום הבינה המלאכותית, אני מציע מגוון רחב של שירותים:</p>
-          <List>
-            <li>סדנאות והדרכות מקצועיות</li>
-            <li>הטמעת מערכות AI</li>
-            <li>אוטומציה חכמה</li>
-            <li>ייעוץ אסטרטגי</li>
-            <li>הובלת קהילות מקצועיות</li>
-          </List>
-        </SectionContent>
-      </Section>
+        <Section>
+          <SectionTitle><VisionIcon /> חזון ואמונות</SectionTitle>
+          <SectionContent>
+            <p>אני מאמין בכל לבי שהבינה המלאכותית היא לא רק כלי טכנולוגי, אלא מפתח להעצמה אישית ומקצועית. חזוני הוא שכל אדם, ללא קשר לתחום העיסוק שלו, יוכל להשתמש בבינה המלאכותית כחלק אינטגרלי מארגז הכלים שלו. אני שואב השראה מהמשפט המפורסם של אלברט איינשטיין: "דמיון חשוב יותר מידע, כי ידע הוא מוגבל, אבל הדמיון מקיף את העולם." משפט זה מנחה אותי בעבודתי היומיומית ומדרבן אותי לקדם את תחום הבינה המלאכותית באופן שיהיה נגיש ומועיל לכלל האוכלוסייה.</p>
+          </SectionContent>
+        </Section>
 
-      <Section>
-        <SectionTitle><MotivationIcon /> המוטיבציה שלי</SectionTitle>
-        <SectionContent>
-          <p>המוטיבציה שלי נובעת מתשוקה עמוקה להביא את הבינה המלאכותית לקדמת הבמה ולהדגים כיצד היא יכולה לשפר באופן משמעותי את החיים המקצועיים והאישיים של כל אדם. אני רואה בעבודתי שליחות - להנגיש את הטכנולוגיה המתקדמת הזו לכל שכבות החברה ולפתח כלים שיתאימו למגוון רחב של צרכים.</p>
-          <p>האתגר של גישור על הפער בין הטכנולוגיה המורכבת לבין היישום היומיומי שלה מניע אותי להמשיך ללמוד, לחדש ולהתפתח. אני מאמין שבאמצעות חינוך, הדרכה ויישום נכון של AI, נוכל ליצור עתיד טוב יותר - עתיד שבו טכנולוגיה משרתת את האנושות ומעצימה את היכולות האנושיות, במקום להחליף אותן.</p>
-        </SectionContent>
-      </Section>
-    </Container>
+        <Section>
+          <SectionTitle><OfferIcon /> מה אנחנו מציעים</SectionTitle>
+          <SectionContent>
+            <p>כחלק מהמחויבות שלי לקידום תחום הבינה המלאכותית, אני מציע מגוון רחב של שירותים:</p>
+            <List>
+              <li>סדנאות והדרכות מקצועיות</li>
+              <li>הטמעת מערכות AI</li>
+              <li>אוטומציה חכמה</li>
+              <li>ייעוץ אסטרטגי</li>
+              <li>הובלת קהילות מקצועיות</li>
+            </List>
+          </SectionContent>
+        </Section>
+
+        <Section>
+          <SectionTitle><MotivationIcon /> המוטיבציה שלי</SectionTitle>
+          <SectionContent>
+            <p>המוטיבציה שלי נובעת מתשוקה עמוקה להביא את הבינה המלאכותית לקדמת הבמה ולהדגים כיצד היא יכולה לשפר באופן משמעותי את החיים המקצועיים והאישיים של כל אדם. אני רואה בעבודתי שליחות - להנגיש את הטכנולוגיה המתקדמת הזו לכל שכבות החברה ולפתח כלים שיתאימו למגוון רחב של צרכים.</p>
+            <p>האתגר של גישור על הפער בין הטכנולוגיה המורכבת לבין היישום היומיומי שלה מניע אותי להמשיך ללמוד, לחדש ולהתפתח. אני מאמין שבאמצעות חינוך, הדרכה ויישום נכון של AI, נוכל ליצור עתיד טוב יותר - עתיד שבו טכנולוגיה משרתת את האנושות ומעצימה את היכולות האנושיות, במקום להחליף אותן.</p>
+          </SectionContent>
+        </Section>
+      </Container>
+    </>
   );
 };
 

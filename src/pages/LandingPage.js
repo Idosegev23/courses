@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import Hero from './hero';
 import StyledButton from '../components/StyledButton';
 import { supabase } from '../supabaseClient';
+import FlipCard from '../components/FlipCard';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -39,33 +40,6 @@ const InteractiveContainer = styled(motion.div)`
     transform: translateY(-10px);
     box-shadow: 0 6px 50px rgba(0, 0, 0, 0.2);
   }
-`;
-
-const CardContainer = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 2rem;
-  height: 80%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-`;
-
-const CardContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: auto;
 `;
 
 const CookieConsentBanner = styled(motion.div)`
@@ -200,7 +174,6 @@ const LandingPage = () => {
       <GlobalStyle />
       <Hero />
       <PageContainer maxWidth="lg">
-        {/* מה יש פה בעצם */}
         <InteractiveContainer
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -219,7 +192,6 @@ const LandingPage = () => {
           </Typography>
         </InteractiveContainer>
 
-        {/* מה אנחנו מציעים לכם */}
         <InteractiveContainer
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -238,7 +210,6 @@ const LandingPage = () => {
           </Typography>
         </InteractiveContainer>
 
-        {/* גריד הקורסים */}
         <Grid container spacing={4} id="course-content">
           <AnimatePresence>
             {courses.map((course) => (
@@ -248,41 +219,30 @@ const LandingPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  style={{ height: '100%' }}
+                  style={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '10px'
+                  }}
                 >
-                  <CardContainer>
-                    <CardContent>
-                      <div>
-                        <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2, color: '#62238C' }}>
-                          {course.title}
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 3, color: '#0D0D0D' }}>
-                          {course.description}
-                        </Typography>
-                      </div>
-                      <ButtonContainer>
-                        {userEnrollments.includes(course.id) ? (
-                          <StyledButton 
-                            as={Link} 
-                            to={`/course-learning/${course.id}`} 
-                            isprimary="true"
-                            data-text="כניסה לקורס"
-                          >
-                            כניסה לקורס
-                          </StyledButton>
-                        ) : (
-                          <StyledButton 
-                            as={Link} 
-                            to={`/course/${course.id}`} 
-                            isprimary="true"
-                            data-text="פרטים נוספים"
-                          >
-                            פרטים נוספים
-                          </StyledButton>
-                        )}
-                      </ButtonContainer>
-                    </CardContent>
-                  </CardContainer>
+                  <FlipCard
+  title={course.title}
+  imageSrc={course.imageSrc || "/path/to/default-image.jpg"}
+  description={course.details}
+  courseId={course.id}
+  isEnrolled={userEnrollments.includes(course.id)}
+>
+  <StyledButton 
+    as={Link} 
+    to={userEnrollments.includes(course.id) ? `/course-learning/${course.id}` : `/course/${course.id}`} 
+    isprimary="true"
+    data-text={userEnrollments.includes(course.id) ? "כניסה לקורס" : "פרטים נוספים"}
+  >
+    {userEnrollments.includes(course.id) ? "כניסה לקורס" : "פרטים נוספים"}
+  </StyledButton>
+</FlipCard>
                 </motion.div>
               </Grid>
             ))}
@@ -296,7 +256,6 @@ const LandingPage = () => {
         )}
       </PageContainer>
 
-      {/* באנר עוגיות */}
       <AnimatePresence>
         {!cookiesAccepted && (
           <CookieConsentBanner

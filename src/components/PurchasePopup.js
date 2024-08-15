@@ -223,8 +223,16 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
   };
 
   const handlePurchase = async () => {
-    console.log('Starting regular purchase process');
+    console.log('Starting purchase process');
     try {
+      if (course.finalPrice === 0) {
+        console.log('Course is free, adding to user\'s courses');
+        await addCourseToUserCourses();
+        onPurchaseSuccess();
+        onClose();
+        return;
+      }
+
       console.log('Requesting token from Green Invoice');
       const tokenResponse = await fetch('/api/green-invoice', {
         method: 'POST',
@@ -265,7 +273,7 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
 
       console.log('User data fetched for invoice:', userData);
 
-      const finalPrice = course.discountPrice || course.price;
+      const finalPrice = course.finalPrice || course.price;
 
       const invoiceData = {
         description: `רכישת קורס ${course.title}`,
@@ -289,8 +297,8 @@ const PurchasePopup = ({ course, onPurchaseSuccess, onClose, isOpen }) => {
           add: true
         },
         successUrl: `https://courses.triroars.co.il/payment-success?success=true&courseId=${course.id}`,
-failureUrl: `https://courses.triroars.co.il/payment-success?success=false&courseId=${course.id}`,
-notifyUrl: `https://courses.triroars.co.il/api/notify`,
+        failureUrl: `https://courses.triroars.co.il/payment-success?success=false&courseId=${course.id}`,
+        notifyUrl: `https://courses.triroars.co.il/api/notify`,
         custom: "300700556"
       };
       
@@ -346,6 +354,24 @@ notifyUrl: `https://courses.triroars.co.il/api/notify`,
         console.error('Error response:', error.response.data);
       }
       setError('אירעה שגיאה במהלך הרכישה. אנא נסה שוב.');
+    }
+  };
+
+  const addCourseToUserCourses = async () => {
+    const { error: enrollmentError } = await supabase
+      .from('enrollments')
+      .insert({
+        user_id: user.id,
+        course_id: course.id,
+        current_lesson: 0,
+        amount_paid: 0,
+        course_title: course.title,
+        total_lessons: course.total_lessons
+      });
+
+    if (enrollmentError) {
+      console.error('Error creating enrollment:', enrollmentError);
+      throw enrollmentError;
     }
   };
 

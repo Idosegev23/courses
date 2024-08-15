@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import Swal from 'sweetalert2';
 import { usePopup } from '../PopupContext';
-import { FaGoogle, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaGoogle, FaUser, FaEnvelope, FaLock, FaTicketAlt } from 'react-icons/fa';
 import {
   Overlay,
   Container,
@@ -29,7 +29,9 @@ const RegisterPopup = () => {
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [coupon, setCoupon] = useState('');
   const [error, setError] = useState('');
+  const [couponApplied, setCouponApplied] = useState(false);
   const containerRef = useRef(null);
   const { showRegisterPopup, closeAllPopups, openLoginPopup, isFromCourseDetails, navigateBack } = usePopup();
 
@@ -44,6 +46,37 @@ const RegisterPopup = () => {
 
   const handlePreviousStep = () => {
     setStep(1);
+  };
+
+  const validateCoupon = () => {
+    if (coupon.toUpperCase() === 'OPENING25') {
+      setCouponApplied(true);
+      setError('');
+      return true;
+    } else {
+      setError('קוד קופון לא תקין');
+      return false;
+    }
+  };
+
+  const applyCoupon = async (userId) => {
+    if (coupon && validateCoupon()) {
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          discount: 25,
+          discount_expiry: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error applying coupon:', error);
+        setError('שגיאה בהחלת הקופון. אנא נסה שנית.');
+        return false;
+      }
+      return true;
+    }
+    return false;
   };
 
   const handleRegister = async (e) => {
@@ -68,11 +101,13 @@ const RegisterPopup = () => {
       if (error) throw error;
 
       if (data.user) {
+        const couponApplied = await applyCoupon(data.user.id);
+        
         console.log('Registration successful:', data);
         
         Swal.fire({
           title: 'הרשמה הושלמה בהצלחה!',
-          text: 'נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר שלך.',
+          text: couponApplied ? 'הקופון הופעל בהצלחה! נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר שלך.' : 'נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר שלך.',
           icon: 'success',
           confirmButtonText: 'פתח את תיבת הדואר',
           showCancelButton: true,
@@ -101,9 +136,30 @@ const RegisterPopup = () => {
 
       if (error) throw error;
 
-      if (data.session) {
-        const user = data.session.user;
-        await handleUserMetadataUpdate(user);
+      if (data) {
+        closeAllPopups();
+        
+        const { value: couponCode } = await Swal.fire({
+          title: 'הזן קוד קופון (אופציונלי)',
+          input: 'text',
+          inputPlaceholder: 'הכנס קוד קופון',
+          showCancelButton: true,
+          cancelButtonText: 'דלג',
+          confirmButtonText: 'החל קופון'
+        });
+
+        if (couponCode) {
+          setCoupon(couponCode);
+          const user = await supabase.auth.getUser();
+          if (user.data.user) {
+            const couponApplied = await applyCoupon(user.data.user.id);
+            if (couponApplied) {
+              Swal.fire('הקופון הופעל בהצלחה!', 'תקבל 25% הנחה למשך 3 חודשים.', 'success');
+            }
+          }
+        }
+
+        navigateBack();
       }
     } catch (error) {
       console.error('Google login error:', error);
@@ -260,6 +316,17 @@ const RegisterPopup = () => {
                   />
                   <Icon><FaLock /></Icon>
                 </InputWrapper>
+                <InputWrapper delay="0.3s">
+                  <Label htmlFor="coupon">קוד קופון (אופציונלי)</Label>
+                  <Input 
+                    id="coupon"
+                    type="text" 
+                    placeholder="הכנס קוד קופון" 
+                    value={coupon} 
+                    onChange={(e) => setCoupon(e.target.value)} 
+                  />
+                  <Icon><FaTicketAlt /></Icon>
+                </InputWrapper>
                 <ButtonContainer>
                   <Button onClick={handleRegister}>הירשם</Button>
                   <Button onClick={handlePreviousStep}>הקודם</Button>
@@ -267,6 +334,7 @@ const RegisterPopup = () => {
               </>
             )}
             {error && <ErrorMessage>{error}</ErrorMessage>}
+            {couponApplied && <div style={{color: 'green', marginTop: '10px'}}>קופון הופעל בהצלחה! תקבל 25% הנחה למשך 3 חודשים.</div>}
           </Inputs>
         </PopupContent>
       </Container>

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes, createGlobalStyle } from 'styled-components';
-import { FaGoogle } from 'react-icons/fa';
+import { FaGoogle, FaUser, FaEnvelope, FaLock, FaTicketAlt } from 'react-icons/fa';
+import { supabase } from '../supabaseClient';
+import Swal from 'sweetalert2';
+import { usePopup } from '../PopupContext';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -21,7 +24,7 @@ const slideIn = keyframes`
   to { transform: translateY(0); opacity: 1; }
 `;
 
-const PopupOverlay = styled.div`
+const Overlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
@@ -32,10 +35,11 @@ const PopupOverlay = styled.div`
   justify-content: center;
   align-items: center;
   animation: ${fadeIn} 0.3s ease-out;
+  z-index: 1000;
 `;
 
-const PopupContent = styled.div`
-  background: rgba(255, 255, 255, 0.25);
+const Container = styled.div`
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 2rem;
@@ -44,6 +48,8 @@ const PopupContent = styled.div`
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
   animation: ${slideIn} 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
 `;
 
 const Title = styled.h2`
@@ -53,7 +59,7 @@ const Title = styled.h2`
   text-align: center;
 `;
 
-const FormContainer = styled.form`
+const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -67,7 +73,7 @@ const InputWrapper = styled.div`
 const Input = styled.input`
   width: 100%;
   height: 100%;
-  padding: 0 1rem;
+  padding: 0 1rem 0 2.5rem;
   border: none;
   border-radius: 10px;
   background-color: #e0e0e0;
@@ -92,12 +98,20 @@ const Input = styled.input`
 const Label = styled.label`
   position: absolute;
   top: 50%;
-  left: 1rem;
+  left: 2.5rem;
   transform: translateY(-50%);
   font-size: 1rem;
   color: #777;
   pointer-events: none;
   transition: all 0.3s ease;
+`;
+
+const Icon = styled.span`
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  color: #62238C;
 `;
 
 const Button = styled.button`
@@ -121,12 +135,6 @@ const Button = styled.button`
   }
 `;
 
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-`;
-
 const GoogleButton = styled(Button)`
   background-color: #DB4437;
   display: flex;
@@ -139,221 +147,349 @@ const GoogleButton = styled(Button)`
   }
 `;
 
-const ProgressBar = styled.div`
+const ButtonContainer = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 2rem;
+  margin-top: 1rem;
 `;
 
-const ProgressStep = styled.div`
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: ${props => props.active ? '#62238C' : '#e0e0e0'};
-  color: ${props => props.active ? 'white' : '#777'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: ${props => props.active ? 'inset 2px 2px 5px #4A1B6A, inset -2px -2px 5px #7C2DB4' : '3px 3px 6px #bebebe, -3px -3px 6px #ffffff'};
+const ErrorMessage = styled.div`
+  color: #ff0033;
+  margin-top: 0.5rem;
+  text-align: center;
 `;
 
-const RegisterPopup = ({ onClose }) => {
+const SuccessMessage = styled.div`
+  color: #00aa00;
+  margin-top: 0.5rem;
+  text-align: center;
+`;
+
+const CouponSection = styled.div`
+  background-color: #f0e6f5;
+  border: 2px dashed #62238C;
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const CouponTitle = styled.h3`
+  color: #62238C;
+  margin-bottom: 0.5rem;
+  text-align: center;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #62238C;
+  cursor: pointer;
+`;
+
+const RegisterPopup = () => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    idNum: '',
-    streetAddress: '',
-    city: '',
-    isCompany: false,
-  });
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [coupon, setCoupon] = useState('');
+  const [error, setError] = useState('');
+  const [couponApplied, setCouponApplied] = useState(false);
+  const containerRef = useRef(null);
+  const { showRegisterPopup, closeAllPopups, openLoginPopup, isFromCourseDetails, navigateBack } = usePopup();
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleNext = () => {
-    if (step < 3) setStep(step + 1);
-  };
-
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Здесь будет логика отправки данных на сервер
-    console.log('Form submitted:', formData);
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <>
-            <InputWrapper>
-              <Input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>שם פרטי</Label>
-            </InputWrapper>
-            <InputWrapper>
-              <Input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>שם משפחה</Label>
-            </InputWrapper>
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <InputWrapper>
-              <Input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>אימייל</Label>
-            </InputWrapper>
-            <InputWrapper>
-              <Input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>סיסמה</Label>
-            </InputWrapper>
-            <InputWrapper>
-              <Input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>אימות סיסמה</Label>
-            </InputWrapper>
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <InputWrapper>
-              <Input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>טלפון</Label>
-            </InputWrapper>
-            <InputWrapper>
-              <Input
-                type="text"
-                name="idNum"
-                value={formData.idNum}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>מספר זהות</Label>
-            </InputWrapper>
-            <InputWrapper>
-              <Input
-                type="text"
-                name="streetAddress"
-                value={formData.streetAddress}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>כתובת</Label>
-            </InputWrapper>
-            <InputWrapper>
-              <Input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder=" "
-                required
-              />
-              <Label>עיר</Label>
-            </InputWrapper>
-            <label>
-              <input
-                type="checkbox"
-                name="isCompany"
-                checked={formData.isCompany}
-                onChange={handleInputChange}
-              />
-              חברה או עוסק מורשה
-            </label>
-          </>
-        );
-      default:
-        return null;
+  const validateCoupon = () => {
+    if (coupon.toUpperCase() === 'OPENING25') {
+      setCouponApplied(true);
+      setError('');
+      return true;
+    } else {
+      setError('קוד קופון לא תקין');
+      return false;
     }
   };
 
+  const applyCoupon = async (userId) => {
+    if (coupon && validateCoupon()) {
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          discount: 25,
+          discount_expiry: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error applying coupon:', error);
+        setError('שגיאה בהחלת הקופון. אנא נסה שנית.');
+        return false;
+      }
+      return true;
+    }
+    return false;
+  };
+
+  const handleNextStep = () => {
+    if (!firstName || !lastName || !email) {
+      setError('כל השדות חייבים להיות מלאים');
+      return;
+    }
+    setStep(2);
+    setError('');
+  };
+
+  const handlePreviousStep = () => {
+    setStep(1);
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('הסיסמאות אינן תואמות');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        const couponApplied = await applyCoupon(data.user.id);
+        
+        Swal.fire({
+          title: 'הרשמה הושלמה בהצלחה!',
+          text: couponApplied ? 'הקופון הופעל בהצלחה! נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר שלך.' : 'נשלח אליך מייל לאימות. אנא בדוק את תיבת הדואר שלך.',
+          icon: 'success',
+          confirmButtonText: 'פתח את תיבת הדואר',
+          showCancelButton: true,
+          cancelButtonText: 'סגור'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            openEmailClient(email);
+          }
+          closeAllPopups();
+          navigateBack();
+        });
+      } else {
+        setError('הרשמה נכשלה. אנא נסה שנית.');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message || 'שגיאה ברישום, נסה שוב');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        const user = data.session.user;
+        await handleUserMetadataUpdate(user);
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError('שגיאה בהתחברות עם גוגל');
+    }
+  };
+
+  const handleUserMetadataUpdate = async (user) => {
+    if (!user.user_metadata || !user.user_metadata.first_name || !user.user_metadata.last_name) {
+      const { value: formValues } = await Swal.fire({
+        title: 'השלמת פרטים',
+        html:
+          '<input id="swal-input1" class="swal2-input" placeholder="שם פרטי">' +
+          '<input id="swal-input2" class="swal2-input" placeholder="שם משפחה">',
+        focusConfirm: false,
+        preConfirm: () => {
+          return [
+            document.getElementById('swal-input1').value,
+            document.getElementById('swal-input2').value
+          ]
+        }
+      });
+
+      if (formValues) {
+        const [firstName, lastName] = formValues;
+        await supabase.auth.updateUser({
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
+        });
+      }
+    }
+  };
+
+  const openEmailClient = (email) => {
+    let emailProvider = email.split('@')[1];
+    let url;
+
+    switch(emailProvider) {
+      case 'gmail.com':
+        url = 'https://mail.google.com/';
+        break;
+      case 'outlook.com':
+      case 'hotmail.com':
+        url = 'https://outlook.live.com/';
+        break;
+      case 'yahoo.com':
+        url = 'https://mail.yahoo.com/';
+        break;
+      default:
+        url = `https://${emailProvider}`;
+    }
+
+    window.open(url, '_blank');
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        closeAllPopups();
+      }
+    };
+
+    if (showRegisterPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showRegisterPopup, closeAllPopups]);
+
+  if (!showRegisterPopup) return null;
+
   return (
-    <PopupOverlay>
-      <PopupContent>
-        <GlobalStyle />
-        <Title>הרשמה</Title>
-        <ProgressBar>
-          <ProgressStep active={step >= 1}>1</ProgressStep>
-          <ProgressStep active={step >= 2}>2</ProgressStep>
-          <ProgressStep active={step >= 3}>3</ProgressStep>
-        </ProgressBar>
-        <FormContainer onSubmit={handleSubmit}>
-          {renderStep()}
-          <ButtonContainer>
-            {step > 1 && <Button type="button" onClick={handleBack}>חזור</Button>}
-            {step < 3 ? (
-              <Button type="button" onClick={handleNext}>הבא</Button>
-            ) : (
-              <Button type="submit">הרשמה</Button>
+    <Overlay>
+      <Container ref={containerRef}>
+        <TopLeftCircle color="#62238C" />
+        <BottomRightCircle color="#9D4EDD" />
+        <PopupContent>
+          <CloseButton onClick={closeAllPopups}>✕</CloseButton>
+          <BrandTitle>הרשמה</BrandTitle>
+          {isFromCourseDetails && (
+            <div style={{marginBottom: '10px', color: '#62238C'}}>יש להרשם על מנת להשלים את הרכישה</div>
+          )}
+          <Inputs>
+            {step === 1 && (
+              <>
+                <InputWrapper delay="0.1s">
+                  <Label htmlFor="firstName">שם פרטי</Label>
+                  <Input 
+                    id="firstName"
+                    type="text" 
+                    placeholder="לדוגמה: יוסי" 
+                    value={firstName} 
+                    onChange={(e) => setFirstName(e.target.value)} 
+                  />
+                  <Icon><FaUser /></Icon>
+                </InputWrapper>
+                <InputWrapper delay="0.2s">
+                  <Label htmlFor="lastName">שם משפחה</Label>
+                  <Input 
+                    id="lastName"
+                    type="text" 
+                    placeholder="לדוגמה: כהן" 
+                    value={lastName} 
+                    onChange={(e) => setLastName(e.target.value)} 
+                  />
+                  <Icon><FaUser /></Icon>
+                </InputWrapper>
+                <InputWrapper delay="0.3s">
+                  <Label htmlFor="email">אימייל</Label>
+                  <Input 
+                    id="email"
+                    type="email" 
+                    placeholder="example@test.com" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                  />
+                  <Icon><FaEnvelope /></Icon>
+                </InputWrapper>
+                
+                {/* הוספת שדה הקופון */}
+                <CouponSection>
+                  <CouponTitle>יש לך קופון? הזן אותו כאן</CouponTitle>
+                  <InputWrapper>
+                    <Input
+                      id="coupon"
+                      type="text"
+                      placeholder=" "
+                      value={coupon}
+                      onChange={(e) => setCoupon(e.target.value)}
+                    />
+                    <Label htmlFor="coupon">קוד קופון</Label>
+                    <Icon><FaTicketAlt /></Icon>
+                  </InputWrapper>
+                </CouponSection>
+
+                <ButtonContainer>
+                  <Button onClick={handleNextStep}>הבא</Button>
+                  <GoogleButton onClick={handleGoogleLogin}>
+                    <FaGoogle />
+                    הירשם עם גוגל
+                  </GoogleButton>
+                  <Button onClick={openLoginPopup}>כבר רשומים אצלנו? התחברו כאן</Button>
+                </ButtonContainer>
+              </>
             )}
-          </ButtonContainer>
-        </FormContainer>
-        {step === 1 && (
-          <GoogleButton type="button" onClick={() => console.log('Google Sign In')}>
-            <FaGoogle /> הרשמה עם גוגל
-          </GoogleButton>
-        )}
-      </PopupContent>
-    </PopupOverlay>
+            {step === 2 && (
+              <>
+                <InputWrapper delay="0.1s">
+                  <Label htmlFor="password">סיסמה</Label>
+                  <Input 
+                    id="password"
+                    type="password" 
+                    placeholder="מינימום 6 תווים" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                  />
+                  <Icon><FaLock /></Icon>
+                </InputWrapper>
+                <InputWrapper delay="0.2s">
+                  <Label htmlFor="confirmPassword">אימות סיסמה</Label>
+                  <Input 
+                    id="confirmPassword"
+                    type="password" 
+                    placeholder="הקלד שוב את הסיסמה" 
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                  />
+                  <Icon><FaLock /></Icon>
+                </InputWrapper>
+                <ButtonContainer>
+                  <Button onClick={handleRegister}>הירשם</Button>
+                  <Button onClick={handlePreviousStep}>הקודם</Button>
+                </ButtonContainer>
+              </>
+            )}
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+          </Inputs>
+        </PopupContent>
+      </Container>
+    </Overlay>
   );
 };
 

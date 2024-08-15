@@ -83,6 +83,22 @@ const HeaderContainer = styled.header`
   z-index: 10;
 `;
 
+const BannerContainer = styled.div`
+  background-color: #6DBFF2; /* צבע רקע */
+  color: #0D0D0D; /* צבע טקסט */
+  text-align: center;
+  padding: 0.5rem;
+  font-family: 'Heebo', sans-serif;
+  font-size: 1rem;
+  font-weight: bold;
+`;
+
+const Banner = () => (
+  <BannerContainer>
+    השקת אתר! קבלו 25% הנחה עם קוד הקופון: <span style={{ color: '#62238C' }}>OPENING25</span>
+  </BannerContainer>
+);
+
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
@@ -455,75 +471,77 @@ const Header = () => {
   );
 
   return (
-    <HeaderContainer>
-      <LogoContainer>
-        <Link to="/">
-          <LogoImage src={newLogo} alt="TriRoars Logo" />
-        </Link>
-        {user && (
-          <UserStatus>
-            <StatusDot />
-            <Greeting>שלום, {getFirstName(user)}</Greeting>
-            <ProfileImage src={getProfileImage(user)} alt="Profile" />
-          </UserStatus>
-        )}
-      </LogoContainer>
-      <NavContainer>
-        {renderNavItems()}
-      </NavContainer>
-      <MobileMenuButton onClick={toggleMobileMenu} aria-label="פתח תפריט">
-        <Menu />
-      </MobileMenuButton>
-      {isMobileMenuOpen && (
-       <MobileMenu>
-       <CloseButton onClick={toggleMobileMenu} aria-label="סגור תפריט">
-         <X />
-       </CloseButton>
-       {renderNavItems(true)}
-     </MobileMenu>
-   )}
-
-   {showPopup && (
-     <PopupOverlay>
-       <PopupContent>
-         <PopupLogo src={newLogo} alt="TriRoars Logo" />
-         <PopupTitle>צור קשר</PopupTitle>
-         <ExitButton onClick={() => setShowPopup(false)}>X</ExitButton>
-         <ContactForm onSubmit={handleSubmit}>
-           <Input 
-             type="text" 
-             name="name" 
-             placeholder="שם" 
-             value={formData.name} 
-             onChange={handleChange} 
-             required 
-           />
-           <Input 
-             type="email" 
-             name="email" 
-             placeholder="אימייל" 
-             value={formData.email} 
-             onChange={handleChange} 
-             required 
-           />
-           <TextArea 
-             name="message" 
-             placeholder="הודעה" 
-             value={formData.message}
-             onChange={handleChange} 
-             required
-           ></TextArea>
-           <SubmitButton type="submit" disabled={loading}>
-             {loading ? 'שולח...' : 'שלח'}
-           </SubmitButton>
-           {success && <p>ההודעה נשלחה בהצלחה!</p>}
-           {error && <p>{error}</p>}
-         </ContactForm>
-       </PopupContent>
-     </PopupOverlay>
-   )}
- </HeaderContainer>
-);
+    <>
+      <HeaderContainer>
+        <LogoContainer>
+          <Link to="/">
+            <LogoImage src={newLogo} alt="TriRoars Logo" />
+          </Link>
+          {user && (
+            <UserStatus>
+              <StatusDot />
+              <Greeting>שלום, {getFirstName(user)}</Greeting>
+              <ProfileImage src={getProfileImage(user)} alt="Profile" />
+            </UserStatus>
+          )}
+        </LogoContainer>
+        <NavContainer>
+          {renderNavItems()}
+        </NavContainer>
+        <MobileMenuButton onClick={toggleMobileMenu} aria-label="פתח תפריט">
+          <Menu />
+        </MobileMenuButton>
+        {isMobileMenuOpen && (
+         <MobileMenu>
+         <CloseButton onClick={toggleMobileMenu} aria-label="סגור תפריט">
+           <X />
+         </CloseButton>
+         {renderNavItems(true)}
+       </MobileMenu>
+     )}
+     </HeaderContainer>
+     <Banner />
+     {showPopup && (
+       <PopupOverlay>
+         <PopupContent>
+           <PopupLogo src={newLogo} alt="TriRoars Logo" />
+           <PopupTitle>צור קשר</PopupTitle>
+           <ExitButton onClick={() => setShowPopup(false)}>X</ExitButton>
+           <ContactForm onSubmit={handleSubmit}>
+             <Input 
+               type="text" 
+               name="name" 
+               placeholder="שם" 
+               value={formData.name} 
+               onChange={handleChange} 
+               required 
+             />
+             <Input 
+               type="email" 
+               name="email" 
+               placeholder="אימייל" 
+               value={formData.email} 
+               onChange={handleChange} 
+               required 
+             />
+             <TextArea 
+               name="message" 
+               placeholder="הודעה" 
+               value={formData.message}
+               onChange={handleChange} 
+               required
+             ></TextArea>
+             <SubmitButton type="submit" disabled={loading}>
+               {loading ? 'שולח...' : 'שלח'}
+             </SubmitButton>
+             {success && <p>ההודעה נשלחה בהצלחה!</p>}
+             {error && <p>{error}</p>}
+           </ContactForm>
+         </PopupContent>
+       </PopupOverlay>
+     )}
+   </>
+  );
 };
 
 export default Header;
