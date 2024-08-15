@@ -8,7 +8,6 @@ import { usePopup } from '../PopupContext';
 import { Menu, X, User, LogOut, Home, Settings } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
-// אנימציות
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
@@ -19,7 +18,6 @@ const slideIn = keyframes`
   to { transform: translateX(0); }
 `;
 
-// סגנונות משותפים לכפתורים
 const buttonStyles = css`
   background: none;
   padding: 0.75rem 1.5rem;
@@ -73,7 +71,6 @@ const buttonStyles = css`
   }
 `;
 
-// רכיבים מעוצבים
 const HeaderContainer = styled.header`
   background-color: #8b81a8;
   padding: 1rem;
@@ -188,15 +185,113 @@ const ProfileImage = styled.img`
   border-radius: 50%;
 `;
 
+const PopupOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const PopupContent = styled.div`
+  background-color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+  direction: rtl;
+  text-align: right;
+`;
+
+const PopupLogo = styled.img`
+  width: 100px;
+  height: auto;
+  display: block;
+  margin: 0 auto 1rem;
+`;
+
+const PopupTitle = styled.h2`
+  text-align: center;
+  margin-bottom: 1rem;
+`;
+
+const ExitButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4d4d;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #ff3333;
+  }
+`;
+
+const ContactForm = styled.form`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Input = styled.input`
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+`;
+
+const TextArea = styled.textarea`
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  height: 100px;
+`;
+
+const SubmitButton = styled.button`
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #BF4B81;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #A33A6A;
+  }
+
+  &:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+`;
+
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { openLoginPopup, openRegisterPopup } = usePopup();
 
   useEffect(() => {
-    // סגירת התפריט הנייד בעת שינוי נתיב
     setIsMobileMenuOpen(false);
   }, [location]);
 
@@ -264,11 +359,59 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const handleContactClick = () => {
+    setShowPopup(true);
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccess(false);
+    setError(null);
+  
+    try {
+      const response = await fetch('http://localhost:3001/api/send-mail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (!response.ok) {
+        throw new Error('שליחת המייל נכשלה');
+      }
+  
+      setSuccess(true);
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setShowPopup(false), 3000);
+    } catch (error) {
+      setError('אירעה שגיאה בשליחת ההודעה, אנא נסה שוב מאוחר יותר');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderNavItems = (isMobile = false) => (
     <>
       <StyledButton to="/" onClick={isMobile ? toggleMobileMenu : undefined}>
         <Home size={18} />
         דף הבית
+      </StyledButton>
+      <StyledButton to="/about" onClick={isMobile ? toggleMobileMenu : undefined}>
+        <User size={18} />
+        אודות
+      </StyledButton>
+      <StyledButton as="button" onClick={handleContactClick}>
+        <Settings size={18} />
+        צור קשר
       </StyledButton>
       {user ? (
         <>
@@ -332,15 +475,55 @@ const Header = () => {
         <Menu />
       </MobileMenuButton>
       {isMobileMenuOpen && (
-        <MobileMenu>
-          <CloseButton onClick={toggleMobileMenu} aria-label="סגור תפריט">
-            <X />
-          </CloseButton>
-          {renderNavItems(true)}
-        </MobileMenu>
-      )}
-    </HeaderContainer>
-  );
+       <MobileMenu>
+       <CloseButton onClick={toggleMobileMenu} aria-label="סגור תפריט">
+         <X />
+       </CloseButton>
+       {renderNavItems(true)}
+     </MobileMenu>
+   )}
+
+   {showPopup && (
+     <PopupOverlay>
+       <PopupContent>
+         <PopupLogo src={newLogo} alt="TriRoars Logo" />
+         <PopupTitle>צור קשר</PopupTitle>
+         <ExitButton onClick={() => setShowPopup(false)}>X</ExitButton>
+         <ContactForm onSubmit={handleSubmit}>
+           <Input 
+             type="text" 
+             name="name" 
+             placeholder="שם" 
+             value={formData.name} 
+             onChange={handleChange} 
+             required 
+           />
+           <Input 
+             type="email" 
+             name="email" 
+             placeholder="אימייל" 
+             value={formData.email} 
+             onChange={handleChange} 
+             required 
+           />
+           <TextArea 
+             name="message" 
+             placeholder="הודעה" 
+             value={formData.message}
+             onChange={handleChange} 
+             required
+           ></TextArea>
+           <SubmitButton type="submit" disabled={loading}>
+             {loading ? 'שולח...' : 'שלח'}
+           </SubmitButton>
+           {success && <p>ההודעה נשלחה בהצלחה!</p>}
+           {error && <p>{error}</p>}
+         </ContactForm>
+       </PopupContent>
+     </PopupOverlay>
+   )}
+ </HeaderContainer>
+);
 };
 
 export default Header;

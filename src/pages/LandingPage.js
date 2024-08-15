@@ -25,8 +25,20 @@ const PageContainer = styled(Container)`
   overflow: hidden;
 `;
 
-const Header = styled.header`
+const InteractiveContainer = styled(motion.div)`
+  padding: 2rem;
   margin-bottom: 4rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(5px);
+  transition: transform 0.3s, box-shadow 0.3s;
+
+  &:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 6px 50px rgba(0, 0, 0, 0.2);
+  }
 `;
 
 const CardContainer = styled(motion.div)`
@@ -188,20 +200,45 @@ const LandingPage = () => {
       <GlobalStyle />
       <Hero />
       <PageContainer maxWidth="lg">
-        <Header>
+        {/* מה יש פה בעצם */}
+        <InteractiveContainer
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <Typography variant="h2" component="h1" sx={{
             fontWeight: 'bold',
             color: '#62238C',
             marginBottom: 2,
             textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
           }}>
-            ברוכים הבאים לקורסים שלנו
+            מה יש פה בעצם?
           </Typography>
-          <Typography variant="h5" sx={{ color: '#0D0D0D' }}>
-            גלו את הקורסים החדשניים ביותר שלנו
+          <Typography variant="h6" sx={{ color: '#0D0D0D', marginBottom: 4 }}>
+            האתר שלנו מציע מגוון רחב של קורסים דיגיטליים בנושאי בינה מלאכותית, המיועדים לשפר את הכישורים שלך, הן במישור האישי והן במקצועי. תוכל למצוא כאן כלים שימושיים, מדריכים מעשיים וקורסים שמותאמים במיוחד לצרכים שלך.
           </Typography>
-        </Header>
+        </InteractiveContainer>
 
+        {/* מה אנחנו מציעים לכם */}
+        <InteractiveContainer
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Typography variant="h2" component="h1" sx={{
+            fontWeight: 'bold',
+            color: '#62238C',
+            marginBottom: 2,
+            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+          }}>
+            מה אנחנו מציעים לכם?
+          </Typography>
+          <Typography variant="h6" sx={{ color: '#0D0D0D', marginBottom: 4 }}>
+            קורסים דיגיטליים בנושאי בינה מלאכותית שיעזרו לכם לא רק בהתפתחות אישית אלא גם בחיי העבודה והעסק שלכם. עם הקורסים שלנו תוכלו ללמוד כיצד להשתמש בבינה מלאכותית לשיפור ביצועים, אוטומציה של תהליכים, ויצירת יתרון תחרותי בעולם העסקי המודרני.
+          </Typography>
+        </InteractiveContainer>
+
+        {/* גריד הקורסים */}
         <Grid container spacing={4} id="course-content">
           <AnimatePresence>
             {courses.map((course) => (
@@ -259,6 +296,7 @@ const LandingPage = () => {
         )}
       </PageContainer>
 
+      {/* באנר עוגיות */}
       <AnimatePresence>
         {!cookiesAccepted && (
           <CookieConsentBanner

@@ -23,6 +23,8 @@ import CourseLearningPage from './pages/CourseLearningPage';
 import ContactAndPolicyPage from './pages/ContactAndPolicyPage';
 import PurchaseResultPage from './pages/PurchaseResultPage';
 import AuthCallback from './pages/AuthCallback';
+import AboutPage from './pages/about'; // נוסיף ייבוא לדף אודות
+
 
 const AppContent = () => {
   const { showLoginPopup, showRegisterPopup, showPurchasePopup, purchaseCourse, closeAllPopups } = usePopup();
@@ -43,6 +45,8 @@ const AppContent = () => {
         <Route path="/contact-and-policy" element={<ContactAndPolicyPage />} />
         <Route path="/purchase-result" element={<PurchaseResultPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/about" element={<AboutPage />} /> {/* הוספת נתיב לדף אודות */}
+
       </Routes>
       {showLoginPopup && <LoginPopupNew />}
       {showRegisterPopup && <RegisterPopup />}
