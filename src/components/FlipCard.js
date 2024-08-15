@@ -8,8 +8,10 @@ const fadeIn = keyframes`
 
 const CardWrapper = styled.div`
   perspective: 1000px;
-  width: 320px;
+  width: 100%;
+  max-width: 320px;
   height: 420px;
+  margin: 0 auto;
   animation: ${css`${fadeIn} 0.5s ease-out`};
 `;
 
@@ -20,10 +22,11 @@ const Card = styled.div`
   transition: transform 0.6s;
   transform-style: preserve-3d;
   transform-origin: center;
+  cursor: pointer;
   
-  ${CardWrapper}:hover & {
+  ${({ isFlipped }) => isFlipped && `
     transform: rotateY(180deg);
-  }
+  `}
 `;
 
 const CardSide = styled.div`
@@ -36,7 +39,7 @@ const CardSide = styled.div`
   align-items: center;
   justify-content: space-between;
   border-radius: 20px;
-  padding: 30px;
+  padding: 20px;
   box-sizing: border-box;
   background: #fff;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
@@ -61,29 +64,33 @@ const GeometricShape = styled.div`
 `;
 
 const TopLeftCircle = styled(GeometricShape)`
-  width: 100px;
-  height: 100px;
-  top: -50px;
-  left: -50px;
+  width: 80px;
+  height: 80px;
+  top: -40px;
+  left: -40px;
 `;
 
 const BottomRightCircle = styled(GeometricShape)`
-  width: 150px;
-  height: 150px;
-  bottom: -75px;
-  right: -75px;
+  width: 120px;
+  height: 120px;
+  bottom: -60px;
+  right: -60px;
 `;
 
 const CourseImage = styled.img`
   width: 80%;
+  max-width: 200px;
   height: auto;
   border-radius: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 `;
 
 const CourseTitle = styled.h2`
   font-weight: 900;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  @media (min-width: 600px) {
+    font-size: 1.5rem;
+  }
   color: ${props => props.isFlipped ? '#ffffff' : '#62238C'};
   text-align: center;
   margin-bottom: 10px;
@@ -91,13 +98,16 @@ const CourseTitle = styled.h2`
 `;
 
 const CourseDescription = styled.p`
-  font-size: 1rem;
+  font-size: 0.9rem;
+  @media (min-width: 600px) {
+    font-size: 1rem;
+  }
   color: #ffffff;
   text-align: center;
   z-index: 1;
   flex-grow: 1;
   overflow-y: auto;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 `;
 
 const ButtonContainer = styled.div`
@@ -110,9 +120,18 @@ const ButtonContainer = styled.div`
 const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  const handleClick = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    handleClick();
+  };
+
   return (
-    <CardWrapper onMouseEnter={() => setIsFlipped(true)} onMouseLeave={() => setIsFlipped(false)}>
-      <Card>
+    <CardWrapper onClick={handleClick} onTouchStart={handleTouchStart}>
+      <Card isFlipped={isFlipped}>
         <CardFront>
           <TopLeftCircle color="#f0f0f0" />
           <BottomRightCircle color="#9D4EDD" />

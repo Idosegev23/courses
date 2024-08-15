@@ -20,15 +20,18 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const PageContainer = styled(Container)`
-  padding: 2rem;
+  padding: 1rem;
+  @media (min-width: 600px) {
+    padding: 2rem;
+  }
   text-align: center;
   position: relative;
   overflow: hidden;
 `;
 
 const InteractiveContainer = styled(motion.div)`
-  padding: 2rem;
-  margin-bottom: 4rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -36,9 +39,13 @@ const InteractiveContainer = styled(motion.div)`
   backdrop-filter: blur(5px);
   transition: transform 0.3s, box-shadow 0.3s;
 
-  &:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 6px 50px rgba(0, 0, 0, 0.2);
+  @media (min-width: 600px) {
+    padding: 2rem;
+    margin-bottom: 4rem;
+    &:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 6px 50px rgba(0, 0, 0, 0.2);
+    }
   }
 `;
 
@@ -184,10 +191,15 @@ const LandingPage = () => {
             color: '#62238C',
             marginBottom: 2,
             textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
           }}>
             מה יש פה בעצם?
           </Typography>
-          <Typography variant="h6" sx={{ color: '#0D0D0D', marginBottom: 4 }}>
+          <Typography variant="h6" sx={{ 
+            color: '#0D0D0D', 
+            marginBottom: 4,
+            fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+          }}>
             האתר שלנו מציע מגוון רחב של קורסים דיגיטליים בנושאי בינה מלאכותית, המיועדים לשפר את הכישורים שלך, הן במישור האישי והן במקצועי. תוכל למצוא כאן כלים שימושיים, מדריכים מעשיים וקורסים שמותאמים במיוחד לצרכים שלך.
           </Typography>
         </InteractiveContainer>
@@ -202,15 +214,20 @@ const LandingPage = () => {
             color: '#62238C',
             marginBottom: 2,
             textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+            fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
           }}>
             מה אנחנו מציעים לכם?
           </Typography>
-          <Typography variant="h6" sx={{ color: '#0D0D0D', marginBottom: 4 }}>
+          <Typography variant="h6" sx={{ 
+            color: '#0D0D0D', 
+            marginBottom: 4,
+            fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+          }}>
             קורסים דיגיטליים בנושאי בינה מלאכותית שיעזרו לכם לא רק בהתפתחות אישית אלא גם בחיי העבודה והעסק שלכם. עם הקורסים שלנו תוכלו ללמוד כיצד להשתמש בבינה מלאכותית לשיפור ביצועים, אוטומציה של תהליכים, ויצירת יתרון תחרותי בעולם העסקי המודרני.
           </Typography>
         </InteractiveContainer>
 
-        <Grid container spacing={4} id="course-content">
+        <Grid container spacing={2} id="course-content">
           <AnimatePresence>
             {courses.map((course) => (
               <Grid item xs={12} sm={6} md={4} key={course.id}>
@@ -228,21 +245,21 @@ const LandingPage = () => {
                   }}
                 >
                   <FlipCard
-  title={course.title}
-  imageSrc={course.imageSrc || "/path/to/default-image.jpg"}
-  description={course.details}
-  courseId={course.id}
-  isEnrolled={userEnrollments.includes(course.id)}
->
-  <StyledButton 
-    as={Link} 
-    to={userEnrollments.includes(course.id) ? `/course-learning/${course.id}` : `/course/${course.id}`} 
-    isprimary="true"
-    data-text={userEnrollments.includes(course.id) ? "כניסה לקורס" : "פרטים נוספים"}
-  >
-    {userEnrollments.includes(course.id) ? "כניסה לקורס" : "פרטים נוספים"}
-  </StyledButton>
-</FlipCard>
+                    title={course.title}
+                    imageSrc={course.imageSrc || "/path/to/default-image.jpg"}
+                    description={course.details}
+                    courseId={course.id}
+                    isEnrolled={userEnrollments.includes(course.id)}
+                  >
+                    <StyledButton 
+                      as={Link} 
+                      to={userEnrollments.includes(course.id) ? `/course-learning/${course.id}` : `/course/${course.id}`} 
+                      isprimary="true"
+                      data-text={userEnrollments.includes(course.id) ? "כניסה לקורס" : "פרטים נוספים"}
+                    >
+                      {userEnrollments.includes(course.id) ? "כניסה לקורס" : "פרטים נוספים"}
+                    </StyledButton>
+                  </FlipCard>
                 </motion.div>
               </Grid>
             ))}

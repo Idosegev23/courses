@@ -223,19 +223,29 @@ const CourseDetailsPage = () => {
 
   const handlePurchaseClick = async () => {
     console.log('Purchase button clicked');
+    if (!user) {
+      console.log('User is not logged in, opening register popup');
+      openRegisterPopup(true);  // true indicates it's from course details
+      return;
+    }
+
     if (finalPrice === 0) {
       console.log('Course is free, adding to user\'s courses');
       await addCourseToUserCourses();
-    } else if (user) {
+    } else {
       console.log('User is logged in, opening purchase popup');
       openPurchasePopup({ ...course, finalPrice });
-    } else {
-      console.log('User is not logged in, opening register popup');
-      openRegisterPopup(true);  // true indicates it's from course details
     }
   };
 
   const addCourseToUserCourses = async () => {
+    if (!user) {
+      console.error('Cannot add course: User is not logged in');
+      setSnackbarMessage('יש להתחבר כדי להוסיף את הקורס');
+      setSnackbarOpen(true);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('enrollments')
       .insert({
