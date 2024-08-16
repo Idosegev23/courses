@@ -186,16 +186,21 @@ const CourseDetailsPage = () => {
 
   useEffect(() => {
     const fetchCourseAndDiscount = async () => {
-      console.log('Fetching course details for courseId:', courseId);
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .single();
+      try {
+        console.log('Fetching course details for courseId:', courseId);
+        const { data: courseData, error: courseError } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', courseId)
+          .single();
 
-      if (courseError) {
-        console.error('Error fetching course:', courseError);
-      } else {
+        if (courseError) {
+          console.error('Error fetching course:', courseError);
+          setSnackbarMessage('שגיאה בטעינת פרטי הקורס.');
+          setSnackbarOpen(true);
+          return;
+        }
+
         console.log('Course data fetched:', courseData);
         setCourse(courseData);
         setOriginalPrice(courseData.price);
@@ -209,6 +214,8 @@ const CourseDetailsPage = () => {
 
           if (userError) {
             console.error('Error fetching user discount:', userError);
+            setSnackbarMessage('שגיאה בטעינת הנחת המשתמש.');
+            setSnackbarOpen(true);
           } else {
             console.log('User discount fetched:', userData);
             const userDiscount = userData.discount || 0;
@@ -243,6 +250,11 @@ const CourseDetailsPage = () => {
           return () => clearInterval(timerId);
         }
 
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        setSnackbarMessage('שגיאה בלתי צפויה בטעינת הקורס.');
+        setSnackbarOpen(true);
+      } finally {
         setLoading(false);
       }
     };
@@ -299,6 +311,7 @@ const CourseDetailsPage = () => {
     }
     setSnackbarOpen(true);
   };
+  
   const getEmbedUrl = (url) => {
     const videoId = url.split('v=')[1];
     return `https://www.youtube.com/embed/${videoId}`;
