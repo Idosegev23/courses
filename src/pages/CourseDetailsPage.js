@@ -178,7 +178,7 @@ const CourseDetailsPage = () => {
   const { user } = useAuth();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const { openRegisterPopup, openPurchasePopup } = usePopup();
+  const { openLoginPopup, openRegisterPopup, openPurchasePopup } = usePopup();
   const [finalPrice, setFinalPrice] = useState(0);
   const [originalPrice, setOriginalPrice] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
