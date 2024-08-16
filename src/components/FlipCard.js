@@ -13,6 +13,7 @@ const CardWrapper = styled.div`
   height: 420px;
   margin: 0 auto;
   animation: ${css`${fadeIn} 0.5s ease-out`};
+  cursor: pointer;
 `;
 
 const Card = styled.div`
@@ -22,7 +23,6 @@ const Card = styled.div`
   transition: transform 0.6s;
   transform-style: preserve-3d;
   transform-origin: center;
-  cursor: pointer;
   
   ${({ isFlipped }) => isFlipped && `
     transform: rotateY(180deg);
@@ -124,13 +124,8 @@ const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children
     setIsFlipped(!isFlipped);
   };
 
-  const handleTouchStart = (e) => {
-    e.preventDefault();
-    handleClick();
-  };
-
   return (
-    <CardWrapper onClick={handleClick} onTouchStart={handleTouchStart}>
+    <CardWrapper onClick={handleClick}>
       <Card isFlipped={isFlipped}>
         <CardFront>
           <TopLeftCircle color="#f0f0f0" />

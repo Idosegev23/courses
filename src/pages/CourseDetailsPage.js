@@ -123,6 +123,17 @@ const CourseDescription = styled.div`
   }
 `;
 
+const CountdownContainer = styled.div`
+  font-size: 1rem;
+  color: #bf4b81;
+  margin-top: 1rem;
+  font-weight: bold;
+
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
+  }
+`;
+
 const LoadingSpinner = styled(CircularProgress)`
   color: #62238C;
 `;
@@ -171,6 +182,7 @@ const CourseDetailsPage = () => {
   const [finalPrice, setFinalPrice] = useState(0);
   const [originalPrice, setOriginalPrice] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
     const fetchCourseAndDiscount = async () => {
@@ -208,6 +220,27 @@ const CourseDetailsPage = () => {
           }
         } else {
           setFinalPrice(courseData.price);
+        }
+
+        // חישוב הזמן שנותר עד לסיום ההנחה
+        if (courseData.discountExpirationDate) {
+          const expirationDate = new Date(courseData.discountExpirationDate);
+          const updateTimeLeft = () => {
+            const now = new Date();
+            const timeDiff = expirationDate - now;
+            if (timeDiff <= 0) {
+              setTimeLeft('ההנחה הסתיימה');
+            } else {
+              const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+              const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+              const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+              setTimeLeft(`${days} ימים, ${hours} שעות, ${minutes} דקות, ${seconds} שניות`);
+            }
+          };
+          updateTimeLeft();
+          const timerId = setInterval(updateTimeLeft, 1000);
+          return () => clearInterval(timerId);
         }
 
         setLoading(false);
@@ -266,6 +299,10 @@ const CourseDetailsPage = () => {
     }
     setSnackbarOpen(true);
   };
+  const getEmbedUrl = (url) => {
+    const videoId = url.split('v=')[1];
+    return `https://www.youtube.com/embed/${videoId}`;
+  };
 
   if (loading) {
     return (
@@ -289,6 +326,29 @@ const CourseDetailsPage = () => {
             <p>{course.description}</p>
             <p>{course.details}</p>
             <p>משך זמן: {course.duration}</p>
+            {/* הצגת סיבת ההנחה רק אם יש הנחה */}
+            {discountPercentage > 0 && course.discountReason && (
+              <p>סיבת ההנחה: {course.discountReason}</p>
+            )}
+            {/* הוספת ה-iframe להקרנת הטריילר של הקורס */}
+            <div style={{ marginBottom: '1.5rem', maxWidth: '100%', textAlign: 'center' }}>
+              <iframe
+                width="100%"
+                height="315"
+                src={getEmbedUrl(course.trailerUrl)} // יצירת קישור ה-Embed
+                title="Course Trailer"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+
+            {course.discountExpirationDate && (
+              <CountdownContainer>
+                <p>תוקף ההנחה מסתיים בעוד: {timeLeft}</p> {/* הצגת ספירה לאחור */}
+              </CountdownContainer>
+            )}
+            
             <PriceDisplay>
               {discountPercentage > 0 ? (
                 <>

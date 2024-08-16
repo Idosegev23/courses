@@ -496,7 +496,7 @@ const CourseLearningPage = () => {
 
         {currentLesson.exercises && currentLesson.exercises.length > 0 && (
           <ExerciseSection>
-            <h2>תרגילים לשיעור זה</h2>
+            <h2>תרגול עצמי</h2>
             <ul>
               {currentLesson.exercises.map((exercise, index) => (
                 <li key={index}>

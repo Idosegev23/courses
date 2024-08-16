@@ -104,6 +104,8 @@ const EditCoursePage = () => {
         price: data.price ?? 0,
         discountPrice: data.discountPrice ?? 0,
         discountPercentage: data.discountPercentage ?? 0,
+        discountExpirationDate: data.discountExpirationDate ?? '',
+        discountReason: data.discountReason ?? '',
         duration: data.duration ?? '',
         details: data.details ?? '',
         lessons: data.lessons ?? [],
@@ -326,6 +328,25 @@ const EditCoursePage = () => {
             name="discountPercentage"
             variant="outlined"
             value={course.discountPercentage}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            type="date"
+            label="תאריך סיום ההנחה"
+            name="discountExpirationDate"
+            variant="outlined"
+            value={course.discountExpirationDate}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="סיבת ההנחה"
+            name="discountReason"
+            variant="outlined"
+            value={course.discountReason}
             onChange={handleChange}
             margin="normal"
           />

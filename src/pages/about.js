@@ -27,7 +27,7 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 2rem auto;
   border-radius: 20px;
-  padding: 30px;
+  padding: 20px;
   background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
   box-shadow: 0 10px 25px rgba(31, 38, 135, 0.15);
   display: flex;
@@ -36,6 +36,11 @@ const Container = styled.div`
   font-family: 'Heebo', sans-serif;
   overflow: hidden;
   animation: ${fadeIn} 0.5s ease-out;
+
+  @media (max-width: 768px) {
+    padding: 15px;
+    margin: 1rem auto;
+  }
 `;
 
 const GeometricShape = styled.div`
@@ -50,6 +55,13 @@ const TopLeftCircle = styled(GeometricShape)`
   height: 200px;
   top: -100px;
   left: -100px;
+
+  @media (max-width: 768px) {
+    width: 150px;
+    height: 150px;
+    top: -75px;
+    left: -75px;
+  }
 `;
 
 const BottomRightCircle = styled(GeometricShape)`
@@ -57,6 +69,13 @@ const BottomRightCircle = styled(GeometricShape)`
   height: 300px;
   bottom: -150px;
   right: -150px;
+
+  @media (max-width: 768px) {
+    width: 200px;
+    height: 200px;
+    bottom: -100px;
+    right: -100px;
+  }
 `;
 
 const ProfileImage = styled.img`
@@ -66,6 +85,12 @@ const ProfileImage = styled.img`
   border: 4px solid #62238C;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const Title = styled.h1`
@@ -76,6 +101,10 @@ const Title = styled.h1`
   text-align: center;
   margin-bottom: 1rem;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
 `;
 
 const Subtitle = styled.h2`
@@ -83,6 +112,11 @@ const Subtitle = styled.h2`
   color: #0D0D0D;
   text-align: center;
   margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const Section = styled.div`
@@ -98,6 +132,11 @@ const Section = styled.div`
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const SectionTitle = styled.h3`
@@ -110,6 +149,14 @@ const SectionTitle = styled.h3`
     margin-right: 0.5rem;
     font-size: 1.5rem;
   }
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+
+    svg {
+      font-size: 1.3rem;
+    }
+  }
 `;
 
 const SectionContent = styled.div`
@@ -117,12 +164,20 @@ const SectionContent = styled.div`
   color: #0D0D0D;
   text-align: right;
   direction: rtl;
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const List = styled.ul`
   text-align: right;
   direction: rtl;
   padding-right: 1.5rem;
+
+  @media (max-width: 768px) {
+    padding-right: 1rem;
+  }
 `;
 
 const AboutPage = () => {

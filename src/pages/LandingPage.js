@@ -229,8 +229,11 @@ const LandingPage = () => {
 
         <Grid container spacing={2} id="course-content">
           <AnimatePresence>
-            {courses.map((course) => (
-              <Grid item xs={12} sm={6} md={4} key={course.id}>
+          {courses
+      .slice() // יצירת עותק של המערך המקורי
+      .sort((a, b) => a.id - b.id) // מיון הקורסים לפי ה-ID בסדר עולה
+      .map((course) => (
+                      <Grid item xs={12} sm={6} md={4} key={course.id}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
