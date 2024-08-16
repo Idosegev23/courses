@@ -339,10 +339,6 @@ const CourseDetailsPage = () => {
             <p>{course.description}</p>
             <p>{course.details}</p>
             <p>משך זמן: {course.duration}</p>
-            {/* הצגת סיבת ההנחה רק אם יש הנחה */}
-            {discountPercentage > 0 && course.discountReason && (
-              <p>סיבת ההנחה: {course.discountReason}</p>
-            )}
             {/* הוספת ה-iframe להקרנת הטריילר של הקורס */}
             <div style={{ marginBottom: '1.5rem', maxWidth: '100%', textAlign: 'center' }}>
               <iframe
@@ -355,7 +351,10 @@ const CourseDetailsPage = () => {
                 allowFullScreen
               ></iframe>
             </div>
-
+ {/* הצגת סיבת ההנחה רק אם יש הנחה */}
+ {discountPercentage > 0 && course.discountReason && (
+              <p>סיבת ההנחה: {course.discountReason}</p>
+            )}
             {course.discountExpirationDate && (
               <CountdownContainer>
                 <p>תוקף ההנחה מסתיים בעוד: {timeLeft}</p> {/* הצגת ספירה לאחור */}
