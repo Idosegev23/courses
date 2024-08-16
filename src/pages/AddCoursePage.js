@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { createGlobalStyle } from 'styled-components';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -67,24 +67,57 @@ const AddCoursePage = () => {
     price: '',
     discountPrice: '',
     discountPercentage: '',
+    discountExpirationDate: '',
+    discountReason: '',
     duration: '',
     details: '',
+    tags: [],
     lessons: [{ title: '', videoLink: '', duration: '', faq: [], exercises: [], summary: '' }],
   });
+  
   const [errors, setErrors] = useState({});
+
+  // עטיפת הפונקציה calculateTotalDuration ב-useCallback
+  const calculateTotalDuration = useCallback(() => {
+    const totalMinutes = course.lessons.reduce((total, lesson) => {
+      const duration = parseFloat(lesson.duration) || 0;
+      return total + duration;
+    }, 0);
+    
+    const hours = (totalMinutes / 60).toFixed(2);
+    
+    setCourse(prevCourse => ({
+      ...prevCourse,
+      duration: `${hours} שעות`
+    }));
+  }, [course.lessons]);
 
   useEffect(() => {
     calculateTotalDuration();
-  }, [course.lessons]);
-
+  }, [course.lessons, calculateTotalDuration]);
+  
+  const handleTagChange = (e) => {
+    const { value, name } = e.target;
+    const tagsArray = value.split(',').map(tag => tag.trim());
+    setCourse((prevCourse) => ({
+      ...prevCourse,
+      tags: tagsArray,
+    }));
+  
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
+  
+    if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
+      handleDiscountCalculation(name, value);
+    }
+  };
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCourse((prevCourse) => ({
       ...prevCourse,
       [name]: value,
     }));
-    setErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
-
+  
     if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
       handleDiscountCalculation(name, value);
     }
@@ -188,20 +221,6 @@ const AddCoursePage = () => {
     }));
   };
 
-  const calculateTotalDuration = () => {
-    const totalMinutes = course.lessons.reduce((total, lesson) => {
-      const duration = parseFloat(lesson.duration) || 0;
-      return total + duration;
-    }, 0);
-    
-    const hours = (totalMinutes / 60).toFixed(2);
-    
-    setCourse(prevCourse => ({
-      ...prevCourse,
-      duration: `${hours} שעות`
-    }));
-  };
-
   const validateForm = () => {
     const newErrors = {};
     if (!course.title.trim()) newErrors.title = 'שדה חובה';
@@ -251,7 +270,7 @@ const AddCoursePage = () => {
   };
 
   const extractVideoId = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
@@ -348,6 +367,25 @@ const AddCoursePage = () => {
               margin="normal"
             />
             <TextField
+  fullWidth
+  type="date"
+  label="תאריך סיום ההנחה"
+  name="discountExpirationDate"
+  value={course.discountExpirationDate}
+  onChange={handleChange}
+  margin="normal"
+/>
+
+<TextField
+  fullWidth
+  label="סיבת ההנחה"
+  name="discountReason"
+  value={course.discountReason}
+  onChange={handleChange}
+  margin="normal"
+/>
+
+            <TextField
               fullWidth
               label="משך הקורס הכולל"
               value={course.duration}
@@ -366,7 +404,14 @@ const AddCoursePage = () => {
               onChange={handleChange}
               margin="normal"
             />
-
+<TextField
+  fullWidth
+  label="תגיות (הפרד בפסיקים)"
+  name="tags"
+  value={course.tags.join(', ')} // מציג את התגיות כמחרוזת מופרדת בפסיקים
+  onChange={handleTagChange}
+  margin="normal"
+/>
             {course.lessons.map((lesson, index) => (
               <Accordion key={index} sx={{ mt: 2 }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>

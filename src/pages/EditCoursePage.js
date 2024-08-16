@@ -108,25 +108,41 @@ const EditCoursePage = () => {
         discountReason: data.discountReason ?? '',
         duration: data.duration ?? '',
         details: data.details ?? '',
+        tags: data.tags ?? [], // שדה חדש עבור תגיות כ-מערך JSON
         lessons: data.lessons ?? [],
         lesson_links: data.lesson_links ?? [],
         faq: data.faq ?? [],
         is_available: data.is_available ?? false,
         total_lessons: data.total_lessons ?? 0
       });
+      
       setLoading(false);
     };
 
     fetchCourse();
   }, [courseId]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleTagChange = (e) => {
+    const { value, name } = e.target; // הוספנו את `name` מתוך `e.target`
+    const tagsArray = value.split(',').map(tag => tag.trim());
     setCourse((prevCourse) => ({
       ...prevCourse,
-      [name]: type === 'checkbox' ? checked : value,
+      tags: tagsArray,
     }));
-
+  
+    if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
+      handleDiscountCalculation(name, value);
+    }
+  };
+  
+  // וודא שהפונקציה handleChange מוגדרת
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCourse((prevCourse) => ({
+      ...prevCourse,
+      [name]: value,
+    }));
+  
     if (name === 'price' || name === 'discountPrice' || name === 'discountPercentage') {
       handleDiscountCalculation(name, value);
     }
@@ -370,6 +386,15 @@ const EditCoursePage = () => {
             onChange={handleChange}
             margin="normal"
           />
+          <TextField
+  fullWidth
+  label="תגיות (הפרד בפסיקים)"
+  name="tags"
+  variant="outlined"
+  value={course.tags.join(', ')} // מציג את התגיות כמחרוזת מופרדת בפסיקים
+  onChange={handleTagChange}
+  margin="normal"
+/>
           <FormControlLabel
             control={
               <Checkbox
