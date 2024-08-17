@@ -110,18 +110,22 @@ const CourseDescription = styled.p`
   margin-bottom: 15px;
 `;
 
-const ButtonContainer = styled.div`
+const ButtonWrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
   z-index: 1;
+  transform: ${props => props.isFlipped ? 'rotateY(180deg)' : 'none'};
 `;
 
 const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const handleClick = () => {
-    setIsFlipped(!isFlipped);
+  const handleClick = (e) => {
+    // Prevent flipping when clicking on the button
+    if (!e.target.closest('a')) {
+      setIsFlipped(!isFlipped);
+    }
   };
 
   return (
@@ -132,22 +136,22 @@ const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children
           <BottomRightCircle color="#9D4EDD" />
           <CourseImage src={imageSrc} alt={title} />
           <CourseTitle isFlipped={false}>{title}</CourseTitle>
-          <ButtonContainer>
+          <ButtonWrapper isFlipped={false}>
             {React.Children.map(children, child =>
               React.cloneElement(child, { isFlipped: false })
             )}
-          </ButtonContainer>
+          </ButtonWrapper>
         </CardFront>
         <CardBack>
           <TopLeftCircle color="#4a1b6d" />
           <BottomRightCircle color="#9D4EDD" />
           <CourseTitle isFlipped={true}>{title}</CourseTitle>
           <CourseDescription>{description}</CourseDescription>
-          <ButtonContainer>
+          <ButtonWrapper isFlipped={true}>
             {React.Children.map(children, child =>
               React.cloneElement(child, { isFlipped: true })
             )}
-          </ButtonContainer>
+          </ButtonWrapper>
         </CardBack>
       </Card>
     </CardWrapper>
