@@ -109,7 +109,7 @@ const CourseDescription = styled.p`
   @media (min-width: 600px) {
     font-size: 1rem;
   }
-  color: #62238C;
+  color: #ffffff;
   text-align: center;
   z-index: 1;
   flex-grow: 1;

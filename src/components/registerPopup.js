@@ -30,6 +30,7 @@ const RegisterPopup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [coupon, setCoupon] = useState('');
+  const [couponBeforeGoogle, setCouponBeforeGoogle] = useState('');
   const [error, setError] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
   const containerRef = useRef(null);
@@ -48,8 +49,8 @@ const RegisterPopup = () => {
     setStep(1);
   };
 
-  const validateCoupon = () => {
-    if (coupon.toUpperCase() === 'OPENING25') {
+  const validateCoupon = (couponCode) => {
+    if (couponCode.toUpperCase() === 'OPENING25') {
       setCouponApplied(true);
       setError('');
       return true;
@@ -59,8 +60,8 @@ const RegisterPopup = () => {
     }
   };
 
-  const applyCoupon = async (userId) => {
-    if (coupon && validateCoupon()) {
+  const applyCoupon = async (userId, couponCode) => {
+    if (couponCode && validateCoupon(couponCode)) {
       const { data, error } = await supabase
         .from('users')
         .update({
@@ -101,7 +102,7 @@ const RegisterPopup = () => {
       if (error) throw error;
 
       if (data.user) {
-        const couponApplied = await applyCoupon(data.user.id);
+        const couponApplied = await applyCoupon(data.user.id, coupon);
         
         console.log('Registration successful:', data);
         
@@ -129,6 +130,8 @@ const RegisterPopup = () => {
   };
 
   const handleGoogleLogin = async () => {
+    const couponToApply = couponBeforeGoogle || coupon;
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -139,26 +142,33 @@ const RegisterPopup = () => {
       if (data) {
         closeAllPopups();
         
-        const { value: couponCode } = await Swal.fire({
-          title: 'הזן קוד קופון (אופציונלי)',
-          input: 'text',
-          inputPlaceholder: 'הכנס קוד קופון',
-          showCancelButton: true,
-          cancelButtonText: 'דלג',
-          confirmButtonText: 'החל קופון'
-        });
-
-        if (couponCode) {
-          setCoupon(couponCode);
-          const user = await supabase.auth.getUser();
-          if (user.data.user) {
-            const couponApplied = await applyCoupon(user.data.user.id);
+        const user = await supabase.auth.getUser();
+        if (user.data.user) {
+          if (couponToApply) {
+            const couponApplied = await applyCoupon(user.data.user.id, couponToApply);
             if (couponApplied) {
               Swal.fire('הקופון הופעל בהצלחה!', 'תקבל 25% הנחה למשך 3 חודשים.', 'success');
+            }
+          } else {
+            const { value: couponCode } = await Swal.fire({
+              title: 'הזן קוד קופון (אופציונלי)',
+              input: 'text',
+              inputPlaceholder: 'הכנס קוד קופון',
+              showCancelButton: true,
+              cancelButtonText: 'דלג',
+              confirmButtonText: 'החל קופון'
+            });
+
+            if (couponCode) {
+              const couponApplied = await applyCoupon(user.data.user.id, couponCode);
+              if (couponApplied) {
+                Swal.fire('הקופון הופעל בהצלחה!', 'תקבל 25% הנחה למשך 3 חודשים.', 'success');
+              }
             }
           }
         }
 
+        await handleUserMetadataUpdate(user.data.user);
         navigateBack();
       }
     } catch (error) {
@@ -281,6 +291,17 @@ const RegisterPopup = () => {
                     onChange={(e) => setEmail(e.target.value)} 
                   />
                   <Icon><FaEnvelope /></Icon>
+                </InputWrapper>
+                <InputWrapper delay="0.4s">
+                  <Label htmlFor="couponBeforeGoogle">קוד קופון (אופציונלי)</Label>
+                  <Input 
+                    id="couponBeforeGoogle"
+                    type="text" 
+                    placeholder="הכנס קוד קופון לפני התחברות עם גוגל" 
+                    value={couponBeforeGoogle} 
+                    onChange={(e) => setCouponBeforeGoogle(e.target.value)} 
+                  />
+                  <Icon><FaTicketAlt /></Icon>
                 </InputWrapper>
                 <ButtonContainer>
                   <Button onClick={handleNextStep}>הבא</Button>
