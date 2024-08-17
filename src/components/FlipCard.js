@@ -47,7 +47,7 @@ const CardSide = styled.div`
 `;
 
 const CardFront = styled(CardSide)`
-  background: #62238C; /* צד קדמי סגול */
+  background: #ffffff; /* צד קדמי סגול */
   color: #ffffff;
   ${({ isFlipped }) => isFlipped && `
     visibility: hidden;
@@ -55,7 +55,7 @@ const CardFront = styled(CardSide)`
 `;
 
 const CardBack = styled(CardSide)`
-  background: #fff; /* צד אחורי לבן */
+  background: #62238C; /* צד אחורי לבן */
   color: #62238C;
   transform: rotateY(180deg);
   ${({ isFlipped }) => !isFlipped && `
