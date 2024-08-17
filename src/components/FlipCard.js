@@ -115,8 +115,7 @@ const ButtonWrapper = styled.div`
   display: flex;
   justify-content: center;
   z-index: 1;
-  transform: ${props => props.isFlipped ? 'rotateY(180deg)' : 'none'};
-`;
+  `;
 
 const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children }) => {
   const [isFlipped, setIsFlipped] = useState(false);
