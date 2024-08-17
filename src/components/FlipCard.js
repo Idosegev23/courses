@@ -47,16 +47,20 @@ const CardSide = styled.div`
 `;
 
 const CardFront = styled(CardSide)`
-  background: #fff;
+  background: #62238C; /* צד קדמי סגול */
+  color: #ffffff;
+  ${({ isFlipped }) => isFlipped && `
+    visibility: hidden;
+  `}
 `;
 
 const CardBack = styled(CardSide)`
-  background: #62238C;
-  color: #ffffff;
+  background: #fff; /* צד אחורי לבן */
+  color: #62238C;
   transform: rotateY(180deg);
-  & button {
-    transform: rotateY(180deg); /* כאן מוסיפים את השורה */
-  }
+  ${({ isFlipped }) => !isFlipped && `
+    visibility: hidden;
+  `}
 `;
 
 const GeometricShape = styled.div`
@@ -94,7 +98,7 @@ const CourseTitle = styled.h2`
   @media (min-width: 600px) {
     font-size: 1.5rem;
   }
-  color: ${props => props.isFlipped ? '#ffffff' : '#62238C'};
+  color: ${props => props.isFlipped ? '#62238C' : '#ffffff'};
   text-align: center;
   margin-bottom: 10px;
   z-index: 1;
@@ -105,7 +109,7 @@ const CourseDescription = styled.p`
   @media (min-width: 600px) {
     font-size: 1rem;
   }
-  color: #ffffff;
+  color: #62238C;
   text-align: center;
   z-index: 1;
   flex-grow: 1;
@@ -133,25 +137,25 @@ const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children
   return (
     <CardWrapper onClick={handleClick}>
       <Card isFlipped={isFlipped}>
-        <CardFront>
-          <TopLeftCircle color="#f0f0f0" />
+        <CardFront isFlipped={isFlipped}>
+          <TopLeftCircle color="#4a1b6d" />
           <BottomRightCircle color="#9D4EDD" />
           <CourseImage src={imageSrc} alt={title} />
-          <CourseTitle isFlipped={false}>{title}</CourseTitle>
-          <ButtonWrapper isFlipped={false}>
+          <CourseTitle isFlipped={isFlipped}>{title}</CourseTitle>
+          <ButtonWrapper>
             {React.Children.map(children, child =>
-              React.cloneElement(child, { isFlipped: false })
+              React.cloneElement(child, { isFlipped: isFlipped })
             )}
           </ButtonWrapper>
         </CardFront>
-        <CardBack>
-          <TopLeftCircle color="#4a1b6d" />
+        <CardBack isFlipped={isFlipped}>
+          <TopLeftCircle color="#f0f0f0" />
           <BottomRightCircle color="#9D4EDD" />
-          <CourseTitle isFlipped={true}>{title}</CourseTitle>
+          <CourseTitle isFlipped={isFlipped}>{title}</CourseTitle>
           <CourseDescription>{description}</CourseDescription>
-          <ButtonWrapper isFlipped={true}>
+          <ButtonWrapper>
             {React.Children.map(children, child =>
-              React.cloneElement(child, { isFlipped: true })
+              React.cloneElement(child, { isFlipped: isFlipped })
             )}
           </ButtonWrapper>
         </CardBack>
