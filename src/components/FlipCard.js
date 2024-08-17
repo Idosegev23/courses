@@ -54,6 +54,9 @@ const CardBack = styled(CardSide)`
   background: #62238C;
   color: #ffffff;
   transform: rotateY(180deg);
+  & button {
+    transform: rotateY(180deg); /* כאן מוסיפים את השורה */
+  }
 `;
 
 const GeometricShape = styled.div`
