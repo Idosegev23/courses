@@ -48,7 +48,7 @@ const CardSide = styled.div`
 
 const CardFront = styled(CardSide)`
   background: #ffffff; /* צד קדמי סגול */
-  color: #ffffff;
+  color: #62238C;
   ${({ isFlipped }) => isFlipped && `
     visibility: hidden;
   `}
@@ -56,7 +56,7 @@ const CardFront = styled(CardSide)`
 
 const CardBack = styled(CardSide)`
   background: #62238C; /* צד אחורי לבן */
-  color: #62238C;
+  color: #ffffff;
   transform: rotateY(180deg);
   ${({ isFlipped }) => !isFlipped && `
     visibility: hidden;
@@ -98,7 +98,7 @@ const CourseTitle = styled.h2`
   @media (min-width: 600px) {
     font-size: 1.5rem;
   }
-  color: ${props => props.isFlipped ? '#62238C' : '#ffffff'};
+  color: ${props => props.isFlipped ? '#ffffff' : '#62238C'};
   text-align: center;
   margin-bottom: 10px;
   z-index: 1;
@@ -138,7 +138,7 @@ const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children
     <CardWrapper onClick={handleClick}>
       <Card isFlipped={isFlipped}>
         <CardFront isFlipped={isFlipped}>
-          <TopLeftCircle color="#4a1b6d" />
+          <TopLeftCircle color="#f0f0f0" />
           <BottomRightCircle color="#9D4EDD" />
           <CourseImage src={imageSrc} alt={title} />
           <CourseTitle isFlipped={isFlipped}>{title}</CourseTitle>
@@ -149,7 +149,7 @@ const FlipCard = ({ title, imageSrc, description, courseId, isEnrolled, children
           </ButtonWrapper>
         </CardFront>
         <CardBack isFlipped={isFlipped}>
-          <TopLeftCircle color="#f0f0f0" />
+          <TopLeftCircle color="#4a1b6d" />
           <BottomRightCircle color="#9D4EDD" />
           <CourseTitle isFlipped={isFlipped}>{title}</CourseTitle>
           <CourseDescription>{description}</CourseDescription>
